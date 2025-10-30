@@ -1,0 +1,404 @@
+[
+  {
+    "category": "System",
+    "subcategory": "OS_Info",
+    "description": "운영체제 버전, 빌드 번호, 설치일 등 시스템 기본 환경 정보를 확인한다.",
+    "keywords": ["SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "ProductName", "CurrentBuildNumber", "InstallDate", "RegisteredOwner"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Boot_Records",
+    "description": "시스템 부팅, 종료, 비정상 종료 관련 이벤트를 확인한다.",
+    "keywords": ["Microsoft-Windows-Eventlog", "BootTime", "ShutdownTime"],
+    "event_id": [6005, 6006, 6008]
+  },
+  {
+    "category": "System",
+    "subcategory": "TimeZone_Config",
+    "description": "시간대 및 일광절약(Daylight) 설정 변경 여부를 확인하여 로그 타임라인의 신뢰성을 확보한다.",
+    "keywords": ["TimeZoneKeyName", "Control\\TimeZoneInformation", "daylight", "Bias"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Computer_Name_Change",
+    "description": "컴퓨터 이름 변경 이벤트를 탐지하여 식별 위장 시도를 확인한다.",
+    "keywords": ["ComputerNameChange", "hostname", "rename"],
+    "event_id": [6011]
+  },
+  {
+    "category": "System",
+    "subcategory": "System_Startup_Config",
+    "description": "부팅 설정, 시작 유형, OS 로드 설정 정보를 분석한다.",
+    "keywords": ["BCD", "bootmgr", "system start", "boot configuration data"]
+  },
+  {
+    "category": "System",
+    "subcategory": "System_Drivers",
+    "description": "드라이버 설치 및 로드 이력을 확인하여 시스템 커널 변경을 추적한다.",
+    "keywords": ["Driver install", "Driver loaded", "System32\\drivers", "SignedDriver"],
+    "event_id": [6]
+  },
+  {
+    "category": "System",
+    "subcategory": "Windows_Update",
+    "description": "Windows Update 설치 및 업데이트 이력을 확인한다.",
+    "keywords": ["WindowsUpdateClient", "Microsoft-Windows-WindowsUpdateClient", "Update installation", "KB"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Patch_Management",
+    "description": "시스템 보안 패치 적용 및 누락 상태를 확인한다.",
+    "keywords": ["Windows Update", "Patch history", "Security Update"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Device_Install",
+    "description": "하드웨어/드라이버 설치 및 장치 연결 로그를 분석하여 시스템 구성 변경을 파악한다.",
+    "keywords": ["SetupAPI.dev.log", "USBSTOR", "Device Instance Path", "PnP device"],
+    "event_id": [2003]
+  },
+  {
+    "category": "System",
+    "subcategory": "Network_Interfaces",
+    "description": "네트워크 어댑터 설치 및 IP 구성, MAC 주소를 수집한다.",
+    "keywords": ["ipconfig /all", "Network Interface", "Adapter", "MAC Address"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Firewall_Config",
+    "description": "방화벽 정책 및 규칙 구성을 점검하여 보안 상태를 파악한다.",
+    "keywords": ["Windows Firewall", "netsh advfirewall", "INetFwPolicy2"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Defender_Config",
+    "description": "Windows Defender 설정 상태와 실시간 보호 동작 여부를 점검한다.",
+    "keywords": ["Windows Defender", "MpCmdRun", "SecurityHealthService", "Real-Time Protection"],
+    "event_id": [5007]
+  },
+  {
+    "category": "System",
+    "subcategory": "Security_Policy",
+    "description": "로컬 보안 정책 및 그룹 정책 설정 상태를 점검한다.",
+    "keywords": ["secpol.msc", "gpedit.msc", "Group Policy", "Security Settings"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Audit_Policy",
+    "description": "감사 정책(Audit Policy) 활성화 여부를 확인하여 로그 생성 범위를 파악한다.",
+    "keywords": ["Audit Policy", "Audit settings", "Security-Auditing"]
+  },
+  {
+    "category": "System",
+    "subcategory": "System_Restore",
+    "description": "복원 지점 생성 및 변경 내역을 확인하여 복원/롤백 시도를 추적한다.",
+    "keywords": ["System Restore", "rstrui.exe", "restore point"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Eventlog_Cleared",
+    "description": "시스템/보안 로그가 초기화 또는 삭제된 흔적을 확인한다.",
+    "keywords": ["Event Log cleared", "wevtutil cl", "Clear-EventLog"],
+    "event_id": [1102]
+  },
+  {
+    "category": "System",
+    "subcategory": "Power_Config",
+    "description": "전원 설정 변경, 절전/대기 모드 관련 이벤트를 확인한다.",
+    "keywords": ["PowerCfg", "Sleep", "Hibernate", "Battery"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Time_Synchronization",
+    "description": "시스템 시간 동기화(NTP/W32Time) 이벤트를 통해 시간 조작 여부를 검증한다.",
+    "keywords": ["W32Time", "Time service", "NTP", "Time synchronization"]
+  },
+  {
+    "category": "System",
+    "subcategory": "Volume_Info",
+    "description": "드라이브 볼륨 정보, 마운트 이력, 시리얼 번호를 수집한다.",
+    "keywords": ["mountvol", "Volume Serial Number", "Logical Volume ID"],
+    "event_id": [98]
+  },
+  {
+    "category": "System",
+    "subcategory": "System_Integrity_Check",
+    "description": "SFC(System File Checker) 및 서명 검증 결과를 통해 시스템 무결성을 평가한다.",
+    "keywords": ["sfc /scannow", "sigverif", "Integrity Check"]
+  },
+
+
+
+
+  
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Keys",
+    "description": "Run 및 RunOnce 레지스트리를 통한 자동 실행 등록 여부를 확인한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "autorun",
+      "registry persistence"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Startup_Folder",
+    "description": "시작 프로그램 폴더를 통한 지속성 확보 여부를 확인한다.",
+    "keywords": [
+      "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+      "shell:startup",
+      "explorer.exe"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks",
+    "description": "예약 작업(Task Scheduler)을 통해 주기적 실행 또는 자동 실행을 유지하는 흔적을 확인한다.",
+    "keywords": [
+      "Microsoft-Windows-TaskScheduler",
+      "C:\\Windows\\System32\\Tasks",
+      "schtasks",
+      "task scheduler",
+      "persistent task"
+    ],
+    "event_id": [4698]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Service_Install",
+    "description": "서비스 등록을 통한 지속성 확보 여부를 탐지한다.",
+    "keywords": [
+      "Service Control Manager",
+      "CreateService",
+      "sc.exe",
+      "svchost.exe"
+    ],
+    "event_id": [7045]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "WMI_Event_Subscription",
+    "description": "WMI 영구 구독(Permanent Event Subscription)을 이용한 자동 실행 여부를 확인한다.",
+    "keywords": [
+      "WMI",
+      "__EventFilter",
+      "__EventConsumer",
+      "FilterToConsumerBinding"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Registry_Shell_Open",
+    "description": "파일 확장자 연결을 조작하여 특정 프로그램이 자동 실행되도록 하는 설정을 탐지한다.",
+    "keywords": [
+      "HKCR\\exefile\\shell\\open\\command",
+      "file association hijack",
+      "Shell Open Command"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Image_File_Execution_Options",
+    "description": "IFEO(Debugger) 키를 악용해 정상 프로세스 실행 시 악성 코드를 실행시키는 설정을 확인한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options",
+      "Debugger",
+      "IFEO persistence"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "AppInit_DLLs",
+    "description": "AppInit_DLLs 값을 통해 모든 프로세스에 DLL이 자동 로드되는 설정을 탐지한다.",
+    "keywords": [
+      "AppInit_DLLs",
+      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
+      "LoadAppInit_DLLs"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Winlogon_Shell",
+    "description": "Winlogon Shell 또는 Userinit 키를 조작하여 사용자 로그인 시 악성 프로세스가 자동 실행되도록 하는 설정을 확인한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
+      "Userinit",
+      "Shell"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "BootExecute_Modification",
+    "description": "BootExecute 값 변경을 통해 부팅 시 명령이 실행되도록 조작된 흔적을 탐지한다.",
+    "keywords": [
+      "HKLM\\System\\CurrentControlSet\\Control\\Session Manager",
+      "BootExecute",
+      "autocheck"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Driver_Load",
+    "description": "드라이버를 등록하여 시스템 부팅 시 자동 로드되도록 설정된 항목을 확인한다.",
+    "keywords": [
+      "HKLM\\System\\CurrentControlSet\\Services",
+      "Driver",
+      "System32\\drivers"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ActiveSetup_Registry",
+    "description": "Active Setup을 이용해 사용자 로그인 시 악성 구성 요소가 실행되도록 하는 설정을 탐지한다.",
+    "keywords": [
+      "Active Setup",
+      "HKLM\\Software\\Microsoft\\Active Setup\\Installed Components"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_Hijacking",
+    "description": "COM 개체 등록을 조작하여 정상 프로그램 실행 시 악성 DLL이 로드되도록 하는 설정을 탐지한다.",
+    "keywords": [
+      "CLSID",
+      "InprocServer32",
+      "COM hijacking",
+      "HKCR\\CLSID"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "AppCert_DLLs",
+    "description": "AppCertDLLs 설정을 통해 시스템 호출 시 특정 DLL이 자동 로드되도록 조작된 흔적을 탐지한다.",
+    "keywords": [
+      "AppCertDLLs",
+      "HKLM\\System\\CurrentControlSet\\Control\\Session Manager"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Printer_Monitor_DLL",
+    "description": "인쇄 모니터 드라이버를 악용하여 부팅 시 악성 DLL을 로드하는 설정을 탐지한다.",
+    "keywords": [
+      "HKLM\\System\\CurrentControlSet\\Control\\Print\\Monitors",
+      "DLL",
+      "Printer Monitor"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ServiceDLL_Modification",
+    "description": "기존 서비스의 ServiceDLL 경로를 변경하여 악성 DLL을 로드하는 행위를 탐지한다.",
+    "keywords": [
+      "ServiceDLL",
+      "HKLM\\System\\CurrentControlSet\\Services",
+      "Parameters"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Logon_Scripts",
+    "description": "로그온 스크립트를 수정하거나 추가하여 로그인 시 자동 실행되도록 하는 설정을 탐지한다.",
+    "keywords": [
+      "logon.bat",
+      "logon.ps1",
+      "C:\\Windows\\System32\\GroupPolicy\\User\\Scripts\\Logon"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "GroupPolicy_Scripts",
+    "description": "그룹 정책(GPO)에 스크립트가 추가되어 사용자/컴퓨터에 지속적으로 실행되는지를 확인한다.",
+    "keywords": [
+      "Sysvol\\Policies\\Scripts",
+      "Group Policy Script",
+      "GPO Logon Script"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "MSI_Package_Installers",
+    "description": "악성 MSI 패키지 설치로 인해 지속성 있는 서비스나 작업이 설치되는 경우를 탐지한다.",
+    "keywords": [
+      "msiexec /i",
+      "MSI installer",
+      "Windows Installer",
+      "Product Code"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "WinRM_Remote_Persistence",
+    "description": "WinRM(원격 관리) 리스너/설정을 변경하여 재부팅 후에도 원격 명령 수신이 가능한 상태로 만드는 동작을 탐지한다.",
+    "keywords": [
+      "winrm quickconfig",
+      "WinRM Listener",
+      "WinRM configuration"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "SCCM_Persistence",
+    "description": "SCCM(관리 도구) 작업이나 클라이언트 구성을 악용하여 지속성을 확보하는 행위를 탐지한다.",
+    "keywords": [
+      "C:\\Windows\\CCM",
+      "SCCM",
+      "ConfigMgr",
+      "Software Center"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Netsh_Helper_DLL",
+    "description": "netsh의 helper DLL 추가/등록을 통해 시스템에 지속적으로 로드되는 DLL을 탐지한다.",
+    "keywords": [
+      "netsh add helper",
+      "HKLM\\SOFTWARE\\Microsoft\\NetSh",
+      "netsh.dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Explorer_Shell_Extension",
+    "description": "Explorer shell extension 또는 context menu handler에 악성 DLL을 등록하여 지속성 및 실행 경로를 확보하는 행위를 탐지한다.",
+    "keywords": [
+      "HKCR\\*\\shellex\\ContextMenuHandlers",
+      "Shell Extension",
+      "ContextMenu handler",
+      "Explorer extension"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "LSA_Authentication_Package",
+    "description": "LSA 인증 패키지(로그온 프로세스)를 가로채거나 추가하여 로그인 시 악성 코드가 실행되도록 하는 행위를 탐지한다.",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+      "Authentication Packages",
+      "LSA"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "PowerShell_Profile_Persistence",
+    "description": "PowerShell 프로필(profile.ps1)에 악성 명령을 추가하여 사용자가 PowerShell을 열 때마다 코드가 실행되도록 하는 설정을 탐지한다.",
+    "keywords": [
+      "%UserProfile%\\Documents\\WindowsPowerShell\\profile.ps1",
+      "PowerShell profile",
+      "profile.ps1"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SearchOrder_Hijacking",
+    "description": "DLL 검색 순서(검색 경로)를 조작하여 정상 프로세스가 악성 DLL을 로드하도록 하는 기법을 탐지한다.",
+    "keywords": [
+      "DLL search order hijacking",
+      "App Paths",
+      "PATH",
+      "DLL preload"
+    ]
+  }
+]
