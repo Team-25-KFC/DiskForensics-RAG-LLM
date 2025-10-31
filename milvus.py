@@ -1,5 +1,5 @@
 # milvus.py
-
+# Milvus와 상호작용하는 기능들을 포함한 모듈
 import pandas as pd
 from pymilvus import Collection, FieldSchema, CollectionSchema, DataType, connections, utility, MilvusClient
 from sentence_transformers import SentenceTransformer
