@@ -120,7 +120,7 @@ def prerequisites_ok() -> bool:
 # -----------------------------
 # 타깃 해석
 # -----------------------------
-# [코드 삽입 시작] (기존 get_available_targets 대체)
+# [코드 삽입 시작]
 def get_available_targets() -> list[str]:
     """
     KAPE --tlist . 출력에서 타깃 이름을 파싱 ('Target: <Name> (.\Targets\...)').
