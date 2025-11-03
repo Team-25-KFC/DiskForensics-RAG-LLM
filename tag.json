@@ -11,65 +11,68 @@
     "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND RegisteredOwner",
     "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductId"
   ]
-},
-{
-  "category": "System",
-  "subcategory": "User_Info",
-  "description": "시스템의 사용자 프로필 경로 및 최근 로그인 계정을 식별한다.",
-  "keywords": [
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList|ProfilesDirectory",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList|Default",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList|Public",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList|ProgramData",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI|LastLoggedOnUser",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI|LastLoggedOnDisplayName",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI|LastLoggedOnUserSID",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI|SelectedUserSID"
-  ]
-},
-
-
-
-
-
-
-
-
-
-
-  {
-    "category": "System",
-    "subcategory": "Boot_Records",
-    "description": "시스템 부팅, 종료, 비정상 종료 관련 이벤트를 확인한다.",
-    "keywords": ["Microsoft-Windows-Eventlog", "BootTime", "ShutdownTime"],
-    "event_id": [6005, 6006, 6008]
   },
   {
     "category": "System",
-    "subcategory": "TimeZone_Config",
-    "description": "시간대 및 일광절약(Daylight) 설정 변경 여부를 확인하여 로그 타임라인의 신뢰성을 확보한다.",
-    "keywords": ["TimeZoneKeyName", "Control\\TimeZoneInformation", "daylight", "Bias"]
+    "subcategory": "User_Info",
+    "description": "시스템의 사용자 프로필 경로 및 최근 로그인 계정을 식별한다.",
+    "keywords": [
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfileImagePath",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfilesDirectory",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Default",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Public",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProgramData",
+      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUser",
+      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnDisplayName",
+      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUserSID",
+      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND SelectedUserSID"
+    ]
+  },
+  {
+  "category": "System",
+  "subcategory": "Boot_Records",
+  "description": "시스템 부팅, 종료, 비정상 종료 이벤트를 식별하여 시스템 가동 이력과 장애 여부를 확인한다.",
+  "keywords": [],
+  "event_id": [6005, 6006, 6008]
   },
   {
     "category": "System",
     "subcategory": "Computer_Name_Change",
     "description": "컴퓨터 이름 변경 이벤트를 탐지하여 식별 위장 시도를 확인한다.",
-    "keywords": ["ComputerNameChange", "hostname", "rename"],
+    "keywords": [],
     "event_id": [6011]
   },
   {
-    "category": "System",
-    "subcategory": "System_Startup_Config",
-    "description": "부팅 설정, 시작 유형, OS 로드 설정 정보를 분석한다.",
-    "keywords": ["BCD", "bootmgr", "system start", "boot configuration data"]
+  "category": "System",
+  "subcategory": "System_Drivers",
+  "description": "드라이버 설치 및 로드 이력을 확인하여 시스템 커널 변경을 추적한다.",
+  "keywords": [
+    "SYSTEM\\CurrentControlSet\\Services AND Type=0x1 OR Type=0x2",
+    "EventLogProvider=Microsoft-Windows-Kernel-PnP",
+    "EventSource=Kernel-PnP"
+  ],
+  "event_id": [6]
   },
   {
-    "category": "System",
-    "subcategory": "System_Drivers",
-    "description": "드라이버 설치 및 로드 이력을 확인하여 시스템 커널 변경을 추적한다.",
-    "keywords": ["Driver install", "Driver loaded", "System32\\drivers", "SignedDriver"],
-    "event_id": [6]
+  "category": "System",
+  "subcategory": "Network_Interfaces",
+  "description": "디스크 상의 SYSTEM 및 SOFTWARE 하이브를 분석하여 네트워크 어댑터의 설치 정보, IP 구성, MAC 주소를 복원한다.",
+  "keywords": [
+    "SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces",
+    "SYSTEM\\ControlSet001\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}",
+    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards"
+  ]
   },
+
+
+
+
+
+
+
+
+
+
   {
     "category": "System",
     "subcategory": "Windows_Update",
@@ -88,27 +91,7 @@
     "description": "하드웨어/드라이버 설치 및 장치 연결 로그를 분석하여 시스템 구성 변경을 파악한다.",
     "keywords": ["SetupAPI.dev.log", "USBSTOR", "Device Instance Path", "PnP device"],
     "event_id": [2003]
-  },
-  {
-  "category": "System",
-  "subcategory": "Network_Interfaces",
-  "description": "네트워크 어댑터 설치 및 IP 구성, MAC 주소를 수집한다.",
-  "keywords": [
-    "ipconfig /all",
-    "Network Interface",
-    "Adapter",
-    "MAC Address"
-  ],
-  "exclude_patterns": [
-    "WofCompressedData",
-    "\\Windows\\assembly\\NativeImages",
-    "WinSxS",
-    "Virtual",
-    "Hyper-V",
-    "Npcap Loopback",
-    "Teredo"
-  ]
-}
+  }
 ,
   {
     "category": "System",
