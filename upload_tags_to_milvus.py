@@ -70,7 +70,11 @@ def batch(iterable, n=BATCH_SIZE):
         yield iterable[i:i + n]
 
 for chunk in batch(tags, BATCH_SIZE):
-    categories = [item["category"] for item in chunk]
+    categories = [
+        item["category"] if isinstance(item["category"], str)
+        else "|".join(item["category"])  # ✅ 리스트면 문자열로 변환
+        for item in chunk
+    ]
     subcategories = [item["subcategory"] for item in chunk]
     descriptions = [item["description"] for item in chunk]
     keywords = [", ".join(item["keywords"]) for item in chunk]
