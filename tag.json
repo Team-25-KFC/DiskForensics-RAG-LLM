@@ -64,85 +64,6 @@
   ]
   },
 
-
-
-
-
-
-
-
-
-
-  {
-    "category": "System",
-    "subcategory": "Windows_Update",
-    "description": "Windows Update 설치 및 업데이트 이력을 확인한다.",
-    "keywords": ["WindowsUpdateClient", "Microsoft-Windows-WindowsUpdateClient", "Update installation", "KB"]
-  },
-  {
-    "category": "System",
-    "subcategory": "Patch_Management",
-    "description": "시스템 보안 패치 적용 및 누락 상태를 확인한다.",
-    "keywords": ["Windows Update", "Patch history", "Security Update"]
-  },
-  {
-    "category": "System",
-    "subcategory": "Device_Install",
-    "description": "하드웨어/드라이버 설치 및 장치 연결 로그를 분석하여 시스템 구성 변경을 파악한다.",
-    "keywords": ["SetupAPI.dev.log", "USBSTOR", "Device Instance Path", "PnP device"],
-    "event_id": [2003]
-  }
-,
-  {
-    "category": "System",
-    "subcategory": "Firewall_Config",
-    "description": "방화벽 정책 및 규칙 구성을 점검하여 보안 상태를 파악한다.",
-    "keywords": ["Windows Firewall", "netsh advfirewall", "INetFwPolicy2"]
-  },
-  {
-    "category": "System",
-    "subcategory": "Defender_Config",
-    "description": "Windows Defender 설정 상태와 실시간 보호 동작 여부를 점검한다.",
-    "keywords": ["Windows Defender", "MpCmdRun", "SecurityHealthService", "Real-Time Protection"],
-    "event_id": [5007]
-  },
-  {
-    "category": "System",
-    "subcategory": "Security_Policy",
-    "description": "로컬 보안 정책 및 그룹 정책 설정 상태를 점검한다.",
-    "keywords": ["secpol.msc", "gpedit.msc", "Group Policy", "Security Settings"]
-  },
-  {
-    "category": "System",
-    "subcategory": "Audit_Policy",
-    "description": "감사 정책(Audit Policy) 활성화 여부를 확인하여 로그 생성 범위를 파악한다.",
-    "keywords": ["Audit Policy", "Audit settings", "Security-Auditing"]
-  },
-  {
-    "category": "System",
-    "subcategory": "System_Restore",
-    "description": "복원 지점 생성 및 변경 내역을 확인하여 복원/롤백 시도를 추적한다.",
-    "keywords": ["System Restore", "rstrui.exe", "restore point"]
-  },
-  {
-    "category": "System",
-    "subcategory": "Eventlog_Cleared",
-    "description": "시스템/보안 로그가 초기화 또는 삭제된 흔적을 확인한다.",
-    "keywords": ["Event Log cleared", "wevtutil cl", "Clear-EventLog"],
-    "event_id": [1102]
-  },
-  {
-    "category": "System",
-    "subcategory": "Power_Config",
-    "description": "전원 설정 변경, 절전/대기 모드 관련 이벤트를 확인한다.",
-    "keywords": ["PowerCfg", "Sleep", "Hibernate", "Battery"]
-  },
-  {
-    "category": "System",
-    "subcategory": "Time_Synchronization",
-    "description": "시스템 시간 동기화(NTP/W32Time) 이벤트를 통해 시간 조작 여부를 검증한다.",
-    "keywords": ["W32Time", "Time service", "NTP", "Time synchronization"]
-  },
   {
   "category": "System",
   "subcategory": "Volume_Info",
@@ -154,25 +75,93 @@
     "WinSxS"
   ],
   "event_id": [98]
-}
-,
-  {
-    "category": "System",
-    "subcategory": "System_Integrity_Check",
-    "description": "SFC(System File Checker) 및 서명 검증 결과를 통해 시스템 무결성을 평가한다.",
-    "keywords": ["sfc /scannow", "sigverif", "Integrity Check"]
-  },
-  {
+} ,{
   "category": "System",
   "subcategory": "USB_Connection_History",
   "description": "시스템에 연결된 USB 저장장치의 연결·해제 기록을 확인하여 외부 매체 사용 여부를 파악한다.",
   "keywords": [
     "SYSTEM\\CurrentControlSet\\Enum\\USBSTOR",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2",
-    "SetupAPI.dev.log"
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2"
+    
   ],
   "event_id": [2003, 2100, 2102]
 },
+  {
+    "category": "System",
+    "subcategory": "Eventlog_Cleared",
+    "description": "시스템/보안 로그가 초기화 또는 삭제된 흔적을 확인한다.",
+    "keywords": ["Event Log cleared", "wevtutil cl", "Clear-EventLog"],
+    "event_id": [1102]
+  },
+  
+
+
+
+{
+  "category": "System",
+  "subcategory": "TimeZone_Config",
+  "description": "시스템 시간대 및 일광절약 설정을 확인하여 로그 타임라인의 신뢰성을 확보한다.",
+  "keywords": [
+    "CurrentControlSet\\Control\\TimeZoneInformation AND TimeZoneKeyName",
+    "CurrentControlSet\\Control\\TimeZoneInformation AND Bias",
+    "CurrentControlSet\\Control\\TimeZoneInformation AND ActiveTimeBias",
+    "CurrentControlSet\\Control\\TimeZoneInformation AND DaylightBias",
+    "CurrentControlSet\\Control\\TimeZoneInformation AND StandardBias",
+    "CurrentControlSet\\Control\\TimeZoneInformation AND DynamicDaylightTimeDisabled"
+  ]
+},
+
+{
+  "category": "System",
+  "subcategory": "System_Installation",
+  "description": "운영체제 설치 일시 및 설치 미디어 경로를 확인하여 초기 설정 시점을 식별한다.",
+  "keywords": [
+    "C:\\Windows\\Panther\\setupact.log",
+    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND InstallDate"
+  ]
+},
+{
+  "category": "System",
+  "subcategory": "Hardware_Info",
+  "description": "CPU, 메모리, 디스크, BIOS 등 하드웨어 구성 정보를 확인하여 시스템의 물리적 환경을 파악한다.",
+  "keywords": [
+    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND Identifier",
+    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND ProcessorNameString",
+    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND ~MHz",
+    "HARDWARE\\DESCRIPTION\\System\\BIOS AND SystemManufacturer",
+    "HARDWARE\\DESCRIPTION\\System\\BIOS AND SystemProductName",
+    "HARDWARE\\DESCRIPTION\\System\\BIOS AND BIOSVersion",
+    "HARDWARE\\DESCRIPTION\\System\\BIOS AND BIOSReleaseDate",
+    "SYSTEM\\CurrentControlSet\\Control\\SystemInformation AND SystemManufacturer",
+    "SYSTEM\\CurrentControlSet\\Control\\SystemInformation AND SystemProductName"
+  ],
+  "event_id": [12]
+},
+{
+  "category": "System",
+  "subcategory": "System_Integrity_Check",
+  "description": "CBS.log 내 주요 키워드를 분석하여 시스템 파일 손상, 복구 여부, 무결성 위반 시점을 식별한다.",
+  "keywords": [
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND [SR]",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Repairing corrupted file",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Cannot repair member file",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Corrupt",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND corruption",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Repaired file",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Fixed file",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Verify and Repair transaction completed",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Error",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND Failure",
+    "C:\\Windows\\Logs\\CBS\\CBS.log AND CSI"
+  ],
+  "event_id": [1001, 1002, 1003]
+},
+
+
+
+
+
+
 
 
 
