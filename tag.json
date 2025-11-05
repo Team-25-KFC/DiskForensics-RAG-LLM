@@ -1,161 +1,185 @@
 [
   {
-  "category": "System",
-  "subcategory": "OS_Info",
-  "description": "운영체제 버전, 빌드, 설치 정보 및 등록자 정보를 확인한다.",
-  "keywords": [
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductName",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND EditionID",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND BuildLabEx",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND InstallDate",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND RegisteredOwner",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductId"
-  ]
+    "category": "System",
+    "subcategory": "OS_Info",
+    "description": "운영체제 버전, 빌드, 설치 정보 및 등록자 정보를 확인한다.",
+    "keywords": [
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductName",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND EditionID",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND BuildLabEx",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND InstallDate",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND RegisteredOwner",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductId"
+    ]
+    },
+    {
+      "category": "System",
+      "subcategory": "User_Info",
+      "description": "시스템의 사용자 프로필 경로 및 최근 로그인 계정을 식별한다.",
+      "keywords": [
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfileImagePath",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfilesDirectory",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Default",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Public",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProgramData",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUser",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnDisplayName",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUserSID",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND SelectedUserSID"
+      ]
+    },
+    {
+    "category": "System",
+    "subcategory": "Boot_Records",
+    "description": "시스템 부팅, 종료, 비정상 종료 이벤트를 식별하여 시스템 가동 이력과 장애 여부를 확인한다.",
+    "keywords": [],
+    "event_id": [6005, 6006, 6008]
+    },
+    {
+      "category": "System",
+      "subcategory": "Computer_Name_Change",
+      "description": "컴퓨터 이름 변경 이벤트를 탐지하여 식별 위장 시도를 확인한다.",
+      "keywords": [],
+      "event_id": [6011]
+    },
+    {
+    "category": "System",
+    "subcategory": "System_Drivers",
+    "description": "드라이버 설치 및 로드 이력을 확인하여 시스템 커널 변경을 추적한다.",
+    "keywords": [
+      "SYSTEM\\CurrentControlSet\\Services AND Type=0x1 OR Type=0x2",
+      "EventLogProvider=Microsoft-Windows-Kernel-PnP",
+      "EventSource=Kernel-PnP"
+    ],
+    "event_id": [6]
+    },
+    {
+    "category": "System",
+    "subcategory": "Network_Interfaces",
+    "description": "디스크 상의 SYSTEM 및 SOFTWARE 하이브를 분석하여 네트워크 어댑터의 설치 정보, IP 구성, MAC 주소를 복원한다.",
+    "keywords": [
+      "SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces",
+      "SYSTEM\\ControlSet001\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}",
+      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards"
+    ]
+    },
+
+    {
+    "category": "System",
+    "subcategory": "Volume_Info",
+    "description": "드라이브 볼륨 정보, 마운트 이력, 시리얼 번호를 수집한다.",
+    "keywords": ["mountvol", "Volume Serial Number", "Logical Volume ID"],
+    "exclude_patterns": [
+      "WofCompressedData",
+      "\\Windows\\assembly\\NativeImages",
+      "WinSxS"
+    ],
+    "event_id": [98]
+  } ,{
+    "category": "System",
+    "subcategory": "USB_Connection_History",
+    "description": "시스템에 연결된 USB 저장장치의 연결·해제 기록을 확인하여 외부 매체 사용 여부를 파악한다.",
+    "keywords": [
+      "SYSTEM\\CurrentControlSet\\Enum\\USBSTOR",
+      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2"
+      
+    ],
+    "event_id": [2003, 2100, 2102]
   },
+    {
+      "category": "System",
+      "subcategory": "Eventlog_Cleared",
+      "description": "시스템/보안 로그가 초기화 또는 삭제된 흔적을 확인한다.",
+      "keywords": ["Event Log cleared", "wevtutil cl", "Clear-EventLog"],
+      "event_id": [1102]
+    },
+    
+
+
+
   {
     "category": "System",
-    "subcategory": "User_Info",
-    "description": "시스템의 사용자 프로필 경로 및 최근 로그인 계정을 식별한다.",
+    "subcategory": "TimeZone_Config",
+    "description": "시스템 시간대 및 일광절약 설정을 확인하여 로그 타임라인의 신뢰성을 확보한다.",
     "keywords": [
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfileImagePath",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfilesDirectory",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Default",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Public",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProgramData",
-      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUser",
-      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnDisplayName",
-      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUserSID",
-      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND SelectedUserSID"
+      "CurrentControlSet\\Control\\TimeZoneInformation AND TimeZoneKeyName",
+      "CurrentControlSet\\Control\\TimeZoneInformation AND Bias",
+      "CurrentControlSet\\Control\\TimeZoneInformation AND ActiveTimeBias",
+      "CurrentControlSet\\Control\\TimeZoneInformation AND DaylightBias",
+      "CurrentControlSet\\Control\\TimeZoneInformation AND StandardBias",
+      "CurrentControlSet\\Control\\TimeZoneInformation AND DynamicDaylightTimeDisabled"
     ]
   },
-  {
-  "category": "System",
-  "subcategory": "Boot_Records",
-  "description": "시스템 부팅, 종료, 비정상 종료 이벤트를 식별하여 시스템 가동 이력과 장애 여부를 확인한다.",
-  "keywords": [],
-  "event_id": [6005, 6006, 6008]
-  },
-  {
-    "category": "System",
-    "subcategory": "Computer_Name_Change",
-    "description": "컴퓨터 이름 변경 이벤트를 탐지하여 식별 위장 시도를 확인한다.",
-    "keywords": [],
-    "event_id": [6011]
-  },
-  {
-  "category": "System",
-  "subcategory": "System_Drivers",
-  "description": "드라이버 설치 및 로드 이력을 확인하여 시스템 커널 변경을 추적한다.",
-  "keywords": [
-    "SYSTEM\\CurrentControlSet\\Services AND Type=0x1 OR Type=0x2",
-    "EventLogProvider=Microsoft-Windows-Kernel-PnP",
-    "EventSource=Kernel-PnP"
-  ],
-  "event_id": [6]
-  },
-  {
-  "category": "System",
-  "subcategory": "Network_Interfaces",
-  "description": "디스크 상의 SYSTEM 및 SOFTWARE 하이브를 분석하여 네트워크 어댑터의 설치 정보, IP 구성, MAC 주소를 복원한다.",
-  "keywords": [
-    "SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces",
-    "SYSTEM\\ControlSet001\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards"
-  ]
-  },
 
-  {
-  "category": "System",
-  "subcategory": "Volume_Info",
-  "description": "드라이브 볼륨 정보, 마운트 이력, 시리얼 번호를 수집한다.",
-  "keywords": ["mountvol", "Volume Serial Number", "Logical Volume ID"],
-  "exclude_patterns": [
-    "WofCompressedData",
-    "\\Windows\\assembly\\NativeImages",
-    "WinSxS"
-  ],
-  "event_id": [98]
-} ,{
-  "category": "System",
-  "subcategory": "USB_Connection_History",
-  "description": "시스템에 연결된 USB 저장장치의 연결·해제 기록을 확인하여 외부 매체 사용 여부를 파악한다.",
-  "keywords": [
-    "SYSTEM\\CurrentControlSet\\Enum\\USBSTOR",
-    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2"
-    
-  ],
-  "event_id": [2003, 2100, 2102]
-},
-  {
-    "category": "System",
-    "subcategory": "Eventlog_Cleared",
-    "description": "시스템/보안 로그가 초기화 또는 삭제된 흔적을 확인한다.",
-    "keywords": ["Event Log cleared", "wevtutil cl", "Clear-EventLog"],
-    "event_id": [1102]
-  },
   
+  {
+    "category": "System",
+    "subcategory": "Hardware_Info",
+    "description": "CPU, 메모리, 디스크, BIOS 등 하드웨어 구성 정보를 확인하여 시스템의 물리적 환경을 파악한다.",
+    "keywords": [
+      "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND Identifier",
+      "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND ProcessorNameString",
+      "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND ~MHz",
+      "HARDWARE\\DESCRIPTION\\System\\BIOS AND SystemManufacturer",
+      "HARDWARE\\DESCRIPTION\\System\\BIOS AND SystemProductName",
+      "HARDWARE\\DESCRIPTION\\System\\BIOS AND BIOSVersion",
+      "HARDWARE\\DESCRIPTION\\System\\BIOS AND BIOSReleaseDate",
+      "SYSTEM\\CurrentControlSet\\Control\\SystemInformation AND SystemManufacturer",
+      "SYSTEM\\CurrentControlSet\\Control\\SystemInformation AND SystemProductName"
+    ],
+    "event_id": [12]
+  },
+  {
+    "category": "System",
+    "subcategory": "System_Integrity_Check",
+    "description": "CBS.log 내 주요 키워드를 분석하여 시스템 파일 손상, 복구 여부, 무결성 위반 시점을 식별한다.",
+    "keywords": [
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND [SR]",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Repairing corrupted file",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Cannot repair member file",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Corrupt",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND corruption",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Repaired file",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Fixed file",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Verify and Repair transaction completed",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Error",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND Failure",
+      "C:\\Windows\\Logs\\CBS\\CBS.log AND CSI"
+    ],
+    "event_id": [1001, 1002, 1003]
+  },
 
-
-
+  {
+    "category": "System",
+    "subcategory": "Security_Status",
+    "description": "Windows Defender와 방화벽의 활성화 상태를 확인하여 공격 당시 시스템 방어 기능의 작동 여부를 판단한다.",
+    "keywords": [
+      "Microsoft\\Windows Defender",
+      "CurrentControlSet\\Services\\mpssvc",
+      "CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy"
+    ],
+    "EventId": [5007]
+  },
+  {
+    "category": "System",
+    "subcategory": "Storage_Device_Info",
+    "description": "로컬 및 외장 저장장치의 볼륨 정보와 USB 연결 이력을 통합 수집하여 외부 매체 사용 여부와 연결 시점을 분석한다.",
+    "keywords": [
+      "\\MountedDevices",
+      "CurrentControlSet\\Enum\\USBSTOR",
+      "CurrentControlSet\\Enum\\USB",
+      "Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2"
+    ],
+    "event_id": [98, 2003, 2100, 2102]
+  },
 {
   "category": "System",
-  "subcategory": "TimeZone_Config",
-  "description": "시스템 시간대 및 일광절약 설정을 확인하여 로그 타임라인의 신뢰성을 확보한다.",
-  "keywords": [
-    "CurrentControlSet\\Control\\TimeZoneInformation AND TimeZoneKeyName",
-    "CurrentControlSet\\Control\\TimeZoneInformation AND Bias",
-    "CurrentControlSet\\Control\\TimeZoneInformation AND ActiveTimeBias",
-    "CurrentControlSet\\Control\\TimeZoneInformation AND DaylightBias",
-    "CurrentControlSet\\Control\\TimeZoneInformation AND StandardBias",
-    "CurrentControlSet\\Control\\TimeZoneInformation AND DynamicDaylightTimeDisabled"
-  ]
+  "subcategory": "User_Account_Activity",
+  "description": "사용자 계정 생성, 비활성화, 암호 변경, 그룹 권한 변경 등의 계정 관리 활동을 추적한다.",
+  "keywords": [],
+  "event_id": [4720, 4722, 4723, 4724, 4725, 4728, 4732, 4740, 4767]
 },
 
-{
-  "category": "System",
-  "subcategory": "System_Installation",
-  "description": "운영체제 설치 일시 및 설치 미디어 경로를 확인하여 초기 설정 시점을 식별한다.",
-  "keywords": [
-    "C:\\Windows\\Panther\\setupact.log",
-    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND InstallDate"
-  ]
-},
-{
-  "category": "System",
-  "subcategory": "Hardware_Info",
-  "description": "CPU, 메모리, 디스크, BIOS 등 하드웨어 구성 정보를 확인하여 시스템의 물리적 환경을 파악한다.",
-  "keywords": [
-    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND Identifier",
-    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND ProcessorNameString",
-    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0 AND ~MHz",
-    "HARDWARE\\DESCRIPTION\\System\\BIOS AND SystemManufacturer",
-    "HARDWARE\\DESCRIPTION\\System\\BIOS AND SystemProductName",
-    "HARDWARE\\DESCRIPTION\\System\\BIOS AND BIOSVersion",
-    "HARDWARE\\DESCRIPTION\\System\\BIOS AND BIOSReleaseDate",
-    "SYSTEM\\CurrentControlSet\\Control\\SystemInformation AND SystemManufacturer",
-    "SYSTEM\\CurrentControlSet\\Control\\SystemInformation AND SystemProductName"
-  ],
-  "event_id": [12]
-},
-{
-  "category": "System",
-  "subcategory": "System_Integrity_Check",
-  "description": "CBS.log 내 주요 키워드를 분석하여 시스템 파일 손상, 복구 여부, 무결성 위반 시점을 식별한다.",
-  "keywords": [
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND [SR]",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Repairing corrupted file",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Cannot repair member file",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Corrupt",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND corruption",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Repaired file",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Fixed file",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Verify and Repair transaction completed",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Error",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND Failure",
-    "C:\\Windows\\Logs\\CBS\\CBS.log AND CSI"
-  ],
-  "event_id": [1001, 1002, 1003]
-},
 
 
 
