@@ -107,8 +107,8 @@
     "subcategory": "Startup_Folder_Common",
     "description": "공용 Startup 폴더에 항목을 배치해 모든 사용자에게 자동 실행되도록 한다.",
     "keywords": [
-      "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
-      "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
+      "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
+      "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
       "shell:common startup"
     ]
   },
