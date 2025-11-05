@@ -1,0 +1,255 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKCU",
+    "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 등록한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "<APPDATA>\\**\\*.exe",
+      "<LOCALAPPDATA>\\**\\*.exe",
+      "autorun",
+      "registry persistence"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKLM",
+    "description": "HKLM Run 키로 모든 사용자 로그인 시 자동 실행되도록 등록한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "<PROGRAMFILES>\\**\\*.exe",
+      "<PROGRAMDATA>\\**\\*.exe",
+      "autorun all users"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKCU_Wow6432Node",
+    "description": "HKCU Wow6432Node Run 키를 이용해 32비트 컨텍스트로 실행되도록 등록한다.",
+    "keywords": [
+      "HKCU\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "<LOCALAPPDATA>\\**\\*.exe",
+      "run 32-bit"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKLM_Wow6432Node",
+    "description": "HKLM Wow6432Node Run 키를 이용해 시스템 전역 32비트 실행을 등록한다.",
+    "keywords": [
+      "HKLM\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "<PROGRAMFILESX86>\\**\\*.exe",
+      "run 32-bit global"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "RunOnce_HKCU",
+    "description": "HKCU RunOnce 키로 다음 로그인에서 1회 실행되도록 등록한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "RegExpandSz",
+      "<APPDATA>\\**\\*.exe",
+      "one-time run"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "RunOnce_HKLM",
+    "description": "HKLM RunOnce 키로 시스템 전역 1회 실행을 등록한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "<PROGRAMDATA>\\**\\*.exe",
+      "one-time run all users"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "RunServices_HKLM",
+    "description": "RunServices 키로 로그인 시 서비스형 실행을 유발한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
+      "service-style autorun"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "User_Run_Policy_HKCU",
+    "description": "정책 기반 Run 키로 사용자별 시작 프로그램을 강제한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
+      "<APPDATA>\\**\\*.exe",
+      "policy run"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Machine_Run_Policy_HKLM",
+    "description": "정책 기반 Run 키로 시스템 전역 시작 프로그램을 강제한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
+      "<PROGRAMDATA>\\**\\*.exe",
+      "policy run all users"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Startup_Folder_User",
+    "description": "사용자 Startup 폴더에 LNK/EXE를 배치해 자동 실행되도록 한다.",
+    "keywords": [
+      "%AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
+      "%AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
+      "shell:startup",
+      "explorer.exe"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Startup_Folder_Common",
+    "description": "공용 Startup 폴더에 항목을 배치해 모든 사용자에게 자동 실행되도록 한다.",
+    "keywords": [
+      "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
+      "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
+      "shell:common startup"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "StartupApproved_Run",
+    "description": "StartupApproved 레지스트리에서 Run 항목의 승인 상태를 조작한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run",
+      "Approval State",
+      "enabled startup"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "StartupApproved_Run32",
+    "description": "StartupApproved의 Run32 승인 상태를 조작해 32비트 시작 프로그램을 활성화한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32",
+      "Run32",
+      "enabled startup 32-bit"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Explorer_Run_HKLMShellFolders",
+    "description": "Explorer Shell Folders를 조작해 시작 경로를 우회한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
+      "Startup",
+      "Special Paths override"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Explorer_Run_HKCUShellFolders",
+    "description": "사용자 Shell Folders를 조작해 시작 경로를 재지정한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
+      "Startup",
+      "Folder redirection"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Alternate_ScriptHosts",
+    "description": "Run 계열에서 스크립트 호스트를 사용해 스크립트를 실행한다.",
+    "keywords": [
+      "wscript.exe //B //E:jscript <APPDATA>\\**\\*.js",
+      "cscript.exe //B <APPDATA>\\**\\*.vbs",
+      "mshta.exe <APPDATA>\\**\\*.hta",
+      "powershell.exe -WindowStyle Hidden -File <APPDATA>\\**\\*.ps1"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Encoded_PowerShell",
+    "description": "Run 계열에서 인코딩된 PowerShell 명령을 사용한다.",
+    "keywords": [
+      "powershell.exe -enc <B64>",
+      "powershell.exe -EncodedCommand <B64>",
+      "<APPDATA>\\**\\*.ps1",
+      "ps encoded"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_DLL_SideLoad_FromAppDir",
+    "description": "Run 계열이 실행하는 EXE의 폴더에 DLL을 두어 사이드로딩을 유도한다.",
+    "keywords": [
+      "<APPDIR>\\*.dll",
+      "<APPDIR>\\plugins\\*.dll",
+      "version.dll",
+      "winhttp.dll",
+      "dll side-loading"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_LNK_Target_UNC",
+    "description": "Startup LNK의 대상 경로를 UNC로 지정해 원격 실행을 유도한다.",
+    "keywords": [
+      "%AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
+      "\\\\<host>\\share\\*.exe",
+      "WebDAV",
+      "SMB share"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Environment_Expansion",
+    "description": "Run 값에서 환경변수를 이용해 사용자별 경로로 우회한다.",
+    "keywords": [
+      "%APPDATA%\\**\\*.exe",
+      "%LOCALAPPDATA%\\**\\*.exe",
+      "%TEMP%\\**\\*.exe",
+      "RegExpandSz"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Abuse_Of_Legit_Updaters",
+    "description": "정상 업데이트 실행 파일을 악용해 시작 프로그램으로 위장한다.",
+    "keywords": [
+      "OneDrive.exe /background",
+      "GoogleUpdate.exe /c",
+      "<PROGRAMFILES>\\**\\Updater\\*.exe",
+      "living off the land"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_SelfDelete_Once",
+    "description": "RunOnce에서 실행 후 자기 삭제 스크립트를 사용한다.",
+    "keywords": [
+      "cmd.exe /c del %~f0",
+      "powershell.exe -Command Remove-Item",
+      "one-shot persistence"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Browser_Extension_Launch",
+    "description": "Run 계열로 브라우저 확장 또는 로더를 시작한다.",
+    "keywords": [
+      "<LOCALAPPDATA>\\**\\Chrome\\User Data\\Default\\Extensions\\*",
+      "msedge.exe --load-extension",
+      "extension loader"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_Path_Tamper_AppPaths",
+    "description": "App Paths/Path 값을 병행해 실행 검색 경로를 확장한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "<APPDATA>\\bin",
+      "<PROGRAMDATA>\\bin",
+      "PATH extension"
+    ]
+  }
+]

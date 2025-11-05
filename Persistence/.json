@@ -1,0 +1,142 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "ServiceDLL_Modification",
+    "description": "서비스의 ServiceDll 경로 변경 여부 확인",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Services\\*\\Parameters\\ServiceDll",
+      "ServiceDll",
+      "svchost"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ActiveSetup_Registry",
+    "description": "Active Setup 실행 항목 확인",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Active Setup\\Installed Components",
+      "HKCU\\Software\\Microsoft\\Active Setup\\Installed Components",
+      "Active Setup"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "LSA_Authentication_Package",
+    "description": "LSA 패키지 추가/변조 확인",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\Authentication Packages",
+      "Security Packages",
+      "Notification Packages"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Printer_Monitor_DLL",
+    "description": "프린터 모니터 드라이버 DLL 로드 확인",
+    "keywords": [
+      "HKLM\\System\\CurrentControlSet\\Control\\Print\\Monitors",
+      "Driver",
+      "Print Monitor"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "AppCert_DLLs",
+    "description": "AppCertDlls 훅 확인",
+    "keywords": [
+      "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\AppCertDlls",
+      "AppCertDLLs",
+      "process hook"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Netsh_Helper_DLL",
+    "description": "netsh helper DLL 등록 확인",
+    "keywords": [
+      "HKLM\\SOFTWARE\\Microsoft\\NetSh",
+      "netsh add helper",
+      "helper DLL"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Explorer_Shell_Extension",
+    "description": "Explorer 셸 확장/컨텍스트 핸들러 확인",
+    "keywords": [
+      "HKCR\\*\\shellex\\ContextMenuHandlers",
+      "HKCU\\Software\\Classes\\*\\shellex\\ContextMenuHandlers",
+      "Shell Extension"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "PowerShell_Profile_Persistence",
+    "description": "PowerShell 프로필 실행 확인",
+    "keywords": [
+      "%UserProfile%\\Documents\\WindowsPowerShell\\profile.ps1",
+      "%UserProfile%\\Documents\\PowerShell\\profile.ps1",
+      "profile.ps1"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "GroupPolicy_Scripts",
+    "description": "GPO 스크립트 배치 확인",
+    "keywords": [
+      "\\\\<domain>\\SYSVOL\\<domain>\\Policies\\*\\Scripts\\*",
+      "GPO",
+      "Group Policy Script"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "MSI_Package_Installers",
+    "description": "MSI 설치로 생성된 지속성 확인",
+    "keywords": [
+      "C:\\Windows\\Installer\\*.msi",
+      "msiexec /i",
+      "Windows Installer"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "WinRM_Remote_Persistence",
+    "description": "WinRM 리스너/설정 지속성 확인",
+    "keywords": [
+      "winrm quickconfig",
+      "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WSMAN\\Listener",
+      "WinRM Listener"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "SCCM_Persistence",
+    "description": "SCCM 작업/클라이언트 기반 지속성 확인",
+    "keywords": [
+      "C:\\Windows\\CCM\\Logs\\*",
+      "HKLM\\SOFTWARE\\Microsoft\\CCM\\*",
+      "ConfigMgr"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Registry_Shell_Open",
+    "description": "Shell Open Command 하이재킹 확인",
+    "keywords": [
+      "HKCR\\exefile\\shell\\open\\command",
+      "HKCU\\Software\\Classes\\exefile\\shell\\open\\command",
+      "file association hijack"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "BootExecute_Modification",
+    "description": "BootExecute 값 변경 확인",
+    "keywords": [
+      "HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\BootExecute",
+      "autocheck",
+      "boot persistence"
+    ]
+  }
+]

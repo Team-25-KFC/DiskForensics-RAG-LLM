@@ -1,0 +1,60 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SearchOrder_Hijacking",
+    "description": "DLL 검색 순서를 악용해 먼저 로드되도록 유도한다.",
+    "keywords": [
+      "Current Working Directory",
+      "C:\\Users\\<USER>\\AppData\\Roaming\\**\\*.dll",
+      "C:\\ProgramData\\*.dll",
+      "side-loading",
+      "preload",
+      "untrusted search path"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SideLoading_AppDir",
+    "description": "서명된 실행 파일 디렉터리에 악성 DLL을 배치해 로드되게 한다.",
+    "keywords": [
+      "C:\\ProgramData\\Vendor\\App\\.exe",
+      "C:\\ProgramData\\*\\App\\*.dll",
+      "binary side-loading",
+      "app directory dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SxS_Manifest_Hijacking",
+    "description": "SxS 매니페스트를 조작해 DLL 경로를 재지정한다.",
+    "keywords": [
+      "C:\\Windows\\WinSxS\\*\\.*dll",
+      "*.manifest",
+      "dependentAssembly",
+      "assemblyIdentity",
+      "appname.exe.local"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_Untrusted_UNC_Load",
+    "description": "UNC/WebDAV 경로에서 DLL을 원격 로드하도록 유도한다.",
+    "keywords": [
+      "WebDAV",
+      "UNC path",
+      "LoadLibrary remote"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_Proxy_ExportForwarding",
+    "description": "프록시 DLL로 내보내기 함수를 위임해 동작을 가로챈다.",
+    "keywords": [
+      "proxy dll",
+      "export forwarding",
+      "ordinals",
+      "thunk",
+      "malicious shim"
+    ]
+  }
+]

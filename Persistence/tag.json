@@ -1,0 +1,24 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_AppPaths_PathExtension",
+    "description": "App Paths의 Path 값을 이용해 검색 경로를 확장한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "App Paths",
+      "PATH extension"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_KnownDLLs_Hijacking",
+    "description": "KnownDLLs 구성을 악용해 시스템 DLL 로드를 가로챈다.",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\KnownDLLs",
+      "KnownDLLs",
+      "KnownDlls override",
+      "System32\\*.dll"
+    ]
+  }
+]
