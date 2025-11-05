@@ -20,5 +20,40 @@
       "KnownDlls override",
       "System32\\*.dll"
     ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SearchOrder_Hijacking",
+    "description": "DLL 검색 순서를 악용해 먼저 로드되도록 유도한다.",
+    "keywords": [
+      "Current Working Directory",
+      "C:\\AppData\\Roaming\\**\\*.dll",
+      "C:\\ProgramData\\*.dll",
+      "side-loading",
+      "preload",
+      "untrusted search path"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SideLoading_AppDir",
+    "description": "서명된 실행 파일 디렉터리에 악성 DLL을 배치해 로드되게 한다.",
+    "keywords": [
+      "C:\\ProgramData\\*\\App\\*.dll",
+      "binary side-loading",
+      "app directory dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SxS_Manifest_Hijacking",
+    "description": "SxS 매니페스트를 조작해 DLL 경로를 재지정한다.",
+    "keywords": [
+      "C:\\Windows\\WinSxS\\*\\.*dll",
+      "*.manifest",
+      "dependentAssembly",
+      "assemblyIdentity",
+      "appname.exe.local"
+    ]
   }
 ]
