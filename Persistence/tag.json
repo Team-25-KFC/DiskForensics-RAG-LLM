@@ -93,7 +93,7 @@
     "description": "HKLM Wow6432Node Run 키를 이용해 시스템 전역 32비트 실행을 등록한다.",
     "keywords": [
       "HKLM\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
-      "C:\\ProgramData\\**\\*.exe",
+      "C:\\ProgramData AND .exe",
       "run 32-bit global"
     ]
   },
@@ -118,45 +118,34 @@
       "one-time run all users"
     ]
   },
-  {
+    {
     "category": "Persistence",
-    "subcategory": "RunServices_HKLM",
-    "description": "RunServices 키로 로그인 시 서비스형 실행을 유발한다.",
+    "subcategory": "RunOnce_HKLM",
+    "description": "HKLM RunOnce 키로 시스템 전역 1회 실행을 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
-      "service-style autorun"
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "C:\\ProgramData\\**\\*.exe",
+      "one-time run all users"
+    ]
+  },
+{
+    "category": "Persistence",
+    "subcategory": "Run_HKLM_UserArea",
+    "description": "HKLM Run 키가 사용자 프로필 경로를 가리키도록 등록한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData LIKE C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "%APPDATA% OR %LOCALAPPDATA% in HKLM Run",
+      "autorun all users"
     ]
   },
   {
     "category": "Persistence",
-    "subcategory": "User_Run_Policy_HKCU",
-    "description": "정책 기반 Run 키로 사용자별 시작 프로그램을 강제한다.",
+    "subcategory": "Run_HKCU",
+    "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
-      "\\AppData\\Roaming\\**\\*.exe",
-      "policy run"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Startup_Folder_User",
-    "description": "사용자 Startup 폴더에 LNK/EXE를 배치해 자동 실행되도록 한다.",
-    "keywords": [
-      "AppData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
-      "AppData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
-      "shell:startup",
-      "explorer.exe"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Startup_Folder_Common",
-    "description": "공용 Startup 폴더에 항목을 배치해 모든 사용자에게 자동 실행되도록 한다.",
-    "keywords": [
-      "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
-      "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
-      "shell:common startup"
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
     ]
   }
 
