@@ -113,7 +113,7 @@
     "subcategory": "RunOnce_HKLM",
     "description": "HKLM RunOnce 키로 시스템 전역 1회 실행을 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "Windows\\CurrentVersion\\RunOnce",
       "C:\\ProgramData\\**\\*.exe",
       "one-time run all users"
     ]
@@ -123,7 +123,7 @@
     "subcategory": "RunOnce_HKLM",
     "description": "HKLM RunOnce 키로 시스템 전역 1회 실행을 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "Windows\\CurrentVersion\\RunOnce",
       "C:\\ProgramData\\**\\*.exe",
       "one-time run all users"
     ]
@@ -147,6 +147,180 @@
       "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
       "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
     ]
-  }
+  },
+  [
+{
+    "category": "Persistence",
+    "subcategory": "AppInit_DLLs_List",
+    "description": "AppInit_DLLs 값에 등록된 DLL 목록을 확인한다.",
+    "keywords": [
+    "Microsoft\\Windows NT\\CurrentVersion\\Windows AND AppInit_DLLs",
+    "SoftWow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows AND AppInit_DLLs"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "AppInit_Enable",
+    "description": "LoadAppInit_DLLs가 활성(1)인지 확인한다.",
+    "keywords": [
+    "Microsoft\\Windows NT\\CurrentVersion\\Windows AND LoadAppInit_DLLs",
+    "Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows AND LoadAppInit_DLLs"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "AppInit_Signature_Policy",
+    "description": "RequireSignedAppInit_DLLs 정책을 확인한다.",
+    "keywords": [
+    "Microsoft\\Windows NT\\CurrentVersion\\Windows AND RequireSignedAppInit_DLLs",
+    "Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows AND RequireSignedAppInit_DLLs"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "AppInit_MultiDLL_Separator",
+    "description": "AppInit_DLLs에 공백으로 구분된 다중 DLL 등록 여부를 확인한다.",
+    "keywords": [
+    "AppInit_DLLs AND .dll .dll",
+    "AppInit_DLLs AND ;",
+    "AppInit_DLLs AND ,"
+    ]
+  },
+  [
+  {
+  "category": "Persistence",
+  "subcategory": "Winlogon_Shell_Modification",
+  "description": "Winlogon Shell 값을 변경해 로그인 시 임의 프로세스를 실행되게 한다.",
+  "keywords": [
+    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
+    "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
+    "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
+    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
+    "Shell AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+    "Shell AND C:\\\\ProgramData\\\\%",
+    "Shell AND \\\\<host>\\share\\*.exe"
+  ]
+},
+{
+  "category": "Persistence",
+  "subcategory": "Winlogon_Userinit_Modification",
+  "description": "Userinit 값에 추가 실행 파일을 덧붙여 로그인 시 로드되게 한다.",
+  "keywords": [
+    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Userinit AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+    "Userinit AND C:\\\\ProgramData\\\\%",
+    "Userinit AND \\\\<host>\\share\\*.exe"
+  ]
+},
+{
+  "category": "Persistence",
+  "subcategory": "Winlogon_Notify_Package",
+  "description": "Winlogon\\Notify 하위에 DLL 패키지를 등록해 로그인 이벤트 시 로드되게 한다.",
+  "keywords": [
+    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify\\{Key} AND DllName",
+    "DllName AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+    "DllName AND C:\\\\ProgramData\\\\%",
+    "DllName AND \\\\<host>\\share\\*.dll"
+  ]
+},
+  {
+    "category": "Persistence",
+    "subcategory": "Winlogon_Shell_Suspicious_Path",
+    "description": "Shell 또는 Userinit 경로가 사용자/공용/UNC 등 비표준 위치인지 확인한다.",
+    "keywords": [
+      "Shell AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "Userinit AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "Shell AND C:\\\\ProgramData\\\\%",
+      "Userinit AND \\\\ <host> \\share\\*.exe"
+    ]
+  },
+  [
+  {
+  "category": "Persistence",
+  "subcategory": "LSA_Authentication_Packages",
+  "description": "Authentication Packages에 DLL을 추가해 LSASS 로드되게 한다.",
+  "keywords": [
+    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Authentication Packages",
+    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\OSConfig AND Authentication Packages",
 
+    "ControlSet001\\Control\\Lsa AND Authentication Packages",
+    "ControlSet001\\Control\\Lsa AND Notification Packages",
+    "ControlSet001\\Control\\Lsa AND Security Packages",
+
+    "Authentication Packages AND msv1_0",
+    "Notification Packages AND scecli",
+    "Security Packages AND \"\"",
+
+    "Authentication Packages AND *.dll",
+    "Notification Packages AND *.dll",
+    "Security Packages AND *.dll",
+
+    "Authentication Packages AND \\\\",
+    "Notification Packages AND \\\\",
+    "Security Packages AND \\\\",
+
+    "Authentication Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
+    "Authentication Packages AND C:\\\\ProgramData\\\\",
+    "Authentication Packages AND \\\\ <host> \\share\\*.dll"
+  ]
+},
+ [
+  {
+    "category": "Persistence",
+    "subcategory": "LSA_Security_Packages",
+    "description": "Security Packages에 DLL을 추가해 SSPI 체인에 주입한다.",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Security Packages",
+      "ControlSet001\\Control\\Lsa AND Security Packages",
+      "Security Packages AND *.dll",
+      "Security Packages AND \\\\",
+      "Security Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
+      "Security Packages AND C:\\\\ProgramData\\\\",
+      "Security Packages AND \"\"" 
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "LSA_Notification_Packages",
+    "description": "Notification Packages에 DLL을 추가해 로그인 이벤트 시 로드되게 한다.",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Notification Packages",
+      "ControlSet001\\Control\\Lsa AND Notification Packages",
+      "Notification Packages AND *.dll",
+      "Notification Packages AND \\\\",
+      "Notification Packages AND C:\\\\ProgramData\\\\",
+      "Notification Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
+      "Notification Packages AND \"\""  
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "SecurityProviders_SSPI_Chain",
+    "description": "SecurityProviders 값에 DLL을 추가해 SSPI 체인을 가로채게 한다.",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders AND SecurityProviders",
+      "ControlSet001\\Control\\SecurityProviders AND SecurityProviders",
+      "SecurityProviders AND *.dll",
+      "SecurityProviders AND \\\\",
+      "SecurityProviders AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
+      "SecurityProviders AND C:\\\\ProgramData\\\\"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "LSA_RunAsPPL_Bypass_Context",
+    "description": "LSA 주입 경로가 PPL 보호 우회를 노리는지 점검한다.",
+    "keywords": [
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND RunAsPPL",
+      "LSASS AND ProtectedProcessLight",
+      "RunAsPPL AND Disable",
+      "LSA injection context check"
+    ]
+  }
+]
+
+]
+]
+]
 ]

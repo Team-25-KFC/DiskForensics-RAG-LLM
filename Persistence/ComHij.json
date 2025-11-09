@@ -1,0 +1,86 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "COM_InprocServer32_Hijack",
+    "description": "CLSID의 InprocServer32 기본값을 바꿔 임의 DLL을 로드되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "InprocServer32 AND ThreadingModel",
+      "InprocServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "InprocServer32 AND \\\\ <host> \\share\\*.dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_PerUser_Override",
+    "description": "HKCU\\Software\\Classes로 사용자 단위 CLSID를 등록해 HKLM을 우선 대체되게 한다.",
+    "keywords": [
+      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND InprocServer32",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND LocalServer32",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND TreatAs"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_LocalServer32_Hijack",
+    "description": "CLSID의 LocalServer32를 변경해 임의 EXE를 COM 서버로 실행되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\CLSID\\{GUID}\\LocalServer32 AND (Default)",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID}\\LocalServer32 AND (Default)",
+      "LocalServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "LocalServer32 AND \\\\ <host> \\share\\*.exe"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_TreatAs_Redirect",
+    "description": "TreatAs를 사용해 CLSID를 다른 CLSID로 리다이렉트되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\CLSID\\{GUID} AND TreatAs",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND TreatAs",
+      "TreatAs AND \\{[A-Fa-f0-9-]{36}\\}"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_ProgID_CurVer_Hijack",
+    "description": "ProgID/CurVer 체인을 조작해 로드되는 CLSID를 바꾸게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\<ProgID> AND CLSID",
+      "HKLM\\Software\\Classes\\<ProgID>\\CurVer AND (Default)",
+      "HKCU\\Software\\Classes\\<ProgID> AND CLSID",
+      "CurVer AND <ProgID>.1"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_Elevation_AutoElevate",
+    "description": "Elevation\\Enabled를 이용해 UAC 자동 상승 COM 개체로 실행되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\CLSID\\{GUID}\\Elevation AND Enabled",
+      "HKLM\\Software\\Classes\\AppID\\{AppID} AND RunAs",
+      "Elevation AND Enabled=1"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_AppID_DllSurrogate",
+    "description": "AppID에 DllSurrogate를 설정해 rundll32(또는 dllhost)로 로드되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\AppID\\{AppID} AND DllSurrogate",
+      "HKLM\\Software\\Classes\\CLSID\\{GUID} AND AppID",
+      "DllSurrogate AND ''"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "COM_Scriptlet_Scrobj",
+    "description": "Scriptlet.Compile CLSID 등을 악용해 스크립트 기반 COM 로드를 유도한다.",
+    "keywords": [
+      "HKLM\\Software\\Classes\\CLSID\\{06290BD5-48AA-11D2-8432-006008C3FBFC} AND InprocServer32",
+      "HKCU\\Software\\Classes\\CLSID\\{06290BD5-48AA-11D2-8432-006008C3FBFC} AND InprocServer32",
+      "InprocServer32 AND scrobj.dll"
+    ]
+  }
+]
