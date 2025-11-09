@@ -4,7 +4,7 @@
 artifacts.py — Target-only 복사 워커 (Win10/11)
 - 오케스트레이터(main.py)가 마운트/드라이브 결정을 끝낸 뒤 호출
 - 화이트리스트(Target allowlist)만 1패스로 복사
-- 모듈 실행은 하지 않음
+- 모듈 실행/언마운트는 하지 않음
 출력 구조:
   <BASE_OUT>\<드라이브>\Artifacts\*      (KAPE Target 복사본)
   <BASE_OUT>\<드라이브>\Logs\targets_copy.log
@@ -54,7 +54,7 @@ TARGET_SUBSET = [
 
 # ── 경로 유틸 ──────────────────────────────────────────────────────
 def _drive_root(dl: str) -> str:
-    """E: → 'E:\\'"""
+    """'E:' -> 'E:\\'"""
     return f"{dl}\\"
 
 def _artifacts_root(base_out: Path, dl: str) -> Path:
@@ -69,8 +69,9 @@ def _logs_dir(base_out: Path, dl: str) -> Path:
 def _marker(base_out: Path, dl: str) -> Path:
     return _artifacts_root(base_out, dl) / ".targets_subset_done"
 
-# ── 실행 ──────────────────────────────────────────────────────────
-def _run_kape_target_copy(kape_exe: Path, dl: str, targets: List[str], dest: Path, timeout_sec: int, log_path: Path) -> int:
+# ── KAPE 실행 ──────────────────────────────────────────────────────
+def _run_kape_target_copy(kape_exe: Path, dl: str, targets: List[str],
+                          dest: Path, timeout_sec: int, log_path: Path) -> int:
     dest.mkdir(parents=True, exist_ok=True)
     if not targets:
         return 0
@@ -102,7 +103,7 @@ def run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool:
     """
     main.py에서 호출:
       - drive_letters: ['E:', 'I:', ...]
-      - unmount_callback: AIM 언마운트 콜백 (여기서는 호출하지 않음)
+      - unmount_callback: AIM 언마운트 콜백 (여기서는 '절대' 호출하지 않음)
       - cfg: {"BASE_OUT": Path, "KAPE_EXE": Path, "PROC_TIMEOUT_SEC": int}
     반환: False (언마운트는 메인에서 수행)
     """

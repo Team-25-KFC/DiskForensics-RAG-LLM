@@ -4,7 +4,7 @@ import importlib, subprocess, time, re, os
 from pathlib import Path
 from typing import List
 
-# ── 기본값(필요하면 환경변수로 덮어쓰기 가능) ─────────────────────────
+# ── 기본값(환경변수로 덮어쓰기 가능) ─────────────────────────
 AIM_EXE  = os.getenv("AIM_EXE",  r"C:\Arsenal-Image-Mounter-v3.11.307\aim_cli.exe")
 E01_PATH = os.getenv("E01_PATH", r"H:\Laptop\Laptop.E01")
 KAPE_EXE = os.getenv("KAPE_EXE", r"D:\KAPE\kape.exe")
@@ -16,7 +16,6 @@ PROC_TIMEOUT_SEC    = int(os.getenv("PROC_TIMEOUT_SEC", "3600"))
 
 BASE_OUT.mkdir(parents=True, exist_ok=True)
 
-# ── PowerShell helpers ─────────────────────────────────────────────
 def run_ps(cmd: str, timeout: int | None = None):
     return subprocess.run(
         ["powershell", "-NoProfile", "-Command", cmd],
@@ -26,9 +25,18 @@ def run_ps(cmd: str, timeout: int | None = None):
 def ps_lines(cp: subprocess.CompletedProcess):
     return [l.strip() for l in (cp.stdout or "").splitlines() if l.strip()]
 
-# ── AIM mount helpers ──────────────────────────────────────────────
+def safe_run(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except SystemExit as se:
+        print(f"[WARN] Caught SystemExit from child: {se}")
+        return None
+    except Exception as e:
+        print(f"[ERR ] Exception in child: {e}")
+        return None
+
+# ── AIM helpers ───────────────────────────────────────────────────
 def mount_e01():
-    """AIM 가상 마운트: (disk_number, device_number) 반환."""
     cmd = [AIM_EXE, "--mount", f"--filename={E01_PATH}", "--provider=LibEwf", "--readonly", "--online"]
     device_number = None
     disk_number = None
@@ -46,7 +54,8 @@ def mount_e01():
             if time.time() - start > 120: break
         time.sleep(MOUNT_STABILIZE_SEC)
         return disk_number, device_number
-    except Exception:
+    except Exception as e:
+        print(f"[ERR ] mount_e01 failed: {e}")
         return None, None
 
 def get_ntfs_volumes(disk_number: int):
@@ -66,45 +75,62 @@ def dismount_e01(device_number=None):
     cmd = [AIM_EXE, f"--dismount={device_number}"] if device_number else [AIM_EXE, "--dismount=all"]
     try:
         subprocess.run(cmd, check=True, capture_output=True)
-    except Exception:
-        pass
+        print("[INFO] Dismounted.")
+    except Exception as e:
+        print(f"[WARN] Dismount error ignored: {e}")
+
+# ── 수동 체인 실행 ────────────────────────────────────────────────
+def run_artifacts(letters: List[str], cfg: dict):
+    artifacts = importlib.import_module("artifacts")
+    if not hasattr(artifacts, "run"):
+        print("[ERR] artifacts.py에 run(drive_letters, unmount_callback, cfg) 함수가 필요합니다.")
+        return
+    print("[STEP] Target copy (artifacts.py)")
+    safe_run(artifacts.run, letters, (lambda: None), cfg)
+
+def run_ntfs_modules(letters: List[str], cfg: dict):
+    ntfs = importlib.import_module("ntfs")  # 파일명: ntfs.py
+    if not hasattr(ntfs, "run"):
+        print("[ERR] ntfs.py에 run(...) 함수가 필요합니다.")
+        return
+    print("[STEP] NTFS modules (ntfs.py)")
+    try:
+        # 신형: run(drive_letters, cfg)
+        safe_run(ntfs.run, letters, cfg)
+    except TypeError:
+        # 구형: run(drive_letters, unmount_callback, cfg)
+        safe_run(ntfs.run, letters, (lambda: None), cfg)
 
 # ── main ──────────────────────────────────────────────────────────
 def main():
-    # 1) 마운트
     disk, dev = mount_e01()
     if disk is None:
         print("[ERR] AIM 마운트 실패")
         return
 
     try:
-        # 2) 드라이브 문자 확보
         vols = get_ntfs_volumes(disk)
         letters = [get_letter_for_volume(v) for v in vols]
         letters = [l for l in letters if l]
         print(f"[INFO] NTFS 드라이브: {', '.join(letters) if letters else '(없음)'}")
-
-        # 3) artifacts.py 호출 (타겟만 복사 전용)
-        artifacts = importlib.import_module("artifacts")
-        if not hasattr(artifacts, "run"):
-            print("[ERR] artifacts.py에 run(drive_letters, unmount_callback, cfg) 함수가 필요합니다.")
+        if not letters:
+            print("[ERR ] NTFS 드라이브가 없어 종료")
             return
 
-        # settings 없이 필요한 값만 전달
         cfg = {
             "BASE_OUT": BASE_OUT,
             "KAPE_EXE": Path(KAPE_EXE),
             "PROC_TIMEOUT_SEC": PROC_TIMEOUT_SEC,
+            # 필요하면 강제 재복사 옵션도 같이 넘길 수 있음
+            # "FORCE_RECOPY": True,
         }
 
-        # artifacts가 언마운트를 수행했는지 반환 받음
-        already_unmounted = artifacts.run(letters, lambda: dismount_e01(dev), cfg)
-
-        if not already_unmounted:
-            dismount_e01(dev)
+        run_artifacts(letters, cfg)
+        run_ntfs_modules(letters, cfg)
 
     except Exception as e:
         print(f"[FATAL] main 실패: {e}")
+    finally:
         dismount_e01(dev)
 
 if __name__ == "__main__":
