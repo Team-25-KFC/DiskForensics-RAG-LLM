@@ -22,9 +22,12 @@ BASE_OUT.mkdir(parents=True, exist_ok=True)
 
 # 실행할 RECmd_* 모듈들 (콤마로 연결되어 KAPE --module 에 전달됨)
 RECMD_MODULES = ",".join([
+    "RECmd_AllRegExecutablesFoundOrRun",
     "RECmd_BasicSystemInfo",
     "RECmd_BCDBootVolume",
     "RECmd_InstalledSoftware",
+    "RECmd_Kroll",
+    "RECmd_Batch_MC",
     "RECmd_RegistryASEPs",
     "RECmd_SoftwareASEPs",
     "RECmd_SoftwareClassesASEPs",
