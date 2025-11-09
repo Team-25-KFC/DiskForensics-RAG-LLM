@@ -1,0 +1,90 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "BHO_Register",
+    "description": "Browser Helper Object(BHO)를 등록해 IE/Explorer 프로세스에 DLL을 로드되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects\\{GUID} AND (Default)",
+      "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects\\{GUID} AND (Default)",
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Browser Helper Objects\\{GUID} AND (Default)",
+      "HKCR\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "InprocServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "InprocServer32 AND \\\\ <host> \\share\\*.dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ShellExecuteHooks",
+    "description": "ShellExecuteHooks에 CLSID를 추가해 프로세스 실행 시 DLL이 개입되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellExecuteHooks AND {GUID}",
+      "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellExecuteHooks AND {GUID}",
+      "HKCR\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "InprocServer32 AND C:\\\\ProgramData\\\\%"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ShellExtensions_ContextMenu",
+    "description": "컨텍스트 메뉴 핸들러를 등록해 Explorer가 DLL을 로드되게 한다.",
+    "keywords": [
+      "HKCR\\*\\shellex\\ContextMenuHandlers\\{Name} AND (Default)",
+      "HKCR\\AllFileSystemObjects\\shellex\\ContextMenuHandlers\\{Name} AND (Default)",
+      "HKCR\\Directory\\shellex\\ContextMenuHandlers\\{Name} AND (Default)",
+      "HKCR\\Folder\\shellex\\ContextMenuHandlers\\{Name} AND (Default)",
+      "HKCU\\Software\\Classes\\*\\shellex\\ContextMenuHandlers\\{Name} AND (Default)",
+      "HKCR\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "InprocServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ShellExtensions_PropertySheet",
+    "description": "속성 시트 핸들러를 등록해 속성 창 열람 시 DLL이 로드되게 한다.",
+    "keywords": [
+      "HKCR\\*\\shellex\\PropertySheetHandlers\\{Name} AND (Default)",
+      "HKCR\\Directory\\shellex\\PropertySheetHandlers\\{Name} AND (Default)",
+      "HKCR\\CLSID\\{GUID}\\InprocServer32 AND (Default)"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ShellExtensions_Approved",
+    "description": "Approved 목록을 조작해 셸 확장을 허용되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved AND {GUID}",
+      "HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved AND {GUID}"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ShellExtensions_DropTarget_DragDrop",
+    "description": "DropHandler/DragDropHandlers 등록으로 파일 드롭 시 DLL이 로드되게 한다.",
+    "keywords": [
+      "HKCR\\*\\shellex\\DropHandler AND (Default)",
+      "HKCR\\AllFileSystemObjects\\shellex\\DragDropHandlers\\{Name} AND (Default)",
+      "HKCR\\CLSID\\{GUID}\\InprocServer32 AND (Default)"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "PerUser_COM_Override",
+    "description": "HKCU\\Software\\Classes로 사용자 단위 CLSID를 등록해 시스템 CLSID를 우선 대체되게 한다.",
+    "keywords": [
+      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND InprocServer32",
+      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND LocalServer32",
+      "InprocServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "LocalServer32 AND \\\\ <host> \\share\\*.exe"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Shell_BandObjects_Toolbars",
+    "description": "Explorer 툴바/밴드 오브젝트를 등록해 Explorer 실행 시 로드되게 한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Toolbar\\Explorer AND {GUID}",
+      "HKCR\\CLSID\\{GUID}\\InprocServer32 AND (Default)"
+    ]
+  }
+]
