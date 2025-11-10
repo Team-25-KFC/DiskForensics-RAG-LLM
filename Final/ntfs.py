@@ -31,8 +31,8 @@ MODULES_9 = [
     #"MFTECmd_$MFT_FileListing",
     #"MFTECmd_$MFT_ProcessMFTSlack",
     #"MFTECmd_$MFT_DumpResidentFiles",
-    "NTFSLogTracker_$J",
-    "NTFSLogTracker_$LogFile",
+    #"NTFSLogTracker_$J",
+    #"NTFSLogTracker_$LogFile",
     "INDXRipper",
 ]
 

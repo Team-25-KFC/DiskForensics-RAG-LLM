@@ -11,7 +11,7 @@ RECMD_MODULES = ",".join([
     "RECmd_BCDBootVolume",
     "RECmd_InstalledSoftware",
     "RECmd_Kroll",
-    "RECmd_Batch_MC",
+    "RECmd_RECmd_Batch_MC",
     "RECmd_RegistryASEPs",
     "RECmd_SoftwareASEPs",
     "RECmd_SoftwareClassesASEPs",

@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-MODULE_NAME="AppCompatCacheParser"; BIN=Path(r"C:\KAPE\Modules\bin")
+MODULE_NAME="AppCompatCacheParser"; BIN=Path(r"D:\KAPE\Modules\bin")
 
 def _has()->bool:
     for p in BIN.rglob("*.exe"):

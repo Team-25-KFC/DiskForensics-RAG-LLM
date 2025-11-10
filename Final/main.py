@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import importlib, subprocess, time, re, os
+import importlib, subprocess, time, re, os, inspect
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ── 기본값(환경변수로 덮어쓰기 가능) ─────────────────────────
 AIM_EXE  = os.getenv("AIM_EXE",  r"C:\Arsenal-Image-Mounter-v3.11.307\aim_cli.exe")
@@ -14,13 +15,18 @@ MOUNT_STABILIZE_SEC = int(os.getenv("MOUNT_STABILIZE_SEC", "15"))
 PS_TIMEOUT_SEC      = int(os.getenv("PS_TIMEOUT_SEC", "90"))
 PROC_TIMEOUT_SEC    = int(os.getenv("PROC_TIMEOUT_SEC", "3600"))
 
+# 병렬 실행 워커 수(기본 4). 예) PowerShell: set MODULE_MAX_WORKERS=6
+MODULE_MAX_WORKERS = int(os.getenv("MODULE_MAX_WORKERS", "4"))
+
+# 콤마 구분 모듈 목록 지정(없으면 DEFAULT_MODULES 사용). 예) set MODULES=ntfs,pecmd,lecmd
+SELECTED_MODULES = [m.strip() for m in os.getenv("MODULES", "").split(",") if m.strip()]
+
 BASE_OUT.mkdir(parents=True, exist_ok=True)
 
-def run_ps(cmd: str, timeout: int | None = None):
-    return subprocess.run(
-        ["powershell", "-NoProfile", "-Command", cmd],
-        capture_output=True, text=True, timeout=timeout
-    )
+# ── 공용 실행 유틸 ───────────────────────────────────────────────
+def run_ps(cmd: str, timeout: Optional[int] = None):
+    return subprocess.run(["powershell", "-NoProfile", "-Command", cmd],
+                          capture_output=True, text=True, timeout=timeout)
 
 def ps_lines(cp: subprocess.CompletedProcess):
     return [l.strip() for l in (cp.stdout or "").splitlines() if l.strip()]
@@ -47,11 +53,15 @@ def mount_e01():
         for line in proc.stdout:
             line = line.strip()
             m_dev = re.search(r"Device number\s+(\d+)", line)
-            if m_dev: device_number = m_dev.group(1)
+            if m_dev:
+                device_number = m_dev.group(1)
             m_phy = re.search(r"Device is .*PhysicalDrive(\d+)", line, re.IGNORECASE)
-            if m_phy: disk_number = int(m_phy.group(1))
-            if "Mounted online" in line or "Mounted read only" in line: break
-            if time.time() - start > 120: break
+            if m_phy:
+                disk_number = int(m_phy.group(1))
+            if "Mounted online" in line or "Mounted read only" in line:
+                break
+            if time.time() - start > 120:
+                break
         time.sleep(MOUNT_STABILIZE_SEC)
         return disk_number, device_number
     except Exception as e:
@@ -66,8 +76,11 @@ def get_ntfs_volumes(disk_number: int):
     return [p if p.endswith('\\') else p + '\\' for p in vols if p.startswith('\\\\?\\Volume{')]
 
 def get_letter_for_volume(vol_path: str):
-    r = run_ps(f"Get-Volume | Where-Object {{$_.Path -eq '{vol_path}'}} | "
-               f"Select-Object -ExpandProperty DriveLetter", timeout=PS_TIMEOUT_SEC)
+    r = run_ps(
+        f"Get-Volume | Where-Object {{$_.Path -eq '{vol_path}'}} | "
+        f"Select-Object -ExpandProperty DriveLetter",
+        timeout=PS_TIMEOUT_SEC
+    )
     letter = (r.stdout or "").strip()
     return f"{letter}:" if letter else None
 
@@ -79,7 +92,7 @@ def dismount_e01(device_number=None):
     except Exception as e:
         print(f"[WARN] Dismount error ignored: {e}")
 
-# ── 수동 체인 실행 ────────────────────────────────────────────────
+# ── Target 복사(artifacts.py) ─────────────────────────────────────
 def run_artifacts(letters: List[str], cfg: dict):
     artifacts = importlib.import_module("artifacts")
     if not hasattr(artifacts, "run"):
@@ -88,18 +101,110 @@ def run_artifacts(letters: List[str], cfg: dict):
     print("[STEP] Target copy (artifacts.py)")
     safe_run(artifacts.run, letters, (lambda: None), cfg)
 
-def run_ntfs_modules(letters: List[str], cfg: dict):
-    ntfs = importlib.import_module("ntfs")  # 파일명: ntfs.py
-    if not hasattr(ntfs, "run"):
-        print("[ERR] ntfs.py에 run(...) 함수가 필요합니다.")
+# ── 모듈 시그니처 자동 감지 실행기 ───────────────────────────────
+def _call_module_run(mod, letters: List[str], cfg: dict, name: str):
+    # 지원 시그니처: run(drive_letters, cfg) / run(drive_letters, unmount, cfg) / run(cfg) / run()
+    if not hasattr(mod, "run"):
+        print(f"[SKIP] {name}: run() 미구현")
         return
-    print("[STEP] NTFS modules (ntfs.py)")
+
+    fn = mod.run
     try:
-        # 신형: run(drive_letters, cfg)
-        safe_run(ntfs.run, letters, cfg)
-    except TypeError:
-        # 구형: run(drive_letters, unmount_callback, cfg)
-        safe_run(ntfs.run, letters, (lambda: None), cfg)
+        sig = inspect.signature(fn)
+    except Exception:
+        sig = None
+
+    try:
+        if sig:
+            params = list(sig.parameters.keys())
+            if len(params) >= 2 and params[0] != 'cfg':
+                try:
+                    fn(letters, cfg)
+                except TypeError:
+                    fn(letters, (lambda: None), cfg)
+            elif len(params) >= 1 and params[0] == 'cfg':
+                fn(cfg)
+            else:
+                fn()
+        else:
+            try:
+                fn(letters, cfg)
+            except TypeError:
+                try:
+                    fn(letters, (lambda: None), cfg)
+                except TypeError:
+                    try:
+                        fn(cfg)
+                    except TypeError:
+                        fn()
+        print(f"[DONE] {name}")
+    except SystemExit as se:
+        print(f"[WARN] {name} raised SystemExit: {se}")
+    except Exception as e:
+        print(f"[ERR ] {name} 실행 오류: {e}")
+
+# ── 논리 모듈명 → 실제 import 후보 매핑 ─────────────────────────
+# 'ntfs' 라고 지정하면 ntfs.py 우선, 없으면 ntfs_modules.py를 시도
+MODULE_IMPORT_MAP = {
+    "ntfs": ["ntfs", "ntfs_modules"],
+    # 나머지는 이름 그대로 import 시도
+}
+
+def _import_by_logical_name(name: str):
+    candidates = MODULE_IMPORT_MAP.get(name, [name])
+    last_err = None
+    for cand in candidates:
+        try:
+            return importlib.import_module(cand), cand
+        except ImportError as e:
+            last_err = e
+            continue
+    raise ImportError(last_err or f"Cannot import {name}")
+
+# ── 모듈 병렬 실행(artifacts 후, 전부 동급 병렬) ─────────────────
+def run_tool_modules(letters: List[str], cfg: dict, module_names: List[str]):
+    results = {}
+
+    def _runner(logical_name: str):
+        try:
+            mod, real_name = _import_by_logical_name(logical_name)
+        except ImportError as e:
+            return (logical_name, f"[MISS] {logical_name}.py import 실패: {e}")
+        buf = [f"[STEP] {logical_name} (import: {real_name}).py"]
+        try:
+            _call_module_run(mod, letters, cfg, logical_name)
+            buf.append(f"[DONE] {logical_name}")
+        except Exception as e:
+            buf.append(f"[ERR ] {logical_name} 실행 오류: {e}")
+        return (logical_name, "\n".join(buf))
+
+    with ThreadPoolExecutor(max_workers=MODULE_MAX_WORKERS) as ex:
+        futs = {ex.submit(_runner, n): n for n in module_names}
+        for fut in as_completed(futs):
+            name, out = fut.result()
+            results[name] = out
+
+    # 요청 순서대로 출력
+    for n in module_names:
+        if n in results:
+            print(results[n])
+
+# ── 실행 목록(artifacts 제외, 전부 동급) ─────────────────────────
+# 파일명(.py 제외) 기준. 'ntfs'는 ntfs.py 우선, 없으면 ntfs_modules.py 대체.
+DEFAULT_MODULES = [
+    "ntfs",             # (논리명) ntfs or ntfs_modules
+    "pecmd",            # Prefetch → PECmd
+    "amcache",          # Amcache → AmcacheParser
+    "appcompatcache",   # ShimCache → AppCompatCacheParser
+    "lecmd", "jlecmd",  # LNK / JumpLists
+    "recentfilecache",  # RecentFileCache
+    "rbcmd",            # Recycle Bin
+    "srum",             # SRUM
+    "sqlecmd", "sbecmd",# Browser
+    "wxtcmd",           # Windows Timeline
+    "eventlog",         # Event Logs
+    "registry",         # RECmd batch
+]
 
 # ── main ──────────────────────────────────────────────────────────
 def main():
@@ -121,12 +226,15 @@ def main():
             "BASE_OUT": BASE_OUT,
             "KAPE_EXE": Path(KAPE_EXE),
             "PROC_TIMEOUT_SEC": PROC_TIMEOUT_SEC,
-            # 필요하면 강제 재복사 옵션도 같이 넘길 수 있음
-            # "FORCE_RECOPY": True,
         }
 
+        # 1) Target 복사(artifacts.py만 개별화/선행)
         run_artifacts(letters, cfg)
-        run_ntfs_modules(letters, cfg)
+
+        # 2) 나머지 모듈: 전부 동급으로 병렬 실행 (여기에 ntfs 포함)
+        module_set = SELECTED_MODULES if SELECTED_MODULES else DEFAULT_MODULES
+        print(f"[INFO] Modules 실행(병렬 {MODULE_MAX_WORKERS}): {', '.join(module_set)}")
+        run_tool_modules(letters, cfg, module_set)
 
     except Exception as e:
         print(f"[FATAL] main 실패: {e}")
