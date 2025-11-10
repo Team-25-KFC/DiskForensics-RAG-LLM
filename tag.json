@@ -4,12 +4,12 @@
     "subcategory": "OS_Info",
     "description": "운영체제 버전, 빌드, 설치 정보 및 등록자 정보를 확인한다.",
     "keywords": [
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductName",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND EditionID",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND BuildLabEx",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND InstallDate",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND RegisteredOwner",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion AND ProductId"
+      "Microsoft\\Windows NT\\CurrentVersion AND ProductName",
+      "Microsoft\\Windows NT\\CurrentVersion AND EditionID",
+      "Microsoft\\Windows NT\\CurrentVersion AND BuildLabEx",
+      "Microsoft\\Windows NT\\CurrentVersion AND InstallDate",
+      "Microsoft\\Windows NT\\CurrentVersion AND RegisteredOwner",
+      "Microsoft\\Windows NT\\CurrentVersion AND ProductId"
     ]
     },
     {
@@ -17,15 +17,15 @@
       "subcategory": "User_Info",
       "description": "시스템의 사용자 프로필 경로 및 최근 로그인 계정을 식별한다.",
       "keywords": [
-        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfileImagePath",
-        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfilesDirectory",
-        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Default",
-        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Public",
-        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProgramData",
-        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUser",
-        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnDisplayName",
-        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUserSID",
-        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND SelectedUserSID"
+        "Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfileImagePath",
+        "Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProfilesDirectory",
+        "Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Default",
+        "Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND Public",
+        "Microsoft\\Windows NT\\CurrentVersion\\ProfileList AND ProgramData",
+        "Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUser",
+        "Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnDisplayName",
+        "Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND LastLoggedOnUserSID",
+        "Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI AND SelectedUserSID"
       ]
     },
     {
@@ -47,7 +47,7 @@
     "subcategory": "System_Drivers",
     "description": "드라이버 설치 및 로드 이력을 확인하여 시스템 커널 변경을 추적한다.",
     "keywords": [
-      "SYSTEM\\CurrentControlSet\\Services AND Type=0x1 OR Type=0x2",
+      "CurrentControlSet\\Services AND Type=0x1 OR Type=0x2",
       "EventLogProvider=Microsoft-Windows-Kernel-PnP",
       "EventSource=Kernel-PnP"
     ],
@@ -58,9 +58,9 @@
     "subcategory": "Network_Interfaces",
     "description": "디스크 상의 SYSTEM 및 SOFTWARE 하이브를 분석하여 네트워크 어댑터의 설치 정보, IP 구성, MAC 주소를 복원한다.",
     "keywords": [
-      "SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces",
-      "SYSTEM\\ControlSet001\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}",
-      "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards"
+      "ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces",
+      "ControlSet001\\Control\\Class\\{4d36e972-e325-11ce-bfc1-08002be10318}",
+      "Microsoft\\Windows NT\\CurrentVersion\\NetworkCards"
     ]
     },
 
@@ -71,7 +71,7 @@
     "keywords": ["mountvol", "Volume Serial Number", "Logical Volume ID"],
     "exclude_patterns": [
       "WofCompressedData",
-      "\\Windows\\assembly\\NativeImages",
+      "Windows\\assembly\\NativeImages",
       "WinSxS"
     ],
     "event_id": [98]
@@ -80,8 +80,8 @@
     "subcategory": "USB_Connection_History",
     "description": "시스템에 연결된 USB 저장장치의 연결·해제 기록을 확인하여 외부 매체 사용 여부를 파악한다.",
     "keywords": [
-      "SYSTEM\\CurrentControlSet\\Enum\\USBSTOR",
-      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2"
+      "CurrentControlSet\\Enum\\USBSTOR",
+      "Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2"
       
     ],
     "event_id": [2003, 2100, 2102]
@@ -183,280 +183,164 @@
 
 
 
-
-
-
-
-
-
-  {
+{
     "category": "Persistence",
-    "subcategory": "Run_Keys",
-    "description": "Run 및 RunOnce 레지스트리를 통한 자동 실행 등록 여부를 확인한다.",
+    "subcategory": "DLL_AppPaths_PathExtension",
+    "description": "App Paths의 Path 값을 이용해 검색 경로를 확장한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
-      "autorun",
-      "registry persistence"
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "App Paths",
+      "PATH extension"
     ]
   },
   {
     "category": "Persistence",
-    "subcategory": "Startup_Folder",
-    "description": "시작 프로그램 폴더를 통한 지속성 확보 여부를 확인한다.",
+    "subcategory": "DLL_KnownDLLs_Hijacking",
+    "description": "KnownDLLs 구성을 악용해 시스템 DLL 로드를 가로챈다.",
     "keywords": [
-      "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\KnownDLLs",
+      "KnownDLLs",
+      "KnownDlls override",
+      "System32\\*.dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SearchOrder_Hijacking",
+    "description": "DLL 검색 순서를 악용해 먼저 로드되도록 유도한다.",
+    "keywords": [
+      "Current Working Directory",
+      "C:\\AppData\\Roaming\\**\\*.dll",
+      "C:\\ProgramData\\*.dll",
+      "side-loading",
+      "preload",
+      "untrusted search path"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SideLoading_AppDir",
+    "description": "서명된 실행 파일 디렉터리에 악성 DLL을 배치해 로드되게 한다.",
+    "keywords": [
+      "C:\\ProgramData\\*\\App\\*.dll",
+      "binary side-loading",
+      "app directory dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "DLL_SxS_Manifest_Hijacking",
+    "description": "SxS 매니페스트를 조작해 DLL 경로를 재지정한다.",
+    "keywords": [
+      "C:\\Windows\\WinSxS\\*\\.*dll",
+      "*.manifest",
+      "dependentAssembly",
+      "assemblyIdentity",
+      "appname.exe.local"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKCU",
+    "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 등록한다.",
+    "keywords": [
+    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "AppData\\Local\\**\\*.exe",
+    "autorun",
+    "registry persistence"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKLM",
+    "description": "HKLM Run 키로 모든 사용자 로그인 시 자동 실행되도록 등록한다.",
+    "keywords": [
+    "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "C:\\ProgramData\\**\\*.exe",
+    "autorun all users"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKCU_Wow6432Node",
+    "description": "HKCU Wow6432Node Run 키를 이용해 32비트 컨텍스트로 실행되도록 등록한다.",
+    "keywords": [
+      "HKCU\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "AppData\\Local\\**\\*.exe",
+      "run 32-bit"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Run_HKLM_Wow6432Node",
+    "description": "HKLM Wow6432Node Run 키를 이용해 시스템 전역 32비트 실행을 등록한다.",
+    "keywords": [
+      "HKLM\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "C:\\ProgramData\\**\\*.exe",
+      "run 32-bit global"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "RunOnce_HKCU",
+    "description": "HKCU RunOnce 키로 다음 로그인에서 1회 실행되도록 등록한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "RegExpandSz",
+      "\\AppData\\Roaming\\**\\*.exe",
+      "one-time run"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "RunOnce_HKLM",
+    "description": "HKLM RunOnce 키로 시스템 전역 1회 실행을 등록한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "C:\\ProgramData\\**\\*.exe",
+      "one-time run all users"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "RunServices_HKLM",
+    "description": "RunServices 키로 로그인 시 서비스형 실행을 유발한다.",
+    "keywords": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
+      "service-style autorun"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "User_Run_Policy_HKCU",
+    "description": "정책 기반 Run 키로 사용자별 시작 프로그램을 강제한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
+      "\\AppData\\Roaming\\**\\*.exe",
+      "policy run"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Startup_Folder_User",
+    "description": "사용자 Startup 폴더에 LNK/EXE를 배치해 자동 실행되도록 한다.",
+    "keywords": [
+      "AppData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
+      "AppData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
       "shell:startup",
       "explorer.exe"
     ]
   },
   {
     "category": "Persistence",
-    "subcategory": "Scheduled_Tasks",
-    "description": "예약 작업(Task Scheduler)을 통해 주기적 실행 또는 자동 실행을 유지하는 흔적을 확인한다.",
+    "subcategory": "Startup_Folder_Common",
+    "description": "공용 Startup 폴더에 항목을 배치해 모든 사용자에게 자동 실행되도록 한다.",
     "keywords": [
-      "Microsoft-Windows-TaskScheduler",
-      "C:\\Windows\\System32\\Tasks",
-      "schtasks",
-      "task scheduler",
-      "persistent task"
-    ],
-    "event_id": [4698]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Service_Install",
-    "description": "서비스 등록을 통한 지속성 확보 여부를 탐지한다.",
-    "keywords": [
-      "Service Control Manager",
-      "CreateService",
-      "sc.exe",
-      "svchost.exe"
-    ],
-    "event_id": [7045]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "WMI_Event_Subscription",
-    "description": "WMI 영구 구독(Permanent Event Subscription)을 이용한 자동 실행 여부를 확인한다.",
-    "keywords": [
-      "WMI",
-      "__EventFilter",
-      "__EventConsumer",
-      "FilterToConsumerBinding"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Registry_Shell_Open",
-    "description": "파일 확장자 연결을 조작하여 특정 프로그램이 자동 실행되도록 하는 설정을 탐지한다.",
-    "keywords": [
-      "HKCR\\exefile\\shell\\open\\command",
-      "file association hijack",
-      "Shell Open Command"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Image_File_Execution_Options",
-    "description": "IFEO(Debugger) 키를 악용해 정상 프로세스 실행 시 악성 코드를 실행시키는 설정을 확인한다.",
-    "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options",
-      "Debugger",
-      "IFEO persistence"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "AppInit_DLLs",
-    "description": "AppInit_DLLs 값을 통해 모든 프로세스에 DLL이 자동 로드되는 설정을 탐지한다.",
-    "keywords": [
-      "AppInit_DLLs",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
-      "LoadAppInit_DLLs"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Winlogon_Shell",
-    "description": "Winlogon Shell 또는 Userinit 키를 조작하여 사용자 로그인 시 악성 프로세스가 자동 실행되도록 하는 설정을 확인한다.",
-    "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
-      "Userinit",
-      "Shell"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "BootExecute_Modification",
-    "description": "BootExecute 값 변경을 통해 부팅 시 명령이 실행되도록 조작된 흔적을 탐지한다.",
-    "keywords": [
-      "HKLM\\System\\CurrentControlSet\\Control\\Session Manager",
-      "BootExecute",
-      "autocheck"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Driver_Load",
-    "description": "드라이버를 등록하여 시스템 부팅 시 자동 로드되도록 설정된 항목을 확인한다.",
-    "keywords": [
-      "HKLM\\System\\CurrentControlSet\\Services",
-      "Driver",
-      "System32\\drivers"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "ActiveSetup_Registry",
-    "description": "Active Setup을 이용해 사용자 로그인 시 악성 구성 요소가 실행되도록 하는 설정을 탐지한다.",
-    "keywords": [
-      "Active Setup",
-      "HKLM\\Software\\Microsoft\\Active Setup\\Installed Components"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "COM_Hijacking",
-    "description": "COM 개체 등록을 조작하여 정상 프로그램 실행 시 악성 DLL이 로드되도록 하는 설정을 탐지한다.",
-    "keywords": [
-      "CLSID",
-      "InprocServer32",
-      "COM hijacking",
-      "HKCR\\CLSID"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "AppCert_DLLs",
-    "description": "AppCertDLLs 설정을 통해 시스템 호출 시 특정 DLL이 자동 로드되도록 조작된 흔적을 탐지한다.",
-    "keywords": [
-      "AppCertDLLs",
-      "HKLM\\System\\CurrentControlSet\\Control\\Session Manager"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Printer_Monitor_DLL",
-    "description": "인쇄 모니터 드라이버를 악용하여 부팅 시 악성 DLL을 로드하는 설정을 탐지한다.",
-    "keywords": [
-      "HKLM\\System\\CurrentControlSet\\Control\\Print\\Monitors",
-      "DLL",
-      "Printer Monitor"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "ServiceDLL_Modification",
-    "description": "기존 서비스의 ServiceDLL 경로를 변경하여 악성 DLL을 로드하는 행위를 탐지한다.",
-    "keywords": [
-      "ServiceDLL",
-      "HKLM\\System\\CurrentControlSet\\Services",
-      "Parameters"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Logon_Scripts",
-    "description": "로그온 스크립트를 수정하거나 추가하여 로그인 시 자동 실행되도록 하는 설정을 탐지한다.",
-    "keywords": [
-      "logon.bat",
-      "logon.ps1",
-      "C:\\Windows\\System32\\GroupPolicy\\User\\Scripts\\Logon"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "GroupPolicy_Scripts",
-    "description": "그룹 정책(GPO)에 스크립트가 추가되어 사용자/컴퓨터에 지속적으로 실행되는지를 확인한다.",
-    "keywords": [
-      "Sysvol\\Policies\\Scripts",
-      "Group Policy Script",
-      "GPO Logon Script"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "MSI_Package_Installers",
-    "description": "악성 MSI 패키지 설치로 인해 지속성 있는 서비스나 작업이 설치되는 경우를 탐지한다.",
-    "keywords": [
-      "msiexec /i",
-      "MSI installer",
-      "Windows Installer",
-      "Product Code"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "WinRM_Remote_Persistence",
-    "description": "WinRM(원격 관리) 리스너/설정을 변경하여 재부팅 후에도 원격 명령 수신이 가능한 상태로 만드는 동작을 탐지한다.",
-    "keywords": [
-      "winrm quickconfig",
-      "WinRM Listener",
-      "WinRM configuration"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "SCCM_Persistence",
-    "description": "SCCM(관리 도구) 작업이나 클라이언트 구성을 악용하여 지속성을 확보하는 행위를 탐지한다.",
-    "keywords": [
-      "C:\\Windows\\CCM",
-      "SCCM",
-      "ConfigMgr",
-      "Software Center"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Netsh_Helper_DLL",
-    "description": "netsh의 helper DLL 추가/등록을 통해 시스템에 지속적으로 로드되는 DLL을 탐지한다.",
-    "keywords": [
-      "netsh add helper",
-      "HKLM\\SOFTWARE\\Microsoft\\NetSh",
-      "netsh.dll"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Explorer_Shell_Extension",
-    "description": "Explorer shell extension 또는 context menu handler에 악성 DLL을 등록하여 지속성 및 실행 경로를 확보하는 행위를 탐지한다.",
-    "keywords": [
-      "HKCR\\*\\shellex\\ContextMenuHandlers",
-      "Shell Extension",
-      "ContextMenu handler",
-      "Explorer extension"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "LSA_Authentication_Package",
-    "description": "LSA 인증 패키지(로그온 프로세스)를 가로채거나 추가하여 로그인 시 악성 코드가 실행되도록 하는 행위를 탐지한다.",
-    "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
-      "Authentication Packages",
-      "LSA"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "PowerShell_Profile_Persistence",
-    "description": "PowerShell 프로필(profile.ps1)에 악성 명령을 추가하여 사용자가 PowerShell을 열 때마다 코드가 실행되도록 하는 설정을 탐지한다.",
-    "keywords": [
-      "%UserProfile%\\Documents\\WindowsPowerShell\\profile.ps1",
-      "PowerShell profile",
-      "profile.ps1"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "DLL_SearchOrder_Hijacking",
-    "description": "DLL 검색 순서(검색 경로)를 조작하여 정상 프로세스가 악성 DLL을 로드하도록 하는 기법을 탐지한다.",
-    "keywords": [
-      "DLL search order hijacking",
-      "App Paths",
-      "PATH",
-      "DLL preload"
+      "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
+      "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.exe",
+      "shell:common startup"
     ]
   },
 
@@ -470,29 +354,154 @@
 
 
 
-
+  
   
   {
-  "category": "Exfiltration",
-  "subcategory": "Archive_Files_Detection",
-  "description": "사용자가 생성/접근한 ZIP·RAR·7Z 파일 흔적을 탐지한다. 시스템 자동 압축(WOF/NativeImages/WinSxS)은 제외한다.",
-  "keywords": [".zip", ".rar", ".7z"],
-  "exclude_patterns": ["WofCompressedData", "\\Windows\\assembly\\NativeImages", "WinSxS"]
-},
-{
-  "category": "Exfiltration",
-  "subcategory": "USB_File_Transfer",
-  "description": "USB 저장장치로의 파일 복사, 이동, 또는 데이터 유출 시도를 분석한다.",
-  "keywords": [
-    "RecentDocs",
-    "USN Journal",
-    "SRUM\\System\\EnergyUsage",
-    "ShimCache",
-    "Prefetch",
-    "File Copy",
-    "Removable Drive"
-  ],
-  "event_id": [4663, 4656, 4660]
-}
+    "category": "Exfiltration",
+    "subcategory": "Archive_Files_Detection",
+    "description": "사용자가 생성하거나 접근한 ZIP·RAR·7Z 파일 흔적을 탐지한다. 시스템 자동 압축(WOF, NativeImages, WinSxS)은 제외한다.",
+    "keywords": [".zip", ".rar", ".7z"],
+    "exclude_patterns": ["WofCompressedData", "\\\\Windows\\\\assembly\\\\NativeImages", "WinSxS"],
+    "event_id": [4663, 4656]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Large_File_Creation",
+    "description": "50MB 이상의 대형 파일이 짧은 시간 내 생성된 흔적을 탐지한다. AppData나 Temp 위치일 경우 유출 준비 가능성이 있다.",
+    "keywords": ["FileSize:>52428800", "Path:(AppData|Temp|Downloads)"],
+    "exclude_patterns": ["pagefile.sys", "hiberfil.sys"],
+    "event_id": [4663]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Temp_Dir_Abuse",
+    "description": "임시 폴더(%TEMP%)에 대형·암호화된 파일이 다량 생성된 경우 업로드 전 임시 저장 가능성이 있다.",
+    "keywords": ["%TEMP%", "FileNameRegex:^(tmp|~)[a-z0-9]{6,}", "Entropy:>7.5"],
+    "exclude_patterns": ["setup", "install", "update"],
+    "event_id": [4663, 4656]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "USB_File_Transfer",
+    "description": "외장 저장장치(USB 등)에 파일이 복사·이동된 흔적을 탐지한다.",
+    "keywords": [
+      "ShellBagPath:.*(Removable|USB).*",
+      "Registry:MountPoints2",
+      "Path:\\\\Users\\\\.* AND DriveType:Removable"
+    ],
+    "exclude_patterns": ["Virtual", "Hyper-V", "Loopback"],
+    "event_id": [4663, 4656, 1102]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Cloud_Sync_Folders",
+    "description": "OneDrive, Dropbox, GoogleDrive 폴더 내 압축·대용량 파일 생성 흔적을 탐지한다.",
+    "keywords": [
+      "Path:.*\\\\OneDrive\\\\.*",
+      "Path:.*\\\\Dropbox\\\\.*",
+      "Path:.*\\\\GoogleDrive\\\\.*",
+      "FileName:(*.zip OR *.7z OR *.rar)"
+    ],
+    "exclude_patterns": ["SyncConfig", "snapshot.db"],
+    "event_id": [600, 4104]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Prefetch_Transfer_Tools",
+    "description": "유출에 자주 사용되는 도구(robocopy, certutil, curl, powershell 등)의 실행 흔적을 탐지한다.",
+    "keywords": [
+      "ROBOCOPY.EXE-*.pf",
+      "CERTUTIL.EXE-*.pf",
+      "CURL.EXE-*.pf",
+      "POWERSHELL.EXE-*.pf",
+      "BITSADMIN.EXE-*.pf"
+    ],
+    "exclude_patterns": ["WindowsUpdate", "Defender"],
+    "event_id": [4104, 4688]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Hidden_Payloads",
+    "description": "이중 확장자(report.pdf.exe) 또는 난독화된 임시파일명을 탐지하여 위장된 유출 파일을 식별한다.",
+    "keywords": [
+      "FileNameRegex:^.*\\.(pdf|docx)\\.exe$",
+      "FileNameRegex:^~?tmp[a-z0-9]{6,}\\.[a-z0-9]{2,4}$",
+      "Entropy:>7.0"
+    ],
+    "exclude_patterns": ["installer", "setup"],
+    "event_id": [4688]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Browser_Uploads",
+    "description": "브라우저 기록에서 업로드 관련 URL(file.io, drive.google.com 등)을 탐지한다.",
+    "keywords": [
+      "URL:(upload|file.io|anonfiles|mega|drive.google.com|dropbox.com)",
+      "DownloadPath:.*\\\\Downloads\\\\.*\\.(zip|7z|rar)"
+    ],
+    "exclude_patterns": ["microsoft.com", "update"],
+    "event_id": [4104]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "LNK_JumpList_Artifacts",
+    "description": "LNK 및 점프리스트에서 외부 장치나 클라우드 경로를 가리키는 항목을 식별한다.",
+    "keywords": [
+      "LNK:TargetPath:.*\\\\(Removable|OneDrive|Dropbox)\\\\.*",
+      "JumpList:automaticDestinations-ms",
+      "RecentItems:*.lnk AND TargetUrl:*.zip"
+    ],
+    "exclude_patterns": ["Desktop", "Documents"],
+    "event_id": []
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Sensitive_File_Access",
+    "description": "민감 확장자(.key, .wallet, .pem, .db 등)에 대한 접근·복사 이벤트를 탐지한다.",
+    "keywords": [
+      "FileNameRegex:.*\\.(key|pem|pfx|wallet|db|sqlite)$",
+      "Path:(AppData|Roaming|Documents)"
+    ],
+    "exclude_patterns": ["system32", "drivers"],
+    "event_id": [4663]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Forensic_Artifacts_Deletion",
+    "description": "이벤트 로그, Prefetch, MFT 등 포렌식 로그 삭제·초기화 흔적을 탐지한다.",
+    "keywords": [
+      "FileName:*.evtx AND Size:0",
+      "$LogFile Deleted",
+      "RecycleBin:DeleteAll"
+    ],
+    "exclude_patterns": ["WindowsUpdate.log"],
+    "event_id": [1102]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Encrypted_Containers",
+    "description": "VeraCrypt, BitLocker, TrueCrypt 등의 암호화 컨테이너 생성 흔적을 탐지한다.",
+    "keywords": [
+      "FileName:(*.tc OR *.hc OR *.vhdx)",
+      "Path:Users\\\\.*\\\\Documents",
+      "Prefetch:(veracrypt.exe OR truecrypt.exe)"
+    ],
+    "exclude_patterns": ["System Volume Information"],
+    "event_id": [5380, 851]
+  },
+  {
+    "category": "Exfiltration",
+    "subcategory": "Screenshot_Archives",
+    "description": "다수의 스크린샷 파일과 함께 압축파일이 존재할 경우 스크린 캡처 유출 가능성을 탐지한다.",
+    "keywords": [
+      "FileNameRegex:.*(screenshot|capture).*\\.(jpg|png)$",
+      "FileName:*screenshots*.zip"
+    ],
+    "exclude_patterns": ["Wallpaper", "Background"],
+    "event_id": [4663]
+  }
+
+
+
 
 ]
