@@ -1,0 +1,1353 @@
+[
+  {
+    "category": "Execution",
+    "subcategory": "Process_Execution",
+    "description": "프로세스 실행 기록을 통해 시스템에서 어떤 프로그램이 언제 실행되었는지 추적한다.",
+    "keywords": [
+      "Process Create",
+      "Process Terminate",
+      "4688",
+      "4689",
+      "Event ID 4688",
+      "Event ID 4689"
+    ],
+    "event_id": [4688, 4689, 1, 5]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "PowerShell_Execution",
+    "description": "PowerShell 스크립트 및 명령 실행 이력을 분석하여 악의적인 스크립트 실행 여부를 확인한다.",
+    "keywords": [
+      "Microsoft-Windows-PowerShell/Operational",
+      "PowerShell.exe",
+      "powershell_ise.exe",
+      "pwsh.exe",
+      "ScriptBlock",
+      "ConsoleHost_history.txt",
+      "%AppData%\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt",
+      "PowerShell Transcripts",
+      "C:\\Users\\*\\Documents\\PowerShell\\Transcripts\\*.txt",
+      "Module Logging",
+      "Script Block Logging",
+      "Invoke-Expression",
+      "IEX",
+      "DownloadString",
+      "EncodedCommand",
+      "-enc",
+      "-e",
+      "Bypass",
+      "Hidden"
+    ],
+    "event_id": [4103, 4104, 4105, 4106, 400, 403, 600, 800]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Command_Line_Execution",
+    "description": "cmd.exe를 통한 명령줄 실행 이력을 추적하여 배치 파일, 스크립트 실행을 탐지한다.",
+    "keywords": [
+      "cmd.exe",
+      "Command Line",
+      "Process Command Line",
+      "CommandLineEventConsumer",
+      "batch file",
+      ".bat",
+      ".cmd"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Windows_Script_Execution",
+    "description": "VBScript, JScript, WSH 등 Windows 스크립트 호스트를 통한 스크립트 실행을 탐지한다.",
+    "keywords": [
+      "wscript.exe",
+      "cscript.exe",
+      ".vbs",
+      ".js",
+      ".jse",
+      ".vbe",
+      ".wsf",
+      ".wsh",
+      "Windows Script Host",
+      "WScript.Shell",
+      "CreateObject"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "BAM_DAM_Execution",
+    "description": "Background Activity Moderator(BAM)와 Desktop Activity Moderator(DAM)를 통해 실행된 프로그램의 마지막 실행 시간을 추적한다.",
+    "keywords": [
+      "SYSTEM\\CurrentControlSet\\Services\\bam\\State\\UserSettings",
+      "SYSTEM\\CurrentControlSet\\Services\\dam\\State\\UserSettings",
+      "BAM",
+      "DAM",
+      "Background Activity Moderator",
+      "Desktop Activity Moderator"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "MUI_Cache",
+    "description": "실행 파일의 표시 이름과 경로를 기록한 MUICache를 분석하여 실행된 프로그램 목록을 확인한다.",
+    "keywords": [
+      "NTUSER.DAT\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache",
+      "MUICache",
+      "ApplicationCompany",
+      "FriendlyAppName",
+      "LangID"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Shimcache_Analysis",
+    "description": "Windows Application Compatibility Cache(ShimCache)를 분석하여 실행 여부와 실행 경로를 확인한다.",
+    "keywords": [
+      "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\AppCompatCache",
+      "SYSTEM\\Select\\Current",
+      "ShimCache",
+      "AppCompatCache",
+      "Application Compatibility"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Compatibility_Assistant",
+    "description": "Compatibility Assistant(호환성 관리자)의 Store/Persisted 키에서 실행 및 호환성 관련 흔적을 추적한다.",
+    "keywords": [
+      "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Compatibility Assistant\\Store",
+      "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Compatibility Assistant\\Persisted",
+      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Compatibility Assistant\\Store",
+      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Compatibility Assistant\\Persisted",
+      "Compatibility Assistant",
+      "Persisted",
+      "Store"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "AmCache_Analysis",
+    "description": "AmCache.hve를 분석하여 프로그램 설치, 실행, SHA1 해시 정보를 확인한다.",
+    "keywords": [
+      "C:\\Windows\\appcompat\\Programs\\Amcache.hve",
+      "AmCache",
+      "InventoryApplicationFile",
+      "InventoryApplication",
+      "File Reference",
+      "ProgramId",
+      "SHA1",
+      "LinkDate"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Prefetch_Analysis",
+    "description": "Prefetch 파일을 분석하여 프로그램의 최초 실행 시간, 최근 실행 시간, 실행 횟수를 확인한다.",
+    "keywords": [
+      "C:\\Windows\\Prefetch\\*.pf",
+      "Prefetch",
+      "Last Run Time",
+      "Run Count",
+      "Volume Information",
+      "Files Loaded",
+      "Directories Referenced"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "WMI_Execution",
+    "description": "WMI(Windows Management Instrumentation)를 통한 원격 명령 실행 및 프로세스 생성을 탐지한다.",
+    "keywords": [
+      "wmic.exe",
+      "WMI",
+      "Win32_Process",
+      "C:\\Windows\\System32\\wbem\\Repository",
+      "OBJECTS.DATA",
+      "INDEX.BTR",
+      "WMI-Activity/Operational",
+      "scrcons.exe",
+      "mofcomp.exe",
+      "winmgmt.exe"
+    ],
+    "event_id": [5857, 5858, 5859, 5860, 5861]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Rundll32_Execution",
+    "description": "rundll32.exe를 통한 DLL 실행 이력을 추적하여 악성 DLL 로딩을 탐지한다.",
+    "keywords": [
+      "rundll32.exe",
+      "DllMain",
+      "export function",
+      "DllRegisterServer",
+      "javascript:",
+      "vbscript:"
+    ],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Regsvr32_Execution",
+    "description": "regsvr32.exe를 통한 DLL/ActiveX 등록 및 실행을 탐지한다.",
+    "keywords": [
+      "regsvr32.exe",
+      "/i",
+      "/s",
+      "/u",
+      "/n",
+      "scrobj.dll",
+      "DllInstall",
+      "DllRegisterServer"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "MSIExec_Execution",
+    "description": "Windows Installer(msiexec.exe)를 통한 패키지 설치 및 실행을 추적한다.",
+    "keywords": [
+      "msiexec.exe",
+      ".msi",
+      ".msp",
+      "/i",
+      "/quiet",
+      "/q",
+      "/a",
+      "Windows Installer",
+      "MsiInstaller"
+    ],
+    "event_id": [1033, 1034, 11707, 11708, 11724, 4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Office_Macro_Execution",
+    "description": "Microsoft Office 문서 내 매크로 실행 여부를 탐지한다.",
+    "keywords": [
+      "VBA",
+      "WINWORD.EXE",
+      "EXCEL.EXE",
+      "POWERPNT.EXE",
+      "MSACCESS.EXE",
+      "Macro",
+      "EnableContent",
+      "VBA7.DLL",
+      "AutoOpen",
+      "AutoExec",
+      "Document_Open",
+      "Workbook_Open",
+      "Shell",
+      "CreateObject(\"WScript.Shell\")"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "UserAssist_Execution",
+    "description": "사용자가 GUI를 통해 실행한 프로그램 목록과 실행 횟수를 UserAssist 레지스트리에서 확인한다.",
+    "keywords": [
+      "NTUSER.DAT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\UserAssist",
+      "UserAssist",
+      "CEBFF5CD",
+      "F4E57C4B",
+      "ROT13",
+      "UEME_RUNPIDL",
+      "UEME_RUNPATH"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "RunMRU_Execution",
+    "description": "실행(Win+R) 대화 상자의 명령 실행 흔적을 추적한다.",
+    "keywords": [
+      "NTUSER.DAT\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RunMRU",
+      "RunMRU",
+      "MRUList"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "SRUM_Application_Usage",
+    "description": "System Resource Usage Monitor(SRUM) 데이터베이스를 분석하여 애플리케이션 사용 시간, 네트워크 사용량 등을 추적한다.",
+    "keywords": [
+      "C:\\Windows\\System32\\sru\\SRUDB.dat",
+      "SRUM",
+      "Application Resource Usage",
+      "Network Data Usage",
+      "Network Connectivity",
+      "Energy Usage",
+      "{D10CA2FE-6FCF-4F6D-848E-B2E99266FA89}",
+      "{973F5D5C-1D90-4944-BE8E-24B94231A174}",
+      "{DD6636C4-8929-4683-974E-22C046A43763}"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "RecentApps_Execution",
+    "description": "Windows RecentApps 키에 기록된 최근 실행 애플리케이션 흔적을 추적한다.",
+    "keywords": [
+      "NTUSER.DAT\\Software\\Microsoft\\Windows\\CurrentVersion\\Search\\RecentApps",
+      "RecentApps",
+      "AppId",
+      "LastAccessTime"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "ActivitiesCache_Execution",
+    "description": "Windows Timeline(ActivitiesCache.db)에 기록된 최근 활동과 실행 흔적을 추적한다.",
+    "keywords": [
+      "%LocalAppData%\\ConnectedDevicesPlatform\\ActivitiesCache.db",
+      "ActivitiesCache.db",
+      "Activity",
+      "AppId",
+      "LastModifiedTimeUtc"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Jump_Lists",
+    "description": "Jump List를 분석하여 사용자가 최근 실행한 파일과 프로그램을 추적한다.",
+    "keywords": [
+      "AutomaticDestinations",
+      "CustomDestinations",
+      "%AppData%\\Microsoft\\Windows\\Recent\\AutomaticDestinations",
+      "%AppData%\\Microsoft\\Windows\\Recent\\CustomDestinations",
+      "Jump List",
+      ".automaticDestinations-ms",
+      ".customDestinations-ms",
+      "DestList",
+      "LNK stream"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "LNK_Shortcuts",
+    "description": "최근 문서 및 다양한 위치의 LNK 바로가기에서 실행 흔적을 추적한다.",
+    "keywords": [
+      "%AppData%\\Microsoft\\Windows\\Recent\\*.lnk",
+      "*.lnk",
+      "LinkInfo",
+      "RelativePath",
+      "WorkingDir",
+      "Arguments"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Scheduled_Task_Execution",
+    "description": "예약된 작업(Scheduled Task)의 실행 이력을 추적한다.",
+    "keywords": [
+      "Microsoft-Windows-TaskScheduler/Operational",
+      "C:\\Windows\\System32\\Tasks",
+      "C:\\Windows\\Tasks",
+      "Task execution",
+      "schtasks.exe",
+      "taskeng.exe",
+      "at.exe",
+      "Action started"
+    ],
+    "event_id": [
+      100, 102, 106, 107, 110, 129, 140, 141, 200, 201, 325, 326, 4698, 4699,
+      4700, 4701, 4702
+    ]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Service_Execution",
+    "description": "Windows 서비스 시작 및 중지 이벤트를 추적하여 서비스를 통한 코드 실행을 탐지한다.",
+    "keywords": [
+      "Service Control Manager",
+      "services.exe",
+      "sc.exe",
+      "service start",
+      "service stop",
+      "service install",
+      "SYSTEM\\CurrentControlSet\\Services"
+    ],
+    "event_id": [7034, 7035, 7036, 7040, 7045, 4697]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Remote_Execution",
+    "description": "PsExec, WinRM, RDP, WMI 등을 통한 원격 명령 실행을 탐지한다.",
+    "keywords": [
+      "psexec.exe",
+      "PSEXESVC.exe",
+      "winrs.exe",
+      "wsmprovhost.exe",
+      "Remote Desktop",
+      "TerminalServices",
+      "RemoteRegistry",
+      "ADMIN$",
+      "C$",
+      "IPC$",
+      "Type 3 logon",
+      "Type 10 logon"
+    ],
+    "event_id": [4624, 4625, 4648, 4672, 5140, 5145, 5156, 1149]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "BITS_Job_Execution",
+    "description": "Background Intelligent Transfer Service(BITS)를 통한 파일 다운로드 및 실행을 추적한다.",
+    "keywords": [
+      "bitsadmin.exe",
+      "BITS",
+      "Microsoft-Windows-Bits-Client/Operational",
+      "BITSAdmin /transfer",
+      "/download",
+      "/upload",
+      "C:\\ProgramData\\Microsoft\\Network\\Downloader"
+    ],
+    "event_id": [59, 60, 61, 3, 4, 16403]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Certutil_Execution",
+    "description": "certutil.exe를 악용한 파일 다운로드 및 인코딩/디코딩 실행을 탐지한다.",
+    "keywords": [
+      "certutil.exe",
+      "-urlcache",
+      "-decode",
+      "-encode",
+      "-decodehex",
+      "-split",
+      "-f"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Mshta_Execution",
+    "description": "mshta.exe를 통한 HTML Application(HTA) 실행 및 원격 스크립트 실행을 탐지한다.",
+    "keywords": [
+      "mshta.exe",
+      ".hta",
+      "HTML Application",
+      "javascript:",
+      "vbscript:",
+      "http://",
+      "https://",
+      "\\\\",
+      "remote script"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "InstallUtil_Execution",
+    "description": ".NET InstallUtil.exe를 악용한 악성 코드 실행을 탐지한다.",
+    "keywords": [
+      "InstallUtil.exe",
+      ".NET",
+      "System.Configuration.Install",
+      "/U",
+      "/logfile=",
+      "/LogToConsole=false"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "RegAsm_RegSvcs_Execution",
+    "description": ".NET 어셈블리 등록 도구(RegAsm, RegSvcs)를 악용한 실행을 탐지한다.",
+    "keywords": [
+      "RegAsm.exe",
+      "RegSvcs.exe",
+      ".NET assembly",
+      "/U",
+      "UnRegisterClass",
+      "System.EnterpriseServices"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "CMSTP_Execution",
+    "description": "CMSTP.exe(Connection Manager Profile Installer)를 통한 악성 코드 실행을 탐지한다.",
+    "keywords": [
+      "CMSTP.exe",
+      ".inf",
+      "Connection Manager",
+      "/s",
+      "/au",
+      "UnRegisterOCXSection",
+      "RegisterOCXSection"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Control_Panel_Item_Execution",
+    "description": "악성 .cpl(Control Panel Item) 파일 실행을 탐지한다.",
+    "keywords": [
+      "control.exe",
+      ".cpl",
+      "Control Panel",
+      "rundll32.exe shell32.dll,Control_RunDLL"
+    ],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "MSBuild_Execution",
+    "description": "MSBuild.exe를 통한 인라인 코드 실행을 탐지한다.",
+    "keywords": [
+      "MSBuild.exe",
+      ".csproj",
+      ".vbproj",
+      ".xml",
+      "Microsoft Build Engine",
+      "UsingTask",
+      "Code",
+      "Type=\"Fragment\"",
+      "AssemblyFile",
+      "inline task"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Compiled_HTML_Help_Execution",
+    "description": "hh.exe를 통한 CHM(Compiled HTML Help) 파일 실행을 탐지한다.",
+    "keywords": ["hh.exe", ".chm", "HTML Help", "hhctrl.ocx", "itss.dll"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Forfiles_Execution",
+    "description": "forfiles.exe를 통한 명령 실행을 탐지한다.",
+    "keywords": ["forfiles.exe", "/c", "/p", "cmd"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "PCAlua_Execution",
+    "description": "Program Compatibility Assistant(pcalua.exe)를 악용한 프로그램 실행을 탐지한다.",
+    "keywords": ["pcalua.exe", "-a", "-m", "Program Compatibility Assistant"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "SyncAppvPublishingServer_Execution",
+    "description": "SyncAppvPublishingServer.exe를 악용한 PowerShell 코드 실행을 탐지한다.",
+    "keywords": [
+      "SyncAppvPublishingServer.exe",
+      "App-V",
+      "powershell",
+      "SyncAppvPublishingServer.vbs",
+      "n;",
+      "Break;"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Odbcconf_Execution",
+    "description": "odbcconf.exe를 통한 DLL 로드 및 실행을 탐지한다.",
+    "keywords": ["odbcconf.exe", "/a", "/f", "REGSVR", "response file"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Mavinject_Execution",
+    "description": "mavinject.exe를 통한 DLL 인젝션을 탐지한다.",
+    "keywords": ["mavinject.exe", "/INJECTRUNNING", "/PID", "DLL injection"],
+    "event_id": [4688, 1, 8]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "ClickOnce_Application",
+    "description": "ClickOnce 배포 응용 프로그램 실행을 추적한다.",
+    "keywords": [
+      "dfsvc.exe",
+      ".application",
+      "ClickOnce",
+      "dfshim.dll",
+      "2.0.50727",
+      "LocalLow\\Sun\\Java\\Deployment\\cache"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Compiler_Execution",
+    "description": "실시간 컴파일 도구(csc.exe, jsc.exe 등)를 통한 코드 컴파일 및 실행을 탐지한다.",
+    "keywords": [
+      "csc.exe",
+      "jsc.exe",
+      "vbc.exe",
+      "cvtres.exe",
+      ".cs compile",
+      "C# compiler",
+      "/out:",
+      "/target:",
+      "Microsoft.CSharp.CSharpCodeProvider"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Xwizard_Execution",
+    "description": "xwizard.exe를 통한 DLL 로드 및 실행을 탐지한다.",
+    "keywords": ["xwizard.exe", "RunWizard", "{", "CLSID"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "AppVLP_Execution",
+    "description": "AppVLP.exe(App-V Launcher)를 악용한 프로그램 실행을 탐지한다.",
+    "keywords": ["AppVLP.exe", "App-V"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Process_Creation",
+    "description": "Sysmon Event ID 1을 통해 프로세스 생성의 상세 정보를 수집한다.",
+    "keywords": [
+      "Sysmon",
+      "ProcessCreate",
+      "CommandLine",
+      "ParentImage",
+      "ParentCommandLine",
+      "Hashes",
+      "CurrentDirectory",
+      "User",
+      "IntegrityLevel"
+    ],
+    "event_id": [1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_File_Time_Modification",
+    "description": "Sysmon Event ID 2를 통해 파일 타임스탬프 조작 흔적을 탐지한다.",
+    "keywords": [
+      "Sysmon",
+      "FileCreateTime",
+      "CreationUtcTime",
+      "PreviousCreationUtcTime",
+      "timestomp"
+    ],
+    "event_id": [2]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Network_Connection",
+    "description": "Sysmon Event ID 3을 통해 프로세스의 네트워크 연결을 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "NetworkConnect",
+      "DestinationIp",
+      "DestinationPort",
+      "SourceIp",
+      "SourcePort",
+      "Protocol"
+    ],
+    "event_id": [3]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Process_Termination",
+    "description": "Sysmon Event ID 5를 통해 프로세스 종료 이벤트를 추적한다.",
+    "keywords": ["Sysmon", "ProcessTerminate", "UtcTime"],
+    "event_id": [5]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Driver_Load",
+    "description": "Sysmon Event ID 6을 통해 드라이버 로드를 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "DriverLoad",
+      "ImageLoaded",
+      "Signature",
+      "SignatureStatus",
+      "Signed"
+    ],
+    "event_id": [6]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Image_Load",
+    "description": "Sysmon Event ID 7을 통해 DLL 및 이미지 로드를 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "ImageLoad",
+      "ImageLoaded",
+      "Signature",
+      "SignatureStatus"
+    ],
+    "event_id": [7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_CreateRemoteThread",
+    "description": "Sysmon Event ID 8을 통해 프로세스 간 원격 스레드 생성(인젝션)을 탐지한다.",
+    "keywords": [
+      "Sysmon",
+      "CreateRemoteThread",
+      "SourceImage",
+      "TargetImage",
+      "StartAddress",
+      "StartFunction"
+    ],
+    "event_id": [8]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_RawAccessRead",
+    "description": "Sysmon Event ID 9를 통해 디스크에 대한 직접 읽기(Raw Access)를 탐지한다.",
+    "keywords": [
+      "Sysmon",
+      "RawAccessRead",
+      "Device",
+      "\\Device\\HarddiskVolume"
+    ],
+    "event_id": [9]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_ProcessAccess",
+    "description": "Sysmon Event ID 10을 통해 프로세스 메모리 접근을 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "ProcessAccess",
+      "SourceImage",
+      "TargetImage",
+      "GrantedAccess",
+      "CallTrace"
+    ],
+    "event_id": [10]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_File_Create",
+    "description": "Sysmon Event ID 11을 통해 파일 생성 이벤트를 추적한다.",
+    "keywords": ["Sysmon", "FileCreate", "TargetFilename", "CreationUtcTime"],
+    "event_id": [11]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Registry_Event",
+    "description": "Sysmon Event ID 12, 13, 14를 통해 레지스트리 생성, 수정, 삭제를 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "RegistryEvent",
+      "CreateKey",
+      "SetValue",
+      "DeleteKey",
+      "DeleteValue",
+      "RenameKey",
+      "TargetObject"
+    ],
+    "event_id": [12, 13, 14]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_File_Stream_Created",
+    "description": "Sysmon Event ID 15를 통해 NTFS ADS(Alternate Data Stream) 생성을 탐지한다.",
+    "keywords": [
+      "Sysmon",
+      "FileCreateStreamHash",
+      "TargetFilename",
+      "Contents",
+      "Zone.Identifier"
+    ],
+    "event_id": [15]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Pipe_Created",
+    "description": "Sysmon Event ID 17, 18을 통해 Named Pipe 생성 및 연결을 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "PipeEvent",
+      "PipeCreated",
+      "PipeConnected",
+      "PipeName"
+    ],
+    "event_id": [17, 18]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_WMI_Event",
+    "description": "Sysmon Event ID 19, 20, 21을 통해 WMI 필터, 컨슈머, 바인딩을 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "WmiEvent",
+      "WmiEventFilter",
+      "WmiEventConsumer",
+      "WmiEventConsumerToFilter"
+    ],
+    "event_id": [19, 20, 21]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_DNS_Query",
+    "description": "Sysmon Event ID 22를 통해 DNS 쿼리를 추적한다.",
+    "keywords": ["Sysmon", "DNSQuery", "QueryName", "QueryResults"],
+    "event_id": [22]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_File_Delete",
+    "description": "Sysmon Event ID 23, 26을 통해 파일 삭제 및 복구 가능한 삭제를 추적한다.",
+    "keywords": [
+      "Sysmon",
+      "FileDelete",
+      "FileDeleteDetected",
+      "TargetFilename",
+      "Archived",
+      "IsExecutable"
+    ],
+    "event_id": [23, 26]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Clipboard_Capture",
+    "description": "Sysmon Event ID 24를 통해 클립보드 내용 접근을 추적한다.",
+    "keywords": ["Sysmon", "ClipboardChange", "ClientInfo", "Hashes"],
+    "event_id": [24]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_Process_Tampering",
+    "description": "Sysmon Event ID 25를 통해 프로세스 이미지 변조를 탐지한다.",
+    "keywords": [
+      "Sysmon",
+      "ProcessTampering",
+      "Type",
+      "Process hollowing",
+      "Herpaderping"
+    ],
+    "event_id": [25]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_File_Block",
+    "description": "Sysmon Event ID 27을 통해 실행 파일 차단 이벤트를 추적한다.",
+    "keywords": ["Sysmon", "FileBlockExecutable", "TargetFilename"],
+    "event_id": [27]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Sysmon_File_Block_Shredding",
+    "description": "Sysmon Event ID 28을 통해 파일 영구 삭제(shredding) 시도를 탐지한다.",
+    "keywords": ["Sysmon", "FileBlockShredding", "TargetFilename"],
+    "event_id": [28]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Dllhost_COM_Execution",
+    "description": "dllhost.exe를 통한 COM 개체 실행을 추적한다.",
+    "keywords": ["dllhost.exe", "/Processid", "CLSID"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Verclsid_Execution",
+    "description": "verclsid.exe를 통한 COM 개체 실행을 탐지한다.",
+    "keywords": ["verclsid.exe", "CLSID"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Regini_Execution",
+    "description": "regini.exe를 통한 레지스트리 스크립트 실행을 탐지한다.",
+    "keywords": ["regini.exe", "registry script"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Wuauclt_Execution",
+    "description": "wuauclt.exe를 악용한 임의 DLL 실행을 탐지한다.",
+    "keywords": [
+      "wuauclt.exe",
+      "/UpdateDeploymentProvider",
+      "/RunHandlerComServer"
+    ],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Ie4uinit_Execution",
+    "description": "ie4uinit.exe를 통한 INF 파일 실행을 탐지한다.",
+    "keywords": ["ie4uinit.exe", "-BaseSettings", "-ClearIconCache"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Presentationhost_Execution",
+    "description": "PresentationHost.exe를 통한 XAML 브라우저 애플리케이션 실행을 탐지한다.",
+    "keywords": ["PresentationHost.exe", ".xbap", "XAML"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Msiexec_Remote_Install",
+    "description": "원격 MSI 패키지 다운로드 및 설치를 탐지한다.",
+    "keywords": ["msiexec.exe", "/i", "http://", "https://", "/q"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Dnscmd_Execution",
+    "description": "dnscmd.exe를 통한 DNS 서버 설정 변조를 탐지한다.",
+    "keywords": ["dnscmd.exe", "/config", "ServerLevelPluginDll"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Extexport_Execution",
+    "description": "extexport.exe를 통한 DLL 사이드로딩을 탐지한다.",
+    "keywords": ["extexport.exe", "mozcrt19.dll", "mozsqlite3.dll"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Gpscript_Execution",
+    "description": "gpscript.exe를 통한 그룹 정책 스크립트 실행을 탐지한다.",
+    "keywords": ["gpscript.exe", "Group Policy"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Unregmp2_Execution",
+    "description": "unregmp2.exe를 통한 DLL 사이드로딩을 탐지한다.",
+    "keywords": ["unregmp2.exe", "wmp.dll"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Infdefaultinstall_Execution",
+    "description": "InfDefaultInstall.exe를 통한 INF 파일 자동 설치를 탐지한다.",
+    "keywords": ["InfDefaultInstall.exe", ".inf"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Atbroker_Execution",
+    "description": "AtBroker.exe를 통한 보조 기술 관리자 악용을 탐지한다.",
+    "keywords": ["AtBroker.exe", "Assistive Technology"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Diskshadow_Execution",
+    "description": "diskshadow.exe를 통한 스크립트 실행 및 볼륨 섀도 복사를 탐지한다.",
+    "keywords": ["diskshadow.exe", "/s", "script file", "EXEC"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Esentutl_Execution",
+    "description": "esentutl.exe를 통한 데이터베이스 복사 및 추출을 탐지한다.",
+    "keywords": ["esentutl.exe", "/y", "/vss", "ntds.dit", "SYSTEM"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Expand_Execution",
+    "description": "expand.exe를 통한 CAB 파일 압축 해제를 탐지한다.",
+    "keywords": ["expand.exe", "-R", ".cab"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Extrac32_Execution",
+    "description": "extrac32.exe를 통한 CAB 파일 추출을 탐지한다.",
+    "keywords": ["extrac32.exe", "/Y", "/C", ".cab"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Findstr_Execution",
+    "description": "findstr.exe를 통한 파일 검색 및 데이터 추출을 탐지한다.",
+    "keywords": ["findstr.exe", "/V", "/L", "password", "credential"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Makecab_Execution",
+    "description": "makecab.exe를 통한 파일 압축 및 데이터 은닉을 탐지한다.",
+    "keywords": ["makecab.exe", ".cab"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Manage_bde_Execution",
+    "description": "manage-bde.exe를 통한 BitLocker 조작을 탐지한다.",
+    "keywords": ["manage-bde.exe", "-protectors", "-unlock"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Mpcmdrun_Execution",
+    "description": "MpCmdRun.exe(Windows Defender)를 통한 파일 다운로드를 탐지한다.",
+    "keywords": ["MpCmdRun.exe", "DownloadFile", "-url", "-path"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Msdt_Execution",
+    "description": "msdt.exe(Microsoft Diagnostic Tool)를 통한 PCW 파일 악용을 탐지한다.",
+    "keywords": ["msdt.exe", "PCWDiagnostic", "/skip", "ms-msdt:"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Msedge_Execution",
+    "description": "msedge.exe를 통한 웹 기반 공격 및 다운로드를 추적한다.",
+    "keywords": ["msedge.exe", "--single-argument", "javascript:", "data:"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Msxsl_Execution",
+    "description": "msxsl.exe를 통한 XSL 스크립트 실행을 탐지한다.",
+    "keywords": ["msxsl.exe", ".xsl", "msxsl:script"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Netsh_Trace",
+    "description": "netsh trace를 통한 패킷 캡처 및 데이터 수집을 탐지한다.",
+    "keywords": ["netsh.exe", "trace", "start", "stop", "capture=yes"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Pktmon_Execution",
+    "description": "pktmon.exe를 통한 패킷 모니터링을 탐지한다.",
+    "keywords": ["pktmon.exe", "start", "filter add", "etl2pcap"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Pnputil_Execution",
+    "description": "pnputil.exe를 통한 악성 드라이버 설치를 탐지한다.",
+    "keywords": ["pnputil.exe", "/add-driver", "/install", ".inf"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Print_Execution",
+    "description": "print.exe를 통한 데이터 전송을 탐지한다.",
+    "keywords": ["print.exe", "/D:"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Rasautou_Execution",
+    "description": "rasautou.exe를 통한 DLL 사이드로딩을 탐지한다.",
+    "keywords": ["rasautou.exe", "-d", "-p"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Register_cimprovider_Execution",
+    "description": "Register-CimProvider PowerShell cmdlet을 통한 WMI Provider 등록을 탐지한다.",
+    "keywords": [
+      "Register-CimProvider",
+      "powershell",
+      "-Path",
+      ".dll",
+      "WMI Provider"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Replace_Execution",
+    "description": "replace.exe를 통한 파일 교체를 탐지한다.",
+    "keywords": ["replace.exe", "/A", "System32"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Rpcping_Execution",
+    "description": "rpcping.exe를 통한 DLL 로드를 탐지한다.",
+    "keywords": ["rpcping.exe", "-s"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Scriptrunner_Execution",
+    "description": "scriptrunner.exe를 통한 PowerShell 스크립트 실행을 탐지한다.",
+    "keywords": ["scriptrunner.exe", "-appvscript", "powershell"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Stordiag_Execution",
+    "description": "stordiag.exe를 통한 데이터 수집 및 실행을 탐지한다.",
+    "keywords": ["stordiag.exe", "-collectEtw", "-out"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Ttdinject_Execution",
+    "description": "ttdinject.exe를 통한 프로세스 인젝션을 탐지한다.",
+    "keywords": ["ttdinject.exe", "/launch", "/attach"],
+    "event_id": [4688, 1, 8]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Tttracer_Execution",
+    "description": "tttracer.exe를 통한 Time Travel Debugging 악용을 탐지한다.",
+    "keywords": ["tttracer.exe", "-out", "-attach"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Vbc_Execution",
+    "description": "vbc.exe(VB.NET 컴파일러)를 통한 코드 컴파일 실행을 탐지한다.",
+    "keywords": ["vbc.exe", "/out:", "/target:", ".vb"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Wab_Execution",
+    "description": "wab.exe(Windows Address Book)를 통한 DLL 사이드로딩을 탐지한다.",
+    "keywords": ["wab.exe", "wab32.dll"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Wlrmdr_Execution",
+    "description": "wlrmdr.exe를 통한 DLL 사이드로딩을 탐지한다.",
+    "keywords": ["wlrmdr.exe"],
+    "event_id": [4688, 1, 7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Wsreset_Execution",
+    "description": "WSReset.exe를 통한 권한 상승 및 우회 실행을 탐지한다.",
+    "keywords": ["WSReset.exe", "AppX"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Zipfldr_Execution",
+    "description": "zipfldr.dll를 통한 압축 파일 처리 및 실행을 탐지한다.",
+    "keywords": ["zipfldr.dll", "RouteTheCall"],
+    "event_id": [7]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Application_Shimming",
+    "description": "Application Shim을 통한 실행 흐름 변조를 탐지한다.",
+    "keywords": ["sdbinst.exe", ".sdb", "Custom", "RedirectEXE", "InjectDll"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Shim_Database_Installation",
+    "description": "Shim 데이터베이스 설치를 통한 지속성 및 실행 제어를 탐지한다.",
+    "keywords": [
+      "sdbinst.exe",
+      "-q",
+      "-p",
+      "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Custom",
+      "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\InstalledSDB"
+    ],
+    "event_id": [4688, 1, 13]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "SQL_Query_Execution",
+    "description": "SQL Server를 통한 명령 실행 및 데이터 접근을 탐지한다.",
+    "keywords": [
+      "xp_cmdshell",
+      "sp_OACreate",
+      "sp_OAMethod",
+      "EXECUTE AS",
+      "OPENROWSET",
+      "sqlcmd.exe",
+      "osql.exe"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Wsus_Client_Execution",
+    "description": "WSUS 클라이언트를 악용한 업데이트 실행을 탐지한다.",
+    "keywords": ["wuauclt.exe", "/DetectNow", "/UpdateDeploymentProvider"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Python_Execution",
+    "description": "Python 인터프리터를 통한 스크립트 실행을 추적한다.",
+    "keywords": [
+      "python.exe",
+      "pythonw.exe",
+      ".py",
+      ".pyc",
+      "-c",
+      "exec(",
+      "eval("
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Node_Execution",
+    "description": "Node.js를 통한 JavaScript 실행을 추적한다.",
+    "keywords": ["node.exe", ".js", "child_process", "require("],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Java_Execution",
+    "description": "Java 런타임을 통한 애플리케이션 실행을 추적한다.",
+    "keywords": ["java.exe", "javaw.exe", ".jar", ".class", "-jar"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Bash_WSL_Execution",
+    "description": "Windows Subsystem for Linux(WSL)를 통한 리눅스 명령 실행을 추적한다.",
+    "keywords": ["bash.exe", "wsl.exe", "ubuntu.exe", "debian.exe", "kali.exe"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Signed_Binary_Proxy_Execution",
+    "description": "신뢰된 서명된 바이너리를 악용한 프록시 실행을 종합 탐지한다.",
+    "keywords": [
+      "mshta.exe",
+      "rundll32.exe",
+      "regsvr32.exe",
+      "certutil.exe",
+      "MSBuild.exe",
+      "InstallUtil.exe",
+      "RegAsm.exe",
+      "RegSvcs.exe",
+      "odbcconf.exe",
+      "mavinject.exe",
+      "Microsoft signed"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "LOLBins_Execution",
+    "description": "Living-Off-The-Land 바이너리를 통한 악의적 실행을 종합 탐지한다.",
+    "keywords": [
+      "LOLBin",
+      "LOLBAS",
+      "Living off the land",
+      "Trusted binary abuse"
+    ],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Alternate_Data_Stream_Execution",
+    "description": "NTFS ADS(Alternate Data Stream)에 숨겨진 코드 실행을 탐지한다.",
+    "keywords": [
+      "wmic.exe process call create",
+      ":$DATA",
+      "type file.txt > file.exe:hidden.exe",
+      "start .:hidden.exe"
+    ],
+    "event_id": [4688, 1, 15]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "DDE_Execution",
+    "description": "Dynamic Data Exchange(DDE)를 통한 Office 문서 기반 코드 실행을 탐지한다.",
+    "keywords": ["DDEAUTO", "DDE", "WINWORD.EXE", "EXCEL.EXE", "cmd /c"],
+    "event_id": [4688, 1]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Exploit_Guard_ASR_Events",
+    "description": "Windows Defender Exploit Guard의 Attack Surface Reduction 이벤트를 추적한다.",
+    "keywords": [
+      "Microsoft-Windows-Windows Defender/Operational",
+      "ASR",
+      "Attack Surface Reduction",
+      "Blocked"
+    ],
+    "event_id": [1121, 1122, 1123, 1124, 1125, 1126]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "AppLocker_Block",
+    "description": "AppLocker에 의한 실행 차단 이벤트를 추적한다.",
+    "keywords": [
+      "Microsoft-Windows-AppLocker",
+      "EXE and DLL",
+      "MSI and Script",
+      "Packaged app",
+      "was prevented from running"
+    ],
+    "event_id": [8003, 8004, 8006, 8007]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Code_Integrity_Failure",
+    "description": "코드 무결성 검증 실패를 추적하여 서명되지 않은 드라이버/코드 로드 시도를 탐지한다.",
+    "keywords": [
+      "Microsoft-Windows-CodeIntegrity/Operational",
+      "Code Integrity",
+      "determined that a process",
+      "attempted to load",
+      "failed signature verification"
+    ],
+    "event_id": [3001, 3002, 3003, 3004, 3033, 3063, 3065, 3066, 3076, 3077]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "Antivirus_Detection",
+    "description": "Windows Defender 및 기타 안티바이러스의 위협 탐지 이벤트를 추적한다.",
+    "keywords": [
+      "Microsoft-Windows-Windows Defender/Operational",
+      "threat detected",
+      "malware detected",
+      "suspicious behavior",
+      "Action taken"
+    ],
+    "event_id": [1006, 1007, 1008, 1009, 1015, 1116, 1117, 1118, 1119]
+  },
+  {
+    "category": "Execution",
+    "subcategory": "App_Paths_Execution",
+    "description": "레지스트리 App Paths 키에서 애플리케이션 실행 경로를 추적한다.",
+    "keywords": [
+      "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths",
+      "App Paths",
+      "(Default)",
+      "Path"
+    ],
+    "event_id": []
+  },
+  {
+    "category": "Execution",
+    "subcategory": "RecentFileCache_Execution",
+    "description": "RecentFileCache.bcf 파일에서 최근 실행된 프로그램 목록을 추적한다. (Windows 7/8)",
+    "keywords": [
+      "C:\\Windows\\AppCompat\\Programs\\RecentFileCache.bcf",
+      "RecentFileCache.bcf",
+      "BCF",
+      "Binary Cache File"
+    ],
+    "event_id": []
+  }
+]
