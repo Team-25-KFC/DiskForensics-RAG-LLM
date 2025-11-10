@@ -4,8 +4,8 @@
     "subcategory": "DLL_AppPaths_PathExtension",
     "description": "App Paths의 Path 값을 이용해 검색 경로를 확장한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
       "App Paths",
       "PATH extension"
     ]
@@ -15,7 +15,7 @@
     "subcategory": "DLL_KnownDLLs_Hijacking",
     "description": "KnownDLLs 구성을 악용해 시스템 DLL 로드를 가로챈다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\KnownDLLs",
+      "CurrentControlSet\\Control\\Session Manager\\KnownDLLs",
       "KnownDLLs",
       "KnownDlls override",
       "System32\\*.dll"
@@ -61,7 +61,7 @@
     "subcategory": "Run_HKCU",
     "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 등록한다.",
     "keywords": [
-    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Microsoft\\Windows\\CurrentVersion\\Run",
     "AppData\\Local\\**\\*.exe",
     "autorun",
     "registry persistence"
@@ -82,7 +82,7 @@
     "subcategory": "Run_HKCU_Wow6432Node",
     "description": "HKCU Wow6432Node Run 키를 이용해 32비트 컨텍스트로 실행되도록 등록한다.",
     "keywords": [
-      "HKCU\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
       "AppData\\Local\\**\\*.exe",
       "run 32-bit"
     ]
@@ -92,7 +92,7 @@
     "subcategory": "Run_HKLM_Wow6432Node",
     "description": "HKLM Wow6432Node Run 키를 이용해 시스템 전역 32비트 실행을 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
       "C:\\ProgramData AND .exe",
       "run 32-bit global"
     ]
@@ -102,7 +102,7 @@
     "subcategory": "RunOnce_HKCU",
     "description": "HKCU RunOnce 키로 다음 로그인에서 1회 실행되도록 등록한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
       "RegExpandSz",
       "\\AppData\\Roaming\\**\\*.exe",
       "one-time run"
@@ -133,8 +133,8 @@
     "subcategory": "Run_HKLM_UserArea",
     "description": "HKLM Run 키가 사용자 프로필 경로를 가리키도록 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData LIKE C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueData LIKE C:\\Users\\<USER>\\AppData\\%",
       "%APPDATA% OR %LOCALAPPDATA% in HKLM Run",
       "autorun all users"
     ]
@@ -144,8 +144,8 @@
     "subcategory": "Run_HKCU",
     "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
     ]
   },
   [
@@ -196,9 +196,9 @@
     "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
     "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
-    "Shell AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-    "Shell AND C:\\\\ProgramData\\\\%",
-    "Shell AND \\\\<host>\\share\\*.exe"
+    "Shell AND C:\\Users\\<USER>\\AppData\\%",
+    "Shell AND C:\\ProgramData\\%",
+    "Shell AND \\<host>\\share\\*.exe"
   ]
 },
 {
@@ -206,11 +206,11 @@
   "subcategory": "Winlogon_Userinit_Modification",
   "description": "Userinit 값에 추가 실행 파일을 덧붙여 로그인 시 로드되게 한다.",
   "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
-    "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
-    "Userinit AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-    "Userinit AND C:\\\\ProgramData\\\\%",
-    "Userinit AND \\\\<host>\\share\\*.exe"
+    "Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Userinit AND C:\\Users\\<USER>\\AppData\\%",
+    "Userinit AND C:\\ProgramData\\%",
+    "Userinit AND \\<host>\\share\\*.exe"
   ]
 },
 {
@@ -219,9 +219,9 @@
   "description": "Winlogon\\Notify 하위에 DLL 패키지를 등록해 로그인 이벤트 시 로드되게 한다.",
   "keywords": [
     "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify\\{Key} AND DllName",
-    "DllName AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-    "DllName AND C:\\\\ProgramData\\\\%",
-    "DllName AND \\\\<host>\\share\\*.dll"
+    "DllName AND C:\\Users\\<USER>\\AppData\\%",
+    "DllName AND C:\\ProgramData\\%",
+    "DllName AND \\<host>\\share\\*.dll"
   ]
 },
   {
@@ -229,10 +229,10 @@
     "subcategory": "Winlogon_Shell_Suspicious_Path",
     "description": "Shell 또는 Userinit 경로가 사용자/공용/UNC 등 비표준 위치인지 확인한다.",
     "keywords": [
-      "Shell AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-      "Userinit AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-      "Shell AND C:\\\\ProgramData\\\\%",
-      "Userinit AND \\\\ <host> \\share\\*.exe"
+      "Shell AND C:\\Users\\<USER>\\AppData\\%",
+      "Userinit AND C:\\Users\\<USER>\\AppData\\%",
+      "Shell AND C:\\ProgramData\\%",
+      "Userinit AND \\ <host> \\share\\*.exe"
     ]
   },
   [
@@ -241,8 +241,8 @@
   "subcategory": "LSA_Authentication_Packages",
   "description": "Authentication Packages에 DLL을 추가해 LSASS 로드되게 한다.",
   "keywords": [
-    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Authentication Packages",
-    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\OSConfig AND Authentication Packages",
+    "CurrentControlSet\\Control\\Lsa AND Authentication Packages",
+    "CurrentControlSet\\Control\\Lsa\\OSConfig AND Authentication Packages",
 
     "ControlSet001\\Control\\Lsa AND Authentication Packages",
     "ControlSet001\\Control\\Lsa AND Notification Packages",
@@ -260,9 +260,9 @@
     "Notification Packages AND \\\\",
     "Security Packages AND \\\\",
 
-    "Authentication Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
-    "Authentication Packages AND C:\\\\ProgramData\\\\",
-    "Authentication Packages AND \\\\ <host> \\share\\*.dll"
+    "Authentication Packages AND C:\\Users\\<USER>\\AppData\\",
+    "Authentication Packages AND C:\\ProgramData\\",
+    "Authentication Packages AND \\ <host> \\share\\*.dll"
   ]
 },
  [
@@ -275,8 +275,8 @@
       "ControlSet001\\Control\\Lsa AND Security Packages",
       "Security Packages AND *.dll",
       "Security Packages AND \\\\",
-      "Security Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
-      "Security Packages AND C:\\\\ProgramData\\\\",
+      "Security Packages AND C:\\Users\\<USER>\\AppData\\",
+      "Security Packages AND C:\\ProgramData\\",
       "Security Packages AND \"\"" 
     ]
   },
@@ -285,12 +285,12 @@
     "subcategory": "LSA_Notification_Packages",
     "description": "Notification Packages에 DLL을 추가해 로그인 이벤트 시 로드되게 한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Notification Packages",
+      "CurrentControlSet\\Control\\Lsa AND Notification Packages",
       "ControlSet001\\Control\\Lsa AND Notification Packages",
       "Notification Packages AND *.dll",
       "Notification Packages AND \\\\",
-      "Notification Packages AND C:\\\\ProgramData\\\\",
-      "Notification Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
+      "Notification Packages AND C:\\ProgramData\\",
+      "Notification Packages AND C:\\Users\\<USER>\\AppData\\",
       "Notification Packages AND \"\""  
     ]
   },
@@ -299,12 +299,12 @@
     "subcategory": "SecurityProviders_SSPI_Chain",
     "description": "SecurityProviders 값에 DLL을 추가해 SSPI 체인을 가로채게 한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders AND SecurityProviders",
+      "CurrentControlSet\\Control\\SecurityProviders AND SecurityProviders",
       "ControlSet001\\Control\\SecurityProviders AND SecurityProviders",
       "SecurityProviders AND *.dll",
       "SecurityProviders AND \\\\",
-      "SecurityProviders AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
-      "SecurityProviders AND C:\\\\ProgramData\\\\"
+      "SecurityProviders AND C:\\Users\\<USER>\\AppData\\",
+      "SecurityProviders AND C:\\ProgramData\\"
     ]
   },
   {
