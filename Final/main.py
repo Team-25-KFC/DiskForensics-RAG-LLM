@@ -192,18 +192,18 @@ def run_tool_modules(letters: List[str], cfg: dict, module_names: List[str]):
 # ── 실행 목록(artifacts 제외, 전부 동급) ─────────────────────────
 # 파일명(.py 제외) 기준. 'ntfs'는 ntfs.py 우선, 없으면 ntfs_modules.py 대체.
 DEFAULT_MODULES = [
-    #"ntfs",             # (논리명) ntfs or ntfs_modules
-    #"pecmd",            # Prefetch → PECmd
-    #"amcache",          # Amcache → AmcacheParser
-    #"appcompatcache",   # ShimCache → AppCompatCacheParser
-    #"lecmd", "jlecmd",  # LNK / JumpLists
-    #"rbcmd",            # Recycle Bin
-    #"SrumECmd",             # SRUM
+    "ntfs",             # (논리명) ntfs or ntfs_modules
+    "pecmd",            # Prefetch → PECmd
+    "amcache",          # Amcache → AmcacheParser
+    "appcompatcache",   # ShimCache → AppCompatCacheParser
+    "lecmd", "jlecmd",  # LNK / JumpLists
+    "rbcmd",            # Recycle Bin
+    "SrumECmd",             # SRUM
     "sqlecmd", 
-    #"sbecmd",           # Browser
-    #"wxtcmd",           # Windows Timeline
-    #"eventlog",         # Event Logs
-    #"registry",         # RECmd batch
+    "sbecmd",           # Browser
+    "wxtcmd",           # Windows Timeline
+    "eventlog",         # Event Logs
+    "registry",         # RECmd batch
 ]
 
 # ── main ──────────────────────────────────────────────────────────
