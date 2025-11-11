@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+artifacts.py — KAPE Target allowlist copy (Win10/11)
+
+- 규칙: TARGET_SUBSET 만 복사, VSS 미사용
+- 출력: BASE_OUT\<드라이브>\Artifacts\...
+- 로그: BASE_OUT\<드라이브>\Logs\targets_copy.log
+- 마커: BASE_OUT\<드라이브>\Artifacts\.targets_subset_done
+- 호환/정리: 과거 실수로 생성된 '...\\Artifacts\\<드라이브문자>' 중첩 폴더를 자동 평탄화
+"""
+
+import shutil
 import subprocess
 from pathlib import Path
 from typing import List
@@ -45,18 +56,58 @@ TARGET_SUBSET = [
 # ── 경로 유틸 ──────────────────────────────────────────────────────
 def _drive_root(dl: str) -> str:
     """'E:' -> 'E:\\'"""
-    return f"{dl}\\"
+    d = dl.strip()
+    return d + ("\\" if not d.endswith("\\") else "")
 
 def _artifacts_root(base_out: Path, dl: str) -> Path:
-    return base_out / dl[0] / "Artifacts"
+    return base_out / dl[0].upper() / "Artifacts"
 
 def _logs_dir(base_out: Path, dl: str) -> Path:
-    d = base_out / dl[0] / "Logs"
+    d = base_out / dl[0].upper() / "Logs"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 def _marker(base_out: Path, dl: str) -> Path:
     return _artifacts_root(base_out, dl) / ".targets_subset_done"
+
+# ── 과거 실수 정리(Artifacts\<드라이브문자> 중첩 평탄화) ───────────
+def _flatten_legacy_nested(base_out: Path, dl: str) -> None:
+    """
+    과거 '--tdest ...\\Artifacts\\E' 같은 실행으로 생긴
+    '<BASE_OUT>\\E\\Artifacts\\E' 중첩 폴더를 감지하면,
+    내부 내용을 상위(Artifacts)로 이동 후 중첩 폴더 제거.
+    """
+    dest = _artifacts_root(base_out, dl)
+    legacy = dest / dl[0].upper()  # 예: D:\Kape Output\E\Artifacts\E
+    if not legacy.exists():
+        return
+
+    print(f"[WARN] legacy nested folder detected: {legacy} → flatten")
+    # 마커 제거(재실행 강제는 아님; 정합성 위해 삭제)
+    mark = dest / ".targets_subset_done"
+    try:
+        if mark.exists():
+            mark.unlink()
+    except Exception:
+        pass
+
+    # 내용 상위로 승격(동명 충돌 시 과거 산출물 덮어쓰기 방지 위해 상위 기존 삭제)
+    try:
+        for p in legacy.iterdir():
+            tgt = dest / p.name
+            if tgt.exists():
+                if tgt.is_dir():
+                    shutil.rmtree(tgt, ignore_errors=True)
+                else:
+                    try:
+                        tgt.unlink()
+                    except Exception:
+                        pass
+            p.rename(tgt)
+        legacy.rmdir()
+        print(f"[INFO] legacy flattened: {dest}")
+    except Exception as e:
+        print(f"[WARN] flatten failed: {e}")
 
 # ── KAPE 실행 ──────────────────────────────────────────────────────
 def _run_kape_target_copy(kape_exe: Path, dl: str, targets: List[str],
@@ -67,12 +118,13 @@ def _run_kape_target_copy(kape_exe: Path, dl: str, targets: List[str],
 
     cmd = [
         str(kape_exe),
-        "--tsource", _drive_root(dl),   # 예: E:\
-        "--tdest",   str(dest),         # 예: D:\Kape Output\E\Artifacts
+        "--tsource", _drive_root(dl),     # 예: E:\
+        "--tdest",   str(dest),           # 예: D:\Kape Output\E\Artifacts
         "--target",  ",".join(targets),
         "--vss",     "false",
     ]
 
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "w", encoding="utf-8") as lf:
         lf.write("[CMD] " + " ".join(cmd) + "\n")
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -106,6 +158,9 @@ def run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool:
 
     try:
         for dl in drive_letters:
+            # ── [사전정리] 과거 중첩 산출물 평탄화 ───────────────────
+            _flatten_legacy_nested(BASE_OUT, dl)
+
             dest   = _artifacts_root(BASE_OUT, dl)
             logs   = _logs_dir(BASE_OUT, dl)
             mark   = _marker(BASE_OUT, dl)

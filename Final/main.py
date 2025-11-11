@@ -198,7 +198,7 @@ DEFAULT_MODULES = [
     #"appcompatcache",   # ShimCache → AppCompatCacheParser
     #"lecmd", "jlecmd",  # LNK / JumpLists
     #"rbcmd",            # Recycle Bin
-    "srum",             # SRUM
+    #"SrumECmd",             # SRUM
     "sqlecmd", 
     #"sbecmd",           # Browser
     #"wxtcmd",           # Windows Timeline

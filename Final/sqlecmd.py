@@ -1,130 +1,140 @@
+# 파일: Final/sqlecmd.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 r"""
-sqlecmd.py — SQLECmd를 KAPE 모듈(.mkape)로 실행 (메인 코드 수정 불필요)
+SQLECmd 모듈 (Windows 10/11)
 
-전략:
-  - cfg의 KAPE_EXE가 오염돼도 무시 가능.
-  - 실제 SQLECmd.exe 위치 기반으로 KAPE 루트를 역산해 kape.exe 사용.
-  - 크로뮴 프로필(History/Cookies/Login Data/Web Data/Favicons 중 ≥2개) 자동 감지.
-  - 리스트 인자 + shell=False만 사용.
+- 입력: BASE_OUT\<드라이브>\Artifacts  (호환: BASE_OUT\$NFTS_<드라이브>\Artifacts)
+- 출력: BASE_OUT\<드라이브>\SQLECmd\*.csv   예) D:\Kape Output\E\SQLECmd\
+- 실행 파일 자동 탐지: <KAPE_EXE>\Modules\bin\**\SQLECmd.exe
+- Maps 자동 탐지: Modules\bin\SQLECmd\Maps 또는 Modules\bin\SQLMap\Maps
 
-출력:
-  - <BASE_OUT>\<드라이브>\SQLECmd\profile_XX\*.csv
+오케스트레이터 시그니처:
+    run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool
+        cfg 필수키: BASE_OUT(Path), KAPE_EXE(Path)
+        cfg 선택키: PROC_TIMEOUT_SEC(int, 기본 1800)
 """
 
-from __future__ import annotations
 from pathlib import Path
-from typing import List, Dict, Set, Iterable
+from typing import List
 import subprocess
 
 MODULE_NAME = "SQLECmd"
-MKAPE_NAME  = "SQLECmd"
 
-def _as_path(x) -> Path:
-    return x if isinstance(x, Path) else Path(str(x))
+# -----------------------------
+# 유틸
+# -----------------------------
+def _debug_path(p: Path, tag: str):
+    try:
+        print(f"[DBG ] {tag}: {p} (exists={p.exists()})")
+    except Exception:
+        pass
 
-def _ensure_dir(p: Path) -> Path:
-    p.mkdir(parents=True, exist_ok=True)
-    return p
-
-def _run(cmd: list[str], timeout_sec: int):
-    print(f"[DBG ] exec(list)={cmd}")
-    return subprocess.run(cmd, check=True, timeout=timeout_sec, shell=False)
-
-def _find_kape_from_module_exe() -> Path | None:
-    """
-    SQLECmd.exe의 실제 위치를 탐색 → KAPE 루트 역산 → kape.exe 반환
-    """
-    candidates = [Path("D:/KAPE"), Path("C:/KAPE")]
-    for root in candidates:
-        exe = root / "Modules" / "bin" / "SQLECmd" / "SQLECmd.exe"
-        if exe.exists():
-            kape_exe = root / "kape.exe"
-            return kape_exe if kape_exe.exists() else None
-
-    for drive in ["D:/", "C:/", "E:/", "F:/"]:
-        try:
-            for exe in Path(drive).glob("**/Modules/bin/SQLECmd/SQLECmd.exe"):
-                kape_root = exe.parent.parent.parent  # SQLECmd -> bin -> Modules -> KAPE
-                kape_exe = kape_root / "kape.exe"
-                if kape_exe.exists():
-                    return kape_exe
-        except Exception:
-            pass
+def _find_art_root(base_out: Path, dl: str) -> Path | None:
+    """Artifacts 루트 탐색 (두 구조 모두 지원)"""
+    d = dl.rstrip(":").upper()
+    for cand in (
+        base_out / d / "Artifacts",
+        base_out / f"$NFTS_{d}" / "Artifacts",
+    ):
+        if cand.exists():
+            return cand
     return None
 
+def _ensure_utf8_bom(csv_path: Path):
+    """
+    CSV를 UTF-8 with BOM으로 보정.
+    - 이미 BOM 있으면 스킵
+    - UTF-8(무BOM)이면 BOM만 추가
+    - 그 외(예: cp949 등)는 복원 후 utf-8-sig로 재저장
+    """
+    data = csv_path.read_bytes()
+    if data.startswith(b"\xef\xbb\xbf"):
+        return
+    try:
+        data.decode("utf-8")
+        csv_path.write_bytes(b"\xef\xbb\xbf" + data)
+    except UnicodeDecodeError:
+        text = data.decode("cp949", errors="replace")
+        csv_path.write_bytes(text.encode("utf-8-sig"))
+
+# -----------------------------
+# 메인
+# -----------------------------
 def run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool:
-    base_out = _as_path(cfg.get("BASE_OUT", "D:/Kape Output"))
+    base_out: Path = cfg["BASE_OUT"]
     to = int(cfg.get("PROC_TIMEOUT_SEC", 1800))
+    bin_dir = cfg["KAPE_EXE"].parent / "Modules" / "bin"
 
-    # 1) kape.exe 경로 확보
-    kape_exe = _find_kape_from_module_exe()
-    if not kape_exe:
-        maybe = cfg.get("KAPE_EXE")
-        if maybe:
-            kape_exe = _as_path(maybe)
-    if not kape_exe or not kape_exe.exists():
-        print("[ERR ] kape.exe 를 찾을 수 없습니다. (Modules/bin/SQLECmd/SQLECmd.exe 기반 역산 실패)")
+    # SQLECmd.exe 탐지 (정확 경로)
+    sqle_path = next((p for p in bin_dir.rglob("SQLECmd.exe")), None)
+    if not sqle_path:
+        print("[SKIP] SQLECmd: exe not found in Modules\\bin")
         return False
+    _debug_path(sqle_path, "SQLECmd.exe")
 
-    # 2) mkape 존재 확인
-    modules_dir = kape_exe.parent / "Modules"
-    if not any((modules_dir / f"{MKAPE_NAME}.mkape").exists() for _ in [0]) \
-       and not any(modules_dir.rglob(f"{MKAPE_NAME}.mkape")):
-        print(f"[ERR ] Modules에 {MKAPE_NAME}.mkape 없음 → KAPE 모듈 실행 불가")
-        return False
+    # Maps 탐지 (둘 중 하나 있으면 사용)
+    maps_dir = None
+    for cand in ("SQLECmd\\Maps", "SQLMap\\Maps"):
+        p = bin_dir / cand
+        if p.exists():
+            maps_dir = p
+            break
+    if maps_dir:
+        _debug_path(maps_dir, "Maps")
 
-    CORE_DB = {"History", "Cookies", "Login Data", "Web Data", "Favicons"}
+    any_ok = False
 
-    def _art_root(dl: str) -> Path | None:
-        d = dl.rstrip(":").upper()
-        for p in (base_out / f"$NFTS_{d}" / "Artifacts",
-                  base_out / d / "Artifacts"):
-            if p.exists():
-                return p
-        return None
-
-    def _find_profiles(root: Path) -> Set[Path]:
-        hits: Dict[Path, Set[str]] = {}
-        for name in CORE_DB:
-            for f in root.rglob(name):
-                prof = f.parent
-                hits.setdefault(prof, set()).add(name)
-        return {p for p, s in hits.items() if len(s) >= 2}  # 필요시 >=1로 완화
-
-    ok_any = False
     for dl in drive_letters:
-        src_root = _art_root(dl)
-        if not src_root:
-            print(f"[SKIP] {dl}: Artifacts 미존재")
+        # 1) Artifacts 루트 찾기
+        art_root = _find_art_root(base_out, dl)
+        if not art_root:
+            print(f"[SKIP] {MODULE_NAME}: {dl} Artifacts not found")
             continue
 
-        profs = _find_profiles(src_root)
-        if not profs:
-            print(f"[SKIP] {dl}: No Chromium profiles with core DBs (Artifacts 기준)")
+        # 2) 출력 폴더 생성 (BASE_OUT\<드라이브>\SQLECmd\)
+        drive_tag = dl.rstrip(":").upper()
+        out_dir = base_out / drive_tag / MODULE_NAME
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        _debug_path(art_root, f"src(Artifacts {dl})")
+        _debug_path(out_dir,  f"dst(Output {dl})")
+
+        # 3) 전체 경로로 cmd 구성 (shell=False)
+        cmd = [str(sqle_path), "-d", str(art_root), "--csv", str(out_dir)]
+        if maps_dir:
+            cmd += ["--maps", str(maps_dir)]
+
+        try:
+            print(f"[RUN ] {MODULE_NAME}: {dl} -d {art_root}")
+            cp = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=to,
+                shell=False
+            )
+        except subprocess.TimeoutExpired:
+            print(f"[TIME] {MODULE_NAME}: {dl} timeout({to}s)")
+            continue
+        except FileNotFoundError as e:
+            print(f"[ERR ] {MODULE_NAME}: {dl} {e}")
+            continue
+        except Exception as e:
+            print(f"[ERR ] {MODULE_NAME}: {dl} {e}")
             continue
 
-        out_root = _ensure_dir(base_out / dl.rstrip(":").upper() / "SQLECmd")
+        if cp.returncode == 0:
+            # 한글 깨짐 방지: 생성된 CSV 전부 BOM 보정
+            for csv in out_dir.glob("*.csv"):
+                _ensure_utf8_bom(csv)
+            print(f"[OK  ] {MODULE_NAME}: {dl}")
+            any_ok = True
+        else:
+            print(f"[FAIL] {MODULE_NAME}: {dl} rc={cp.returncode}")
+            if cp.stdout:
+                print(cp.stdout.strip())
+            if cp.stderr:
+                print(cp.stderr.strip())
 
-        for idx, pdir in enumerate(sorted(profs)):
-            out_dir = _ensure_dir(out_root / f"profile_{idx+1:02d}")
-
-            cmd = [
-                str(kape_exe),
-                "--msource", str(pdir),
-                "--mdest",   str(out_dir),
-                "--module",  MKAPE_NAME,
-                "--mef",     "csv",
-                "--vss",     "false",
-            ]
-            print(f"[DBG ] {dl}: KAPE module cmd(list)={cmd} (profile={pdir})")
-            try:
-                _run(cmd, to)
-                ok_any = True
-            except subprocess.CalledProcessError as e:
-                print(f"[ERR ] {dl}: SQLECmd(KAPE) 실패 (rc={e.returncode}) profile={pdir}")
-            except subprocess.TimeoutExpired:
-                print(f"[ERR ] {dl}: SQLECmd(KAPE) 타임아웃({to}s) profile={pdir}")
-
-    return ok_any
+    return any_ok
