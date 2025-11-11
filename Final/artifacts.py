@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-artifacts.py — Target-only 복사 워커 (Win10/11)
-- 오케스트레이터(main.py)가 마운트/드라이브 결정을 끝낸 뒤 호출
-- 화이트리스트(Target allowlist)만 1패스로 복사
-- 모듈 실행/언마운트는 하지 않음
-출력 구조:
-  <BASE_OUT>\<드라이브>\Artifacts\*      (KAPE Target 복사본)
-  <BASE_OUT>\<드라이브>\Logs\targets_copy.log
-"""
-
 import subprocess
 from pathlib import Path
 from typing import List
@@ -58,7 +48,6 @@ def _drive_root(dl: str) -> str:
     return f"{dl}\\"
 
 def _artifacts_root(base_out: Path, dl: str) -> Path:
-    """D:\Kape Output\E\Artifacts"""
     return base_out / dl[0] / "Artifacts"
 
 def _logs_dir(base_out: Path, dl: str) -> Path:
