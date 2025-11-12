@@ -4,10 +4,10 @@
   "subcategory": "Winlogon_Shell_Modification",
   "description": "Winlogon Shell 값을 변경해 로그인 시 임의 프로세스를 실행되게 한다.",
   "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
-    "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
-    "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
-    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
+    "Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
+    "Microsoft\\Windows NT\\CurrentVersion\\Policies\\System AND Shell",
     "Shell AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
     "Shell AND C:\\\\ProgramData\\\\%",
     "Shell AND \\\\<host>\\share\\*.exe"
@@ -18,8 +18,8 @@
   "subcategory": "Winlogon_Userinit_Modification",
   "description": "Userinit 값에 추가 실행 파일을 덧붙여 로그인 시 로드되게 한다.",
   "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
-    "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
     "Userinit AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
     "Userinit AND C:\\\\ProgramData\\\\%",
     "Userinit AND \\\\<host>\\share\\*.exe"

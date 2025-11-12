@@ -4,11 +4,10 @@
     "subcategory": "COM_InprocServer32_Hijack",
     "description": "CLSID의 InprocServer32 기본값을 바꿔 임의 DLL을 로드되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
-      "HKCU\\Software\\Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
+      "Classes\\CLSID\\{GUID}\\InprocServer32 AND (Default)",
       "InprocServer32 AND ThreadingModel",
-      "InprocServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-      "InprocServer32 AND \\\\ <host> \\share\\*.dll"
+      "InprocServer32 AND C:\\Users\\<USER>\\AppData\\%"
     ]
   },
   {
@@ -16,9 +15,9 @@
     "subcategory": "COM_PerUser_Override",
     "description": "HKCU\\Software\\Classes로 사용자 단위 CLSID를 등록해 HKLM을 우선 대체되게 한다.",
     "keywords": [
-      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND InprocServer32",
-      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND LocalServer32",
-      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND TreatAs"
+      "Classes\\CLSID\\{GUID} AND InprocServer32",
+      "Classes\\CLSID\\{GUID} AND LocalServer32",
+      "Classes\\CLSID\\{GUID} AND TreatAs"
     ]
   },
   {
@@ -26,8 +25,7 @@
     "subcategory": "COM_LocalServer32_Hijack",
     "description": "CLSID의 LocalServer32를 변경해 임의 EXE를 COM 서버로 실행되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Classes\\CLSID\\{GUID}\\LocalServer32 AND (Default)",
-      "HKCU\\Software\\Classes\\CLSID\\{GUID}\\LocalServer32 AND (Default)",
+      "CLSID\\{GUID}\\LocalServer32 AND (Default)",
       "LocalServer32 AND C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
       "LocalServer32 AND \\\\ <host> \\share\\*.exe"
     ]
@@ -37,8 +35,7 @@
     "subcategory": "COM_TreatAs_Redirect",
     "description": "TreatAs를 사용해 CLSID를 다른 CLSID로 리다이렉트되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Classes\\CLSID\\{GUID} AND TreatAs",
-      "HKCU\\Software\\Classes\\CLSID\\{GUID} AND TreatAs",
+      "Classes\\CLSID\\{GUID} AND TreatAs",
       "TreatAs AND \\{[A-Fa-f0-9-]{36}\\}"
     ]
   },
@@ -68,8 +65,8 @@
     "subcategory": "COM_AppID_DllSurrogate",
     "description": "AppID에 DllSurrogate를 설정해 rundll32(또는 dllhost)로 로드되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Classes\\AppID\\{AppID} AND DllSurrogate",
-      "HKLM\\Software\\Classes\\CLSID\\{GUID} AND AppID",
+      "Classes\\AppID\\{AppID} AND DllSurrogate",
+      "Classes\\CLSID\\{GUID} AND AppID",
       "DllSurrogate AND ''"
     ]
   },
@@ -78,8 +75,7 @@
     "subcategory": "COM_Scriptlet_Scrobj",
     "description": "Scriptlet.Compile CLSID 등을 악용해 스크립트 기반 COM 로드를 유도한다.",
     "keywords": [
-      "HKLM\\Software\\Classes\\CLSID\\{06290BD5-48AA-11D2-8432-006008C3FBFC} AND InprocServer32",
-      "HKCU\\Software\\Classes\\CLSID\\{06290BD5-48AA-11D2-8432-006008C3FBFC} AND InprocServer32",
+      "Classes\\CLSID\\{GUID} AND InprocServer32",
       "InprocServer32 AND scrobj.dll"
     ]
   }

@@ -4,8 +4,8 @@
     "subcategory": "Scheduled_Tasks_Tree",
     "description": "TaskCache\\Tree에서 작업 경로와 GUID 매핑을 확인한다.",
     "keywords": [
-      "CurrentVersion\\Schedule\\TaskCache\\Tree AND Id",
-      "CurrentVersion\\Schedule\\TaskCache\\Tree AND Index"
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\Tree AND Id",
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\Tree AND Index"
     ]
   },
   {
@@ -22,19 +22,10 @@
   {
     "category": "Persistence",
     "subcategory": "Scheduled_Tasks_Trigger_Logon",
-    "description": "Logon 트리거 GUID 매핑을 확인한다.",
+    "description": "Logon,Boot 트리거 GUID 매핑을 확인한다.",
     "keywords": [
       "CurrentVersion\\Schedule\\TaskCache\\Logon AND Id",
       "CurrentVersion\\Schedule\\TaskCache\\Logon AND Index"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Scheduled_Tasks_Trigger_Boot",
-    "description": "Boot 트리거 GUID 매핑을 확인한다.",
-    "keywords": [
-      "CurrentVersion\\Schedule\\TaskCache\\Boot AND Id",
-      "CurrentVersion\\Schedule\\TaskCache\\Boot AND Index"
     ]
   },
   {
@@ -61,8 +52,7 @@
     "description": "Tree의 Id와 Tasks의 Path가 상호 일치하는지 점검한다.",
     "keywords": [
       "TaskCache\\Tree AND Id",
-      "TaskCache\\Tasks\\{GUID} AND Path",
-      "Tree-Tasks GUID 매핑 불일치"
+      "TaskCache\\Tasks\\{GUID} AND Path"
     ]
   },
   {
@@ -71,8 +61,7 @@
     "description": "레지스트리 GUID를 C:\\Windows\\System32\\Tasks 파일로 피벗한다.",
     "keywords": [
       "C:\\Windows\\System32\\Tasks\\*",
-      "TaskCache\\Tasks\\{GUID} AND Path",
-      "작업 XML 피벗"
+      "TaskCache\\Tasks\\{GUID} AND Path"
     ]
   }
 ]

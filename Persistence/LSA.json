@@ -4,8 +4,8 @@
   "subcategory": "LSA_Authentication_Packages",
   "description": "Authentication Packages에 DLL을 추가해 LSASS 로드되게 한다.",
   "keywords": [
-    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Authentication Packages",
-    "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\OSConfig AND Authentication Packages",
+    "CurrentControlSet\\Control\\Lsa AND Authentication Packages",
+    "CurrentControlSet\\Control\\Lsa\\OSConfig AND Authentication Packages",
 
     "ControlSet001\\Control\\Lsa AND Authentication Packages",
     "ControlSet001\\Control\\Lsa AND Notification Packages",
@@ -17,15 +17,7 @@
 
     "Authentication Packages AND *.dll",
     "Notification Packages AND *.dll",
-    "Security Packages AND *.dll",
-
-    "Authentication Packages AND \\\\",
-    "Notification Packages AND \\\\",
-    "Security Packages AND \\\\",
-
-    "Authentication Packages AND C:\\\\Users\\\\<USER>\\\\AppData\\\\",
-    "Authentication Packages AND C:\\\\ProgramData\\\\",
-    "Authentication Packages AND \\\\ <host> \\share\\*.dll"
+    "Security Packages AND *.dll"
   ]
 },
  [
@@ -34,7 +26,7 @@
     "subcategory": "LSA_Security_Packages",
     "description": "Security Packages에 DLL을 추가해 SSPI 체인에 주입한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Security Packages",
+      "CurrentControlSet\\Control\\Lsa AND Security Packages",
       "ControlSet001\\Control\\Lsa AND Security Packages",
       "Security Packages AND *.dll",
       "Security Packages AND \\\\",
@@ -48,7 +40,7 @@
     "subcategory": "LSA_Notification_Packages",
     "description": "Notification Packages에 DLL을 추가해 로그인 이벤트 시 로드되게 한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Notification Packages",
+      "CurrentControlSet\\Control\\Lsa AND Notification Packages",
       "ControlSet001\\Control\\Lsa AND Notification Packages",
       "Notification Packages AND *.dll",
       "Notification Packages AND \\\\",
@@ -62,7 +54,7 @@
     "subcategory": "SecurityProviders_SSPI_Chain",
     "description": "SecurityProviders 값에 DLL을 추가해 SSPI 체인을 가로채게 한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders AND SecurityProviders",
+      "CurrentControlSet\\Control\\SecurityProviders AND SecurityProviders",
       "ControlSet001\\Control\\SecurityProviders AND SecurityProviders",
       "SecurityProviders AND *.dll",
       "SecurityProviders AND \\\\",
@@ -75,7 +67,7 @@
     "subcategory": "LSA_RunAsPPL_Bypass_Context",
     "description": "LSA 주입 경로가 PPL 보호 우회를 노리는지 점검한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND RunAsPPL",
+      "CurrentControlSet\\Control\\Lsa AND RunAsPPL",
       "LSASS AND ProtectedProcessLight",
       "RunAsPPL AND Disable",
       "LSA injection context check"

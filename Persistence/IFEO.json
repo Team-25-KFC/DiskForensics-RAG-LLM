@@ -4,9 +4,9 @@
     "subcategory": "IFEO_Debugger",
     "description": "IFEO Debugger 값으로 정상 프로세스 실행을 가로채 다른 실행 파일을 실행되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND Debugger",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND Debugger LIKE \\\\<host>\\share\\*.exe",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND Debugger LIKE C:\\\\Users\\\\<USER>\\\\AppData\\\\%"
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND Debugger",
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND Debugger LIKE \\\\<host>\\share\\*.exe",
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND Debugger LIKE C:\\\\Users\\\\<USER>\\\\AppData\\\\%"
     ]
   },
   {
@@ -14,9 +14,9 @@
     "subcategory": "IFEO_GlobalFlags_SilentExit",
     "description": "IFEO GlobalFlag를 설정해 SilentProcessExit 트리거를 유발되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND GlobalFlag",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND UseFilter",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND FilterFullPath"
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND GlobalFlag",
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND UseFilter",
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe> AND FilterFullPath"
     ]
   },
   {
@@ -24,9 +24,9 @@
     "subcategory": "SilentProcessExit_Key_IFEO_Subkey",
     "description": "IFEO 하위의 SilentProcessExit 키에서 종료 시 모니터링 실행을 설정되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe>\\SilentProcessExit AND MonitorProcess",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe>\\SilentProcessExit AND ReportingMode",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe>\\SilentProcessExit AND DumpType"
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe>\\SilentProcessExit AND MonitorProcess",
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe>\\SilentProcessExit AND ReportingMode",
+      "Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\<target.exe>\\SilentProcessExit AND DumpType"
     ]
   },
   {
@@ -34,9 +34,9 @@
     "subcategory": "SilentProcessExit_Key_Root",
     "description": "루트 SilentProcessExit 키에서 프로세스 종료 후 실행을 설정되게 한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\<target.exe> AND MonitorProcess",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\<target.exe> AND ReportingMode",
-      "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\<target.exe> AND DumpType"
+      "Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\<target.exe> AND MonitorProcess",
+      "Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\<target.exe> AND ReportingMode",
+      "Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\<target.exe> AND DumpType"
     ]
   },
   {

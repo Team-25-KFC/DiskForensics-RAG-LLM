@@ -1,0 +1,41 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "ActiveSetup_StubPath_Run",
+    "description": "Active Setup StubPath로 로그인 시 실행되게 한다.",
+    "keywords": [
+      "Microsoft\\Active Setup\\Installed Components\\{GUID} AND StubPath",
+      "Microsoft\\Active Setup\\Installed Components\\{GUID} AND StubPath",
+      "StubPath AND powershell.exe",
+      "StubPath AND mshta.exe"    
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "ActiveSetup_Version_IsInstalled_Hijack",
+    "description": "Version/IsInstalled 조작으로 StubPath를 반복 실행되게 한다.",
+    "keywords": [
+      "Microsoft\\Active Setup\\Installed Components\\{GUID} AND Version",
+      "Microsoft\\Active Setup\\Installed Components\\{GUID} AND IsInstalled",
+      "IsInstalled AND 0",
+      "Version AND downgrade"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "SSODL_Register_Inproc",
+    "description": "SSODL에 CLSID를 등록해 Explorer 시작 시 DLL이 로드되게 한다.",
+    "keywords": [
+      "Microsoft\\Windows\\CurrentVersion\\ShellServiceObjectDelayLoad",
+      "CLSID\\{GUID}\\InprocServer32 AND (Default)"
+      ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "SSODL_Approved_Bypass",
+    "description": "Shell Extensions Approved를 조작해 SSODL 확장을 허용되게 한다.",
+    "keywords": [
+      "Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved AND {GUID}"
+    ]
+  }
+]

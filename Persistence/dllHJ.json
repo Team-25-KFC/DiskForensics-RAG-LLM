@@ -8,7 +8,6 @@
       "C:\\AppData\\Roaming\\**\\*.dll",
       "C:\\ProgramData\\*.dll",
       "side-loading",
-      "preload",
       "untrusted search path"
     ]
   },
@@ -29,19 +28,7 @@
     "keywords": [
       "C:\\Windows\\WinSxS\\*\\.*dll",
       "*.manifest",
-      "dependentAssembly",
-      "assemblyIdentity",
-      "appname.exe.local"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "DLL_Untrusted_UNC_Load",
-    "description": "UNC/WebDAV 경로에서 DLL을 원격 로드하도록 유도한다.",
-    "keywords": [
-      "WebDAV",
-      "UNC path",
-      "LoadLibrary remote"
+      "Assembly"
     ]
   },
   {
@@ -49,11 +36,8 @@
     "subcategory": "DLL_Proxy_ExportForwarding",
     "description": "프록시 DLL로 내보내기 함수를 위임해 동작을 가로챈다.",
     "keywords": [
-      "proxy dll",
-      "export forwarding",
-      "ordinals",
-      "thunk",
-      "malicious shim"
+      "proxy.dll",
+      "thunk"
     ]
   }
 ]

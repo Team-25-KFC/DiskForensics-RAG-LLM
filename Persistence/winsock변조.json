@@ -1,0 +1,40 @@
+[
+  {
+    "category": "Persistence",
+    "subcategory": "Winsock_ProtocolCatalog9_DLL",
+    "description": "Protocol_Catalog9의 항목을 변조해 DLL을 네트워크 스택에 삽입되게 한다.",
+    "keywords": [
+      "Services\\WinSock2\\Parameters\\Protocol_Catalog9 AND PackedCatalogItem",
+      "PackedCatalogItem AND *.dll"    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Winsock_NameSpaceCatalog5_DLL",
+    "description": "NameSpace_Catalog5의 항목을 변조해 DLL이 네임스페이스 해석에 개입되게 한다.",
+    "keywords": [
+      "Services\\WinSock2\\Parameters\\NameSpace_Catalog5 AND PackedCatalogItem",
+      "System\\CurrentControlSet\\Services\\WinSock2\\Parameters AND Current_NameSpace_Catalog",
+      "PackedCatalogItem AND *.dll"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Winsock_Catalog_Order_Tamper",
+    "description": "카탈로그 순서를 변경해 악성 제공자가 우선 로드되게 한다.",
+    "keywords": [
+      "Protocol_Catalog9 AND order",
+      "NameSpace_Catalog5 AND order",
+      "PackedCatalogItem AND priority"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Winsock_LSP_Legacy_Leftover",
+    "description": "제거된 LSP의 잔존 항목으로 로드 에러 또는 우회가 발생되게 한다.",
+    "keywords": [
+      "WinSock2 AND orphaned",
+      "WinSock2 AND missing file",
+      "ProviderPath AND not found"
+    ]
+  }
+]

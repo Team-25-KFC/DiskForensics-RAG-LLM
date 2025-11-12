@@ -72,7 +72,7 @@
     "subcategory": "Run_HKLM",
     "description": "HKLM Run 키로 모든 사용자 로그인 시 자동 실행되도록 등록한다.",
     "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Microsoft\\Windows\\CurrentVersion\\Run",
     "C:\\ProgramData\\**\\*.exe",
     "autorun all users"
     ]
@@ -82,7 +82,7 @@
     "subcategory": "Run_HKCU_Wow6432Node",
     "description": "HKCU Wow6432Node Run 키를 이용해 32비트 컨텍스트로 실행되도록 등록한다.",
     "keywords": [
-      "Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "Microsoft\\Windows\\CurrentVersion\\Run",
       "AppData\\Local\\**\\*.exe",
       "run 32-bit"
     ]
@@ -92,7 +92,7 @@
     "subcategory": "Run_HKLM_Wow6432Node",
     "description": "HKLM Wow6432Node Run 키를 이용해 시스템 전역 32비트 실행을 등록한다.",
     "keywords": [
-      "Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "Microsoft\\Windows\\CurrentVersion\\Run",
       "C:\\ProgramData AND .exe",
       "run 32-bit global"
     ]
@@ -102,9 +102,9 @@
     "subcategory": "RunOnce_HKCU",
     "description": "HKCU RunOnce 키로 다음 로그인에서 1회 실행되도록 등록한다.",
     "keywords": [
-      "Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "Microsoft\\Windows\\CurrentVersion\\RunOnce",
       "RegExpandSz",
-      "\\AppData\\Roaming\\**\\*.exe",
+      "AppData\\Roaming\\**\\*.exe",
       "one-time run"
     ]
   },
@@ -169,15 +169,6 @@
   },
   {
     "category": "Persistence",
-    "subcategory": "AppInit_Signature_Policy",
-    "description": "RequireSignedAppInit_DLLs 정책을 확인한다.",
-    "keywords": [
-    "Microsoft\\Windows NT\\CurrentVersion\\Windows AND RequireSignedAppInit_DLLs",
-    "Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows AND RequireSignedAppInit_DLLs"
-    ]
-  },
-  {
-    "category": "Persistence",
     "subcategory": "AppInit_MultiDLL_Separator",
     "description": "AppInit_DLLs에 공백으로 구분된 다중 DLL 등록 여부를 확인한다.",
     "keywords": [
@@ -192,13 +183,10 @@
   "subcategory": "Winlogon_Shell_Modification",
   "description": "Winlogon Shell 값을 변경해 로그인 시 임의 프로세스를 실행되게 한다.",
   "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
-    "HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
-    "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
-    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Shell",
+    "Microsoft\\Windows\\CurrentVersion\\Policies\\System AND Shell",
     "Shell AND C:\\Users\\<USER>\\AppData\\%",
-    "Shell AND C:\\ProgramData\\%",
-    "Shell AND \\<host>\\share\\*.exe"
+    "Shell AND C:\\ProgramData\\%"
   ]
 },
 {
@@ -206,8 +194,8 @@
   "subcategory": "Winlogon_Userinit_Modification",
   "description": "Userinit 값에 추가 실행 파일을 덧붙여 로그인 시 로드되게 한다.",
   "keywords": [
-    "Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
-    "Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon AND Userinit",
     "Userinit AND C:\\Users\\<USER>\\AppData\\%",
     "Userinit AND C:\\ProgramData\\%",
     "Userinit AND \\<host>\\share\\*.exe"
@@ -218,7 +206,7 @@
   "subcategory": "Winlogon_Notify_Package",
   "description": "Winlogon\\Notify 하위에 DLL 패키지를 등록해 로그인 이벤트 시 로드되게 한다.",
   "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify\\{Key} AND DllName",
+    "Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Notify\\{Key} AND DllName",
     "DllName AND C:\\Users\\<USER>\\AppData\\%",
     "DllName AND C:\\ProgramData\\%",
     "DllName AND \\<host>\\share\\*.dll"
@@ -271,7 +259,7 @@
     "subcategory": "LSA_Security_Packages",
     "description": "Security Packages에 DLL을 추가해 SSPI 체인에 주입한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND Security Packages",
+      "CurrentControlSet\\Control\\Lsa AND Security Packages",
       "ControlSet001\\Control\\Lsa AND Security Packages",
       "Security Packages AND *.dll",
       "Security Packages AND \\\\",
@@ -312,12 +300,81 @@
     "subcategory": "LSA_RunAsPPL_Bypass_Context",
     "description": "LSA 주입 경로가 PPL 보호 우회를 노리는지 점검한다.",
     "keywords": [
-      "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa AND RunAsPPL",
+      "CurrentControlSet\\Control\\Lsa AND RunAsPPL",
       "LSASS AND ProtectedProcessLight",
       "RunAsPPL AND Disable",
       "LSA injection context check"
     ]
+  },
+  [
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_Tree",
+    "description": "TaskCache\\Tree에서 작업 경로와 GUID 매핑을 확인한다.",
+    "keywords": [
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\Tree AND Id",
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\Tree AND Index"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_TasksKey",
+    "description": "TaskCache\\Tasks의 GUID 키에서 Path 등 메타값을 확인한다.",
+    "keywords": [
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\{GUID} AND Path",
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\{GUID} AND SD",
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\{GUID} AND Flags",
+      "CurrentVersion\\Schedule\\TaskCache\\Tasks\\{GUID} AND Hash"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_Trigger_Logon",
+    "description": "Logon,Boot 트리거 GUID 매핑을 확인한다.",
+    "keywords": [
+      "CurrentVersion\\Schedule\\TaskCache\\Logon AND Id",
+      "CurrentVersion\\Schedule\\TaskCache\\Logon AND Index"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_Trigger_Time",
+    "description": "Time(스케줄) 트리거 GUID 매핑을 확인한다.",
+    "keywords": [
+      "CurrentVersion\\Schedule\\TaskCache\\Time AND Id",
+      "CurrentVersion\\Schedule\\TaskCache\\Time AND Index"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_Trigger_Maintenance",
+    "description": "Maintenance 트리거 GUID 매핑을 확인한다.",
+    "keywords": [
+      "CurrentVersion\\Schedule\\TaskCache\\Maintenance AND Id",
+      "CurrentVersion\\Schedule\\TaskCache\\Maintenance AND Index"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_PathMismatch",
+    "description": "Tree의 Id와 Tasks의 Path가 상호 일치하는지 점검한다.",
+    "keywords": [
+      "TaskCache\\Tree AND Id",
+      "TaskCache\\Tasks\\{GUID} AND Path"
+    ]
+  },
+  {
+    "category": "Persistence",
+    "subcategory": "Scheduled_Tasks_Pivot_To_File",
+    "description": "레지스트리 GUID를 C:\\Windows\\System32\\Tasks 파일로 피벗한다.",
+    "keywords": [
+      "C:\\Windows\\System32\\Tasks\\*",
+      "TaskCache\\Tasks\\{GUID} AND Path"
+    ]
   }
+]
+
+
 ]
 
 ]

@@ -4,10 +4,9 @@
     "subcategory": "Run_HKCU",
     "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 등록한다.",
     "keywords": [
-    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Microsoft\\Windows\\CurrentVersion\\Run",
     "AppData\\Local\\**\\*.exe",
-    "autorun",
-    "registry persistence"
+    "autorun"
     ]
   },
   {
@@ -15,29 +14,9 @@
     "subcategory": "Run_HKLM",
     "description": "HKLM Run 키로 모든 사용자 로그인 시 자동 실행되도록 등록한다.",
     "keywords": [
-    "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "Microsoft\\Windows\\CurrentVersion\\Run",
     "C:\\ProgramData\\**\\*.exe",
     "autorun all users"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Run_HKCU_Wow6432Node",
-    "description": "HKCU Wow6432Node Run 키를 이용해 32비트 컨텍스트로 실행되도록 등록한다.",
-    "keywords": [
-      "HKCU\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
-      "AppData\\Local\\**\\*.exe",
-      "run 32-bit"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Run_HKLM_Wow6432Node",
-    "description": "HKLM Wow6432Node Run 키를 이용해 시스템 전역 32비트 실행을 등록한다.",
-    "keywords": [
-      "HKLM\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run",
-      "C:\\ProgramData\\**\\*.exe",
-      "run 32-bit global"
     ]
   },
   {
@@ -45,7 +24,7 @@
     "subcategory": "RunOnce_HKCU",
     "description": "HKCU RunOnce 키로 다음 로그인에서 1회 실행되도록 등록한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "Microsoft\\Windows\\CurrentVersion\\RunOnce",
       "RegExpandSz",
       "\\AppData\\Roaming\\**\\*.exe",
       "one-time run"
@@ -56,7 +35,7 @@
     "subcategory": "RunOnce_HKLM",
     "description": "HKLM RunOnce 키로 시스템 전역 1회 실행을 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+      "Microsoft\\Windows\\CurrentVersion\\RunOnce",
       "C:\\ProgramData\\**\\*.exe",
       "one-time run all users"
     ]
@@ -66,8 +45,8 @@
     "subcategory": "RunServices_HKLM",
     "description": "RunServices 키로 로그인 시 서비스형 실행을 유발한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
+      "Microsoft\\Windows\\CurrentVersion\\RunServices",
+      "Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
       "service-style autorun"
     ]
   },
@@ -76,7 +55,7 @@
     "subcategory": "User_Run_Policy_HKCU",
     "description": "정책 기반 Run 키로 사용자별 시작 프로그램을 강제한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
+      "Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
       "\\AppData\\Roaming\\**\\*.exe",
       "policy run"
     ]
@@ -86,39 +65,9 @@
     "subcategory": "Machine_Run_Policy_HKLM",
     "description": "정책 기반 Run 키로 시스템 전역 시작 프로그램을 강제한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
+      "Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\Run",
       "<PROGRAMDATA>\\**\\*.exe",
       "policy run all users"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Run_HKLM_UserArea",
-    "description": "HKLM Run 키가 사용자 프로필 경로를 가리키도록 등록한다.",
-    "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData LIKE C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
-      "%APPDATA% OR %LOCALAPPDATA% in HKLM Run",
-      "autorun all users"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Run_HKCU",
-    "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 한다.",
-    "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Run_Orphaned_Target",
-    "description": "Run 값이 존재하지만 대상 파일이 없어 실행에 실패한다.",
-    "keywords": [
-      "Run entry points to missing file",
-      "This app can't be found",
-      "Run value orphaned"
     ]
   },
   {
@@ -126,7 +75,7 @@
     "subcategory": "StartupApproved_Run32",
     "description": "StartupApproved의 Run32 승인 상태를 조작해 32비트 시작 프로그램을 활성화한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32",
+      "Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32",
       "Run32",
       "enabled startup 32-bit"
     ]
@@ -136,9 +85,8 @@
     "subcategory": "Explorer_Run_HKLMShellFolders",
     "description": "Explorer Shell Folders를 조작해 시작 경로를 우회한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
-      "Startup",
-      "Special Paths override"
+      "Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell",
+      "Startup"
     ]
   },
   {
@@ -146,9 +94,9 @@
     "subcategory": "Explorer_Run_HKCUShellFolders",
     "description": "사용자 Shell Folders를 조작해 시작 경로를 재지정한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
+      "Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
       "Startup",
-      "Folder redirection"
+      "redirection"
     ]
   },
   
@@ -165,25 +113,12 @@
   },
   {
     "category": "Persistence",
-    "subcategory": "Run_DLL_SideLoad_FromAppDir",
-    "description": "Run 계열이 실행하는 EXE의 폴더에 DLL을 두어 사이드로딩을 유도한다.",
-    "keywords": [
-      "<APPDIR>\\*.dll",
-      "<APPDIR>\\plugins\\*.dll",
-      "version.dll",
-      "winhttp.dll",
-      "dll side-loading"
-    ]
-  },
-  {
-    "category": "Persistence",
     "subcategory": "Run_LNK_Target_UNC",
     "description": "Startup LNK의 대상 경로를 UNC로 지정해 원격 실행을 유도한다.",
     "keywords": [
-      "%AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
-      "\\\\<host>\\share\\*.exe",
+      "Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.lnk",
       "WebDAV",
-      "SMB share"
+      "SMB"
     ]
   },
   {
@@ -202,20 +137,8 @@
     "subcategory": "Run_Abuse_Of_Legit_Updaters",
     "description": "정상 업데이트 실행 파일을 악용해 시작 프로그램으로 위장한다.",
     "keywords": [
-      "OneDrive.exe /background",
-      "GoogleUpdate.exe /c",
-      "<PROGRAMFILES>\\**\\Updater\\*.exe",
-      "living off the land"
-    ]
-  },
-  {
-    "category": "Persistence",
-    "subcategory": "Run_SelfDelete_Once",
-    "description": "RunOnce에서 실행 후 자기 삭제 스크립트를 사용한다.",
-    "keywords": [
-      "cmd.exe /c del %~f0",
-      "powershell.exe -Command Remove-Item",
-      "one-shot persistence"
+      "OneDrive.exe",
+      "Update.exe"
     ]
   },
   {
@@ -223,7 +146,7 @@
     "subcategory": "Run_Browser_Extension_Launch",
     "description": "Run 계열로 브라우저 확장 또는 로더를 시작한다.",
     "keywords": [
-      "<LOCALAPPDATA>\\**\\Chrome\\User Data\\Default\\Extensions\\*",
+      "User Data\\Default\\Extensions\\*",
       "msedge.exe --load-extension",
       "extension loader"
     ]
@@ -233,7 +156,7 @@
     "subcategory": "Run_Path_Tamper_AppPaths",
     "description": "App Paths/Path 값을 병행해 실행 검색 경로를 확장한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
+      "Microsoft\\Windows\\CurrentVersion\\App Paths\\*.exe\\Path",
       "<APPDATA>\\bin",
       "<PROGRAMDATA>\\bin",
       "PATH extension"
@@ -245,8 +168,8 @@
     "subcategory": "Run_HKLM_UserArea",
     "description": "HKLM Run 키가 사용자 프로필 경로를 가리키도록 등록한다.",
     "keywords": [
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
-      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData LIKE C:\\\\Users\\\\<USER>\\\\AppData\\\\%",
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueData",
       "%APPDATA% OR %LOCALAPPDATA% in HKLM Run",
       "autorun all users"
     ]
@@ -256,8 +179,8 @@
     "subcategory": "Run_HKCU",
     "description": "HKCU Run 키로 사용자 로그인 시 자동 실행되도록 한다.",
     "keywords": [
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
-      "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueName=*",
+      "Microsoft\\Windows\\CurrentVersion\\Run AND ValueData=*"
     ]
   }
 
