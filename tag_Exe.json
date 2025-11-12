@@ -215,9 +215,14 @@
     "subcategory": "SRUM_Application_Usage",
     "description": "System Resource Usage Monitor(SRUM) 데이터베이스를 분석하여 애플리케이션 사용 시간, 네트워크 사용량 등을 추적한다.",
     "keywords": [
-      "SRUM_ApplicationResourceUsage",
-      "SRUM_NetworkDataUsage",
-      "SRUM_NetworkConnectivity"
+      "SRUM_AppResource_AppId",
+      "SRUM_AppResource_BackgroundBytes",
+      "SRUM_AppResource_ForegroundBytes",
+      "SRUM_AppResource_FaceTime",
+      "SRUM_Network_BytesReceived",
+      "SRUM_Network_BytesSent",
+      "SRUM_Network_InterfaceType",
+      "SRUM_Network_ProfileName"
     ],
     "event_id": []
   },
@@ -232,7 +237,11 @@
     "category": "Execution",
     "subcategory": "ActivitiesCache_Execution",
     "description": "Windows Timeline(ActivitiesCache.db)에 기록된 최근 활동과 실행 흔적을 추적한다.",
-    "keywords": ["ActivitiesCache_AppId"],
+    "keywords": [
+      "ActivitiesCache_AppId",
+      "ActivitiesCache_EndTime",
+      "ActivitiesCache_DurationMs"
+    ],
     "event_id": []
   },
   {
