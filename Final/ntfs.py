@@ -31,14 +31,14 @@ from typing import List
 # 모듈 목록 (총 9)
 # -----------------------------
 MODULES_9 = [
-    #"MFTECmd_$MFT",
-    #"MFTECmd_$J",
-    #"MFTECmd_$Boot",
-    #"MFTECmd_$MFT_FileListing",
-    #"MFTECmd_$MFT_ProcessMFTSlack",
-    #"MFTECmd_$MFT_DumpResidentFiles",
-    #"NTFSLogTracker_$J",
-    #"NTFSLogTracker_$LogFile",
+    "MFTECmd_$MFT",
+    "MFTECmd_$J",
+    "MFTECmd_$Boot",
+    "MFTECmd_$MFT_FileListing",
+    "MFTECmd_$MFT_ProcessMFTSlack",
+    "MFTECmd_$MFT_DumpResidentFiles",
+    "NTFSLogTracker_$J",
+    "NTFSLogTracker_$LogFile",
     "INDXRipper",
 ]
 

@@ -7,16 +7,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ── 기본값(환경변수로 덮어쓰기 가능) ─────────────────────────
 AIM_EXE  = os.getenv("AIM_EXE",  r"C:\Arsenal-Image-Mounter-v3.11.307\aim_cli.exe")
-E01_PATH = os.getenv("E01_PATH", r"H:\Laptop\Laptop.E01")
+E01_PATH = os.getenv("E01_PATH", r"G:\Laptop\Laptop.E01")
 KAPE_EXE = os.getenv("KAPE_EXE", r"D:\KAPE\kape.exe")
-BASE_OUT = Path(os.getenv("BASE_OUT", r"D:\Kape Output"))
+BASE_OUT = Path(os.getenv("BASE_OUT", r"D:\Kape Output")) 
 
 MOUNT_STABILIZE_SEC = int(os.getenv("MOUNT_STABILIZE_SEC", "15"))
 PS_TIMEOUT_SEC      = int(os.getenv("PS_TIMEOUT_SEC", "90"))
 PROC_TIMEOUT_SEC    = int(os.getenv("PROC_TIMEOUT_SEC", "3600"))
 
 # 병렬 실행 워커 수(기본 4). 예) PowerShell: set MODULE_MAX_WORKERS=6
-MODULE_MAX_WORKERS = int(os.getenv("MODULE_MAX_WORKERS", "4"))
+MODULE_MAX_WORKERS = int(os.getenv("MODULE_MAX_WORKERS", "6"))
 
 # 콤마 구분 모듈 목록 지정(없으면 DEFAULT_MODULES 사용). 예) set MODULES=ntfs,pecmd,lecmd
 SELECTED_MODULES = [m.strip() for m in os.getenv("MODULES", "").split(",") if m.strip()]
