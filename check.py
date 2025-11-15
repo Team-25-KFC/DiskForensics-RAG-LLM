@@ -1,40 +1,47 @@
-from pymilvus import connections, Collection, utility
+from pymilvus import connections, Collection
 
-# ✅ 1️⃣ Milvus 연결
-connections.connect("default", host="localhost", port="19530")
+COLLECTION_NAME = "tag_test"
 
-# ✅ 2️⃣ 컬렉션 선택
-collection_name = "tag_test"
-collection = Collection(collection_name)
 
-# ✅ 3️⃣ 인덱스 생성 (없으면 새로)
-try:
-    # vector 필드에 인덱스 생성
-    collection.create_index(
-        field_name="vector",
-        index_params={
-            "index_type": "IVF_FLAT",   # 검색 효율 높이기 위한 인덱스 유형
-            "metric_type": "COSINE",
-            "params": {"nlist": 1024}
-        }
+def main():
+    # 1) Milvus 연결
+    connections.connect("default", host="localhost", port="19530")
+    coll = Collection(COLLECTION_NAME)
+
+    # 2) 컬렉션 로드
+    coll.load()
+    print(f"현재 '{COLLECTION_NAME}' 컬렉션에는 {coll.num_entities}개의 엔티티가 있습니다.")
+
+    # 3) 일단 최대 1000개 정도 뽑아서 그 안에서 id 기준으로 정렬
+    limit = 1000
+    results = coll.query(
+        expr="id >= 0",              # 전체 중 아무거나
+        output_fields=["id", "text"],
+        limit=limit,
     )
-    print("✅ 벡터 인덱스 생성 완료!")
-except Exception as e:
-    print(f"⚠️ 인덱스 생성 중 예외 발생 (이미 존재할 수도 있음): {e}")
 
-# ✅ 4️⃣ 컬렉션 로드
-collection.load()
-print("✅ 컬렉션 메모리 로드 완료!")
+    if not results:
+        print("query 결과가 없습니다.")
+        return
 
-# ✅ 5️⃣ 데이터 조회
-limit = 40
-results = collection.query(expr="id >= 0", output_fields=["id", "text"], limit=limit)
+    # id 내림차순으로 정렬해서 "끝부분" 쪽을 보자
+    results_sorted = sorted(results, key=lambda r: r["id"], reverse=True)
 
-# ✅ 6️⃣ 결과 출력
-print(f"📦 현재 '{collection_name}' 컬렉션에는 {collection.num_entities}개의 엔티티가 있습니다.\n")
-print("=== 📄 저장된 데이터 미리보기 ===")
-for idx, r in enumerate(results, 1):
-    text_preview = r["text"][:500].replace("\n", " ")
-    print(f"{idx}. id: {r['id']}")
-    print(f"   text: {text_preview}")
-    print("-" * 80)
+    tail_n = 40
+    tail = results_sorted[:tail_n]
+
+    print(f"\n=== 끝부분 데이터 미리보기 (id 큰 순 상위 {len(tail)}개) ===")
+    for idx, r in enumerate(tail, 1):
+        text = (r.get("text") or "").replace("\n", " ")
+        if len(text) > 300:
+            text_preview = text[:300] + "..."
+        else:
+            text_preview = text
+
+        print(f"{idx}. id: {r['id']}")
+        print(f"   text: {text_preview}")
+        print("-" * 80)
+
+
+if __name__ == "__main__":
+    main()
