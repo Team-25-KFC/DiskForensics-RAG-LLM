@@ -43,7 +43,7 @@ MODULES_9 = [
 ]
 
 # EZTools 모듈 실행파일이 위치한 기본 폴더(하위 폴더 포함 검색)
-MODULE_BIN_DIR = Path(r"C:\KAPE\Modules\bin")
+MODULE_BIN_DIR = Path(r"D:\KAPE\Modules\bin")
 
 # =============================
 # 경로 유틸

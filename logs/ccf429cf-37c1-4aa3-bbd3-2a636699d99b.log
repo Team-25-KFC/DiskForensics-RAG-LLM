@@ -1,0 +1,181 @@
+[INFO] NTFS 드라이브: I:, H:, J:
+[STEP] Target copy (artifacts.py)
+[SKIP] I: target-only: 이미 복사 완료 (D:\Kape Output\I\Artifacts\.targets_subset_done)
+[SKIP] H: target-only: 이미 복사 완료 (D:\Kape Output\H\Artifacts\.targets_subset_done)
+[SKIP] J: target-only: 이미 복사 완료 (D:\Kape Output\J\Artifacts\.targets_subset_done)
+[INFO] Modules 실행(병렬 6): ntfs, pecmd, amcache, appcompatcache, lecmd, jlecmd, rbcmd, SrumECmd, sqlecmd, sbecmd, wxtcmd, eventlog, registry
+[RUN ] I: PECmd → D:\Kape Output\I\PECmd
+[RUN ] INDXRipper (I:\)
+[RUN ] I: AppCompatCacheParser
+[RUN ] I: LECmd
+[RUN ] I: JLECmd
+[RUN ] I: AmcacheParser
+[OK  ] I: AmcacheParser
+[RUN ] H: AmcacheParser
+[OK  ] I: AppCompatCacheParser
+[RUN ] H: AppCompatCacheParser
+[OK  ] I: JLECmd
+[RUN ] H: JLECmd
+[OK  ] I: LECmd
+[RUN ] H: LECmd
+[OK  ] I: PECmd
+[RUN ] H: PECmd → D:\Kape Output\H\PECmd
+[OK  ] H: AppCompatCacheParser
+[RUN ] J: AppCompatCacheParser
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\I\Artifacts)
+[OK  ] H: JLECmd
+[RUN ] J: JLECmd
+[OK  ] H: LECmd
+[RUN ] J: LECmd
+[OK  ] H: PECmd
+[RUN ] J: PECmd → D:\Kape Output\J\PECmd
+[FAIL] H: AmcacheParser rc=3762504530
+[RUN ] J: AmcacheParser
+[OK  ] J: AppCompatCacheParser
+[DONE] appcompatcache
+[RUN ] I: RBCmd
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\I\Artifacts)
+[OK  ] J: JLECmd
+[DONE] jlecmd
+[DBG ] SrumECmd.exe: D:\KAPE\Modules\bin\SrumECmd.exe (exists=True)
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] SRUDB.dat I:: N\A (exists=False)
+[DBG ] SOFTWARE I:: N\A (exists=False)
+[SKIP] SrumECmd: I: SRUDB.dat not found under Artifacts
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] SRUDB.dat H:: N\A (exists=False)
+[DBG ] SOFTWARE H:: N\A (exists=False)
+[SKIP] SrumECmd: H: SRUDB.dat not found under Artifacts
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] SRUDB.dat J:: N\A (exists=False)
+[DBG ] SOFTWARE J:: N\A (exists=False)
+[SKIP] SrumECmd: J: SRUDB.dat not found under Artifacts
+[DONE] SrumECmd
+[DBG ] SQLECmd.exe: D:\KAPE\Modules\bin\SQLECmd\SQLECmd.exe (exists=True)
+[DBG ] Maps: D:\KAPE\Modules\bin\SQLECmd\Maps (exists=True)
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] dst(Output I:): D:\Kape Output\I\SQLECmd (exists=True)
+[RUN ] SQLECmd: I: -d D:\Kape Output\I\Artifacts
+[OK  ] J: LECmd
+[DONE] lecmd
+[RUN ] I: SBECmd
+[OK  ] J: PECmd
+[DONE] pecmd
+[RUN ] I: WxTCmd
+[OK  ] J: AmcacheParser
+[DONE] amcache
+[SKIP] I: eventlogs: EVTX 없음 → D:\Kape Output\I\Artifacts
+[SKIP] H: eventlogs: EVTX 없음 → D:\Kape Output\H\Artifacts
+[SKIP] J: eventlogs: EVTX 없음 → D:\Kape Output\J\Artifacts
+[DONE] eventlog
+[SKIP] I: registry: 레지스트리 하이브 없음 → D:\Kape Output\I\Artifacts
+[SKIP] H: registry: 레지스트리 하이브 없음 → D:\Kape Output\H\Artifacts
+[SKIP] J: registry: 레지스트리 하이브 없음 → D:\Kape Output\J\Artifacts
+[DONE] registry
+[OK  ] SQLECmd: I:
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SQLECmd (exists=True)
+[RUN ] SQLECmd: H: -d D:\Kape Output\H\Artifacts
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\I\Artifacts)
+[OK  ] I: RBCmd
+[RUN ] H: RBCmd
+[OK  ] SQLECmd: H:
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] dst(Output J:): D:\Kape Output\J\SQLECmd (exists=True)
+[RUN ] SQLECmd: J: -d D:\Kape Output\J\Artifacts
+[OK  ] I: WxTCmd
+[RUN ] H: WxTCmd
+[OK  ] I: SBECmd
+[RUN ] H: SBECmd
+[OK  ] SQLECmd: J:
+[DONE] sqlecmd
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\I\Artifacts)
+[OK  ] H: RBCmd
+[RUN ] J: RBCmd
+[OK  ] H: WxTCmd
+[RUN ] J: WxTCmd
+[OK  ] H: SBECmd
+[RUN ] J: SBECmd
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\I\Artifacts)
+[OK  ] J: RBCmd
+[DONE] rbcmd
+[OK  ] J: WxTCmd
+[DONE] wxtcmd
+[OK  ] J: SBECmd
+[DONE] sbecmd
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\I\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\I\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\I\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[RUN ] INDXRipper (H:\)
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\H\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\H\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[RUN ] INDXRipper (J:\)
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\J\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\J\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[DONE] ntfs
+[STEP] ntfs (import: ntfs).py
+[DONE] ntfs
+[STEP] pecmd (import: pecmd).py
+[DONE] pecmd
+[STEP] amcache (import: amcache).py
+[DONE] amcache
+[STEP] appcompatcache (import: appcompatcache).py
+[DONE] appcompatcache
+[STEP] lecmd (import: lecmd).py
+[DONE] lecmd
+[STEP] jlecmd (import: jlecmd).py
+[DONE] jlecmd
+[STEP] rbcmd (import: rbcmd).py
+[DONE] rbcmd
+[STEP] SrumECmd (import: SrumECmd).py
+[DONE] SrumECmd
+[STEP] sqlecmd (import: sqlecmd).py
+[DONE] sqlecmd
+[STEP] sbecmd (import: sbecmd).py
+[DONE] sbecmd
+[STEP] wxtcmd (import: wxtcmd).py
+[DONE] wxtcmd
+[STEP] eventlog (import: eventlog).py
+[DONE] eventlog
+[STEP] registry (import: registry).py
+[DONE] registry
+[INFO] Dismounted.

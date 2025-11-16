@@ -1,0 +1,261 @@
+[INFO] NTFS 드라이브: I:, H:, J:
+[STEP] Target copy (artifacts.py)
+[RUN ] I: target-only: 91개 타깃 복사 → D:\Kape Output\I\Artifacts
+[OK  ] I: target-only: 복사 완료
+[RUN ] H: target-only: 91개 타깃 복사 → D:\Kape Output\H\Artifacts
+[OK  ] H: target-only: 복사 완료
+[RUN ] J: target-only: 91개 타깃 복사 → D:\Kape Output\J\Artifacts
+[OK  ] J: target-only: 복사 완료
+[INFO] Modules 실행(병렬 6): ntfs, pecmd, amcache, appcompatcache, lecmd, jlecmd, rbcmd, SrumECmd, sqlecmd, sbecmd, wxtcmd, eventlog, registry
+[RUN ] I: PECmd → D:\Kape Output\I\PECmd
+[RUN ] I: LECmd
+[RUN ] I: JLECmd
+[RUN ] I: AppCompatCacheParser
+[RUN ] I: AmcacheParser
+[RUN ] INDXRipper (I:\)
+[OK  ] I: AmcacheParser
+[RUN ] H: AmcacheParser
+[OK  ] I: AppCompatCacheParser
+[RUN ] H: AppCompatCacheParser
+[OK  ] I: PECmd
+[RUN ] H: PECmd → D:\Kape Output\H\PECmd
+[OK  ] I: JLECmd
+[RUN ] H: JLECmd
+[OK  ] I: LECmd
+[RUN ] H: LECmd
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\I\Artifacts)
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\I\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\I\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\I\Artifacts)
+[OK  ] H: AmcacheParser
+[RUN ] J: AmcacheParser
+[OK  ] H: AppCompatCacheParser
+[RUN ] J: AppCompatCacheParser
+[OK  ] H: JLECmd
+[RUN ] J: JLECmd
+[OK  ] J: AmcacheParser
+[DONE] amcache
+[RUN ] I: RBCmd
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\I\Artifacts)
+[OK  ] J: AppCompatCacheParser
+[DONE] appcompatcache
+[DBG ] SrumECmd.exe: D:\KAPE\Modules\bin\SrumECmd.exe (exists=True)
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] SRUDB.dat I:: N\A (exists=False)
+[DBG ] SOFTWARE I:: N\A (exists=False)
+[SKIP] SrumECmd: I: SRUDB.dat not found under Artifacts
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] SRUDB.dat H:: D:\Kape Output\H\Artifacts\H\Windows\System32\SRU\SRUDB.dat (exists=True)
+[DBG ] SOFTWARE H:: D:\Kape Output\H\Artifacts\H\Windows\System32\config\SOFTWARE (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SrumECmd\SRUMDatabase (exists=True)
+[RUN ] SrumECmd: H: → -f SRUDB.dat -r SOFTWARE
+[OK  ] H: LECmd
+[RUN ] J: LECmd
+[OK  ] J: JLECmd
+[DONE] jlecmd
+[DBG ] SQLECmd.exe: D:\KAPE\Modules\bin\SQLECmd\SQLECmd.exe (exists=True)
+[DBG ] Maps: D:\KAPE\Modules\bin\SQLECmd\Maps (exists=True)
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] dst(Output I:): D:\Kape Output\I\SQLECmd (exists=True)
+[RUN ] SQLECmd: I: -d D:\Kape Output\I\Artifacts
+[OK  ] I: RBCmd
+[RUN ] H: RBCmd
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\I\Artifacts)
+[OK  ] H: PECmd
+[RUN ] J: PECmd → D:\Kape Output\J\PECmd
+[OK  ] SrumECmd: H:
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] SRUDB.dat J:: N\A (exists=False)
+[DBG ] SOFTWARE J:: N\A (exists=False)
+[SKIP] SrumECmd: J: SRUDB.dat not found under Artifacts
+[DONE] SrumECmd
+[RUN ] I: SBECmd
+[OK  ] J: LECmd
+[DONE] lecmd
+[RUN ] I: WxTCmd
+[OK  ] H: RBCmd
+[RUN ] J: RBCmd
+[OK  ] SQLECmd: I:
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SQLECmd (exists=True)
+[RUN ] SQLECmd: H: -d D:\Kape Output\H\Artifacts
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\I\Artifacts)
+[OK  ] J: PECmd
+[DONE] pecmd
+[SKIP] I: eventlogs: EVTX 없음 → D:\Kape Output\I\Artifacts\I
+[RUN ] H: eventlogs(csv): msource=D:\Kape Output\H\Artifacts\H → mdest=D:\Kape Output\H\EvtxECmd
+[OK  ] I: WxTCmd
+[RUN ] H: WxTCmd
+KAPE version 1.3.0.2, Author: Eric Zimmerman, Contact: https://www.kroll.com/kape (kape@kroll.com)
+
+KAPE directory: D:\KAPE
+Command line:   --module EvtxECmd --msource D:\Kape Output\H\Artifacts\H --mdest D:\Kape Output\H\EvtxECmd --mef csv --vss false
+
+System info: Machine name: DESKTOP-RQRC4OD, 64-bit: True, User: PC OS: Windows10 (10.0.19045)
+[OK  ] I: SBECmd
+[RUN ] H: SBECmd
+
+Using Module operations
+    Found processor Executable: EvtxECmd\EvtxECmd.exe, Cmd line: -d %sourceDirectory% --csv %destinationDirectory%, Export: csv, Append: False!
+Discovered 1 processor to run
+Executing modules with file masks...
+Executing remaining modules...
+  Running EvtxECmd\EvtxECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --csv "D:\Kape Output\H\EvtxECmd\EventLogs"
+[OK  ] J: RBCmd
+[DONE] rbcmd
+[SKIP] I: registry: 레지스트리 하이브 없음 → D:\Kape Output\I\Artifacts\I
+[RUN ] H: registry(csv): msource=D:\Kape Output\H\Artifacts\H → mdest=D:\Kape Output\H\RECmd
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\I\Artifacts)
+KAPE version 1.3.0.2, Author: Eric Zimmerman, Contact: https://www.kroll.com/kape (kape@kroll.com)
+
+KAPE directory: D:\KAPE
+Command line:   --module RECmd_AllRegExecutablesFoundOrRun,RECmd_BasicSystemInfo,RECmd_BCDBootVolume,RECmd_InstalledSoftware,RECmd_Kroll,RECmd_RECmd_Batch_MC,RECmd_RegistryASEPs,RECmd_SoftwareASEPs,RECmd_SoftwareClassesASEPs,RECmd_SoftwareWow6432ASEPs,RECmd_SystemASEPs,RECmd_UserActivity,RECmd_UserClassesASEPs --msource D:\Kape Output\H\Artifacts\H --mdest D:\Kape Output\H\RECmd --mef csv --vss false
+
+System info: Machine name: DESKTOP-RQRC4OD, 64-bit: True, User: PC OS: Windows10 (10.0.19045)
+
+Using Module operations
+Module RECmd_AllRegExecutablesFoundOrRun: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\AllRegExecutablesFoundOrRun.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_BasicSystemInfo: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\BasicSystemInfo.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_BCDBootVolume: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\BCDBootVolume.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_InstalledSoftware: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\InstalledSoftware.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_Kroll: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\Kroll_Batch.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_RECmd_Batch_MC: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\RECmd_Batch_MC.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_RegistryASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\RegistryASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SoftwareASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SoftwareASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SoftwareClassesASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SoftwareClassesASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SoftwareWoW6432ASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SoftwareWoW6432ASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SystemASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SystemASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_UserActivity: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\UserActivity.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_UserClassesASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\UserClassesASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Discovered 13 processors to run
+Executing modules with file masks...
+Executing remaining modules...
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\AllRegExecutablesFoundOrRun.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] NTFSLogTracker_$LogFile
+[RUN ] INDXRipper (H:\)
+[OK  ] H: WxTCmd
+[RUN ] J: WxTCmd
+[OK  ] J: WxTCmd
+[DONE] wxtcmd
+[OK  ] H: SBECmd
+[RUN ] J: SBECmd
+[OK  ] J: SBECmd
+[DONE] sbecmd
+[OK  ] SQLECmd: H:
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] dst(Output J:): D:\Kape Output\J\SQLECmd (exists=True)
+[RUN ] SQLECmd: J: -d D:\Kape Output\J\Artifacts
+[OK  ] SQLECmd: J:
+[DONE] sqlecmd
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\BasicSystemInfo.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\BCDBootVolume.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\InstalledSoftware.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\Kroll_Batch.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\RECmd_Batch_MC.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\H\Artifacts)
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\RegistryASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\SoftwareASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Executed 1 processor in 2,909.9066 seconds
+
+Total execution time: 2,909.9100 seconds
+
+
+[OK  ] H: eventlogs(csv): 완료 → D:\Kape Output\H\EvtxECmd
+[SKIP] J: eventlogs: EVTX 없음 → D:\Kape Output\J\Artifacts\J
+[DONE] eventlog
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\SoftwareClassesASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\SoftwareWoW6432ASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\SystemASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\H\Artifacts)
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\UserActivity.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\UserClassesASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Executed 13 processors in 3,174.1293 seconds
+
+Total execution time: 3,174.1339 seconds
+
+
+[OK  ] H: registry(csv): 완료 → D:\Kape Output\H\RECmd
+[SKIP] J: registry: 레지스트리 하이브 없음 → D:\Kape Output\J\Artifacts\J
+[DONE] registry
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\H\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\H\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[RUN ] INDXRipper (J:\)
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\J\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\J\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[DONE] ntfs
+[STEP] ntfs (import: ntfs).py
+[DONE] ntfs
+[STEP] pecmd (import: pecmd).py
+[DONE] pecmd
+[STEP] amcache (import: amcache).py
+[DONE] amcache
+[STEP] appcompatcache (import: appcompatcache).py
+[DONE] appcompatcache
+[STEP] lecmd (import: lecmd).py
+[DONE] lecmd
+[STEP] jlecmd (import: jlecmd).py
+[DONE] jlecmd
+[STEP] rbcmd (import: rbcmd).py
+[DONE] rbcmd
+[STEP] SrumECmd (import: SrumECmd).py
+[DONE] SrumECmd
+[STEP] sqlecmd (import: sqlecmd).py
+[DONE] sqlecmd
+[STEP] sbecmd (import: sbecmd).py
+[DONE] sbecmd
+[STEP] wxtcmd (import: wxtcmd).py
+[DONE] wxtcmd
+[STEP] eventlog (import: eventlog).py
+[DONE] eventlog
+[STEP] registry (import: registry).py
+[DONE] registry
+[INFO] Dismounted.
