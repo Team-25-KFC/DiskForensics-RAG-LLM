@@ -1,0 +1,281 @@
+[INFO] NTFS 드라이브: H:, I:, J:
+[STEP] Target copy (artifacts.py)
+[RUN ] H: target-only: 91개 타깃 복사 → D:\Kape Output\H\Artifacts
+[OK  ] H: target-only: 복사 완료
+[RUN ] I: target-only: 91개 타깃 복사 → D:\Kape Output\I\Artifacts
+[OK  ] I: target-only: 복사 완료
+[RUN ] J: target-only: 91개 타깃 복사 → D:\Kape Output\J\Artifacts
+[OK  ] J: target-only: 복사 완료
+[INFO] Modules 실행(병렬 6): ntfs, pecmd, amcache, appcompatcache, lecmd, jlecmd, rbcmd, SrumECmd, sqlecmd, sbecmd, wxtcmd, eventlog, registry
+[RUN ] H: LECmd
+[RUN ] H: PECmd → D:\Kape Output\H\PECmd
+[RUN ] H: AppCompatCacheParser
+[RUN ] H: AmcacheParser
+[RUN ] H: JLECmd
+[RUN ] INDXRipper (H:\)
+[OK  ] H: AmcacheParser
+[RUN ] I: AmcacheParser
+[OK  ] H: JLECmd
+[RUN ] I: JLECmd
+[OK  ] H: LECmd
+[RUN ] I: LECmd
+[OK  ] H: AppCompatCacheParser
+[RUN ] I: AppCompatCacheParser
+[OK  ] H: PECmd
+[RUN ] I: PECmd → D:\Kape Output\I\PECmd
+[OK  ] I: AmcacheParser
+[RUN ] J: AmcacheParser
+[OK  ] I: JLECmd
+[RUN ] J: JLECmd
+[OK  ] I: LECmd
+[RUN ] J: LECmd
+[OK  ] I: AppCompatCacheParser
+[RUN ] J: AppCompatCacheParser
+[OK  ] I: PECmd
+[RUN ] J: PECmd → D:\Kape Output\J\PECmd
+[OK  ] J: AmcacheParser
+[DONE] amcache
+[RUN ] H: RBCmd
+[OK  ] J: JLECmd
+[DONE] jlecmd
+[DBG ] SrumECmd.exe: D:\KAPE\Modules\bin\SrumECmd.exe (exists=True)
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] SRUDB.dat H:: D:\Kape Output\H\Artifacts\H\Windows\System32\SRU\SRUDB.dat (exists=True)
+[DBG ] SOFTWARE H:: D:\Kape Output\H\Artifacts\H\Windows\System32\config\SOFTWARE (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SrumECmd\SRUMDatabase (exists=True)
+[RUN ] SrumECmd: H: → -f SRUDB.dat -r SOFTWARE
+[OK  ] J: LECmd
+[DONE] lecmd
+[DBG ] SQLECmd.exe: D:\KAPE\Modules\bin\SQLECmd\SQLECmd.exe (exists=True)
+[DBG ] Maps: D:\KAPE\Modules\bin\SQLECmd\Maps (exists=True)
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SQLECmd (exists=True)
+[RUN ] SQLECmd: H: -d D:\Kape Output\H\Artifacts
+[OK  ] J: AppCompatCacheParser
+[DONE] appcompatcache
+[RUN ] H: SBECmd
+[OK  ] J: PECmd
+[DONE] pecmd
+[RUN ] H: WxTCmd
+[OK  ] SrumECmd: H:
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] SRUDB.dat I:: N\A (exists=False)
+[DBG ] SOFTWARE I:: N\A (exists=False)
+[SKIP] SrumECmd: I: SRUDB.dat not found under Artifacts
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] SRUDB.dat J:: N\A (exists=False)
+[DBG ] SOFTWARE J:: N\A (exists=False)
+[SKIP] SrumECmd: J: SRUDB.dat not found under Artifacts
+[DONE] SrumECmd
+[RUN ] H: eventlogs(csv): msource=D:\Kape Output\H\Artifacts\H → mdest=D:\Kape Output\H\EvtxECmd
+KAPE version 1.3.0.2, Author: Eric Zimmerman, Contact: https://www.kroll.com/kape (kape@kroll.com)
+
+KAPE directory: D:\KAPE
+Command line:   --module EvtxECmd --msource D:\Kape Output\H\Artifacts\H --mdest D:\Kape Output\H\EvtxECmd --mef csv --vss false
+
+System info: Machine name: DESKTOP-RQRC4OD, 64-bit: True, User: PC OS: Windows10 (10.0.19045)
+[OK  ] H: RBCmd
+[RUN ] I: RBCmd
+
+Using Module operations
+    Found processor Executable: EvtxECmd\EvtxECmd.exe, Cmd line: -d %sourceDirectory% --csv %destinationDirectory%, Export: csv, Append: False!
+Discovered 1 processor to run
+Executing modules with file masks...
+Executing remaining modules...
+  Running EvtxECmd\EvtxECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --csv "D:\Kape Output\H\EvtxECmd\EventLogs"
+[OK  ] I: RBCmd
+[RUN ] J: RBCmd
+[OK  ] H: SBECmd
+[RUN ] I: SBECmd
+[OK  ] H: WxTCmd
+[RUN ] I: WxTCmd
+[OK  ] J: RBCmd
+[DONE] rbcmd
+[RUN ] H: registry(csv): msource=D:\Kape Output\H\Artifacts\H → mdest=D:\Kape Output\H\RECmd
+KAPE version 1.3.0.2, Author: Eric Zimmerman, Contact: https://www.kroll.com/kape (kape@kroll.com)
+
+KAPE directory: D:\KAPE
+Command line:   --module RECmd_AllRegExecutablesFoundOrRun,RECmd_BasicSystemInfo,RECmd_BCDBootVolume,RECmd_InstalledSoftware,RECmd_Kroll,RECmd_RECmd_Batch_MC,RECmd_RegistryASEPs,RECmd_SoftwareASEPs,RECmd_SoftwareClassesASEPs,RECmd_SoftwareWow6432ASEPs,RECmd_SystemASEPs,RECmd_UserActivity,RECmd_UserClassesASEPs --msource D:\Kape Output\H\Artifacts\H --mdest D:\Kape Output\H\RECmd --mef csv --vss false
+
+System info: Machine name: DESKTOP-RQRC4OD, 64-bit: True, User: PC OS: Windows10 (10.0.19045)
+[OK  ] I: SBECmd
+[RUN ] J: SBECmd
+
+Using Module operations
+Module RECmd_AllRegExecutablesFoundOrRun: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\AllRegExecutablesFoundOrRun.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_BasicSystemInfo: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\BasicSystemInfo.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_BCDBootVolume: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\BCDBootVolume.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_InstalledSoftware: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\InstalledSoftware.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_Kroll: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\Kroll_Batch.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_RECmd_Batch_MC: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\RECmd_Batch_MC.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_RegistryASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\RegistryASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SoftwareASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SoftwareASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SoftwareClassesASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SoftwareClassesASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SoftwareWoW6432ASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SoftwareWoW6432ASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_SystemASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\SystemASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_UserActivity: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\UserActivity.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Module RECmd_UserClassesASEPs: Found 1 processor
+Found processor Executable: RECmd\RECmd.exe, Cmd line: -d %sourceDirectory% --bn BatchExamples\UserClassesASEPs.reb --nl false --csv %destinationDirectory%, Export: csv, Append: False!
+Discovered 13 processors to run
+Executing modules with file masks...
+Executing remaining modules...
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\AllRegExecutablesFoundOrRun.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] I: WxTCmd
+[RUN ] J: WxTCmd
+[OK  ] J: SBECmd
+[DONE] sbecmd
+[OK  ] J: WxTCmd
+[DONE] wxtcmd
+[OK  ] SQLECmd: H:
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] dst(Output I:): D:\Kape Output\I\SQLECmd (exists=True)
+[RUN ] SQLECmd: I: -d D:\Kape Output\I\Artifacts
+[OK  ] SQLECmd: I:
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] dst(Output J:): D:\Kape Output\J\SQLECmd (exists=True)
+[RUN ] SQLECmd: J: -d D:\Kape Output\J\Artifacts
+[OK  ] SQLECmd: J:
+[DONE] sqlecmd
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\BasicSystemInfo.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\BCDBootVolume.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\H\Artifacts)
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\InstalledSoftware.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\H\Artifacts)
+Executed 1 processor in 5,568.0698 seconds
+
+Total execution time: 5,568.1885 seconds
+
+
+[OK  ] H: eventlogs(csv): 완료 → D:\Kape Output\H\EvtxECmd
+[SKIP] I: eventlogs: EVTX 없음 → D:\Kape Output\I\Artifacts\I
+[SKIP] J: eventlogs: EVTX 없음 → D:\Kape Output\J\Artifacts\J
+[DONE] eventlog
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\H\Artifacts)
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\Kroll_Batch.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\H\Artifacts)
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\RECmd_Batch_MC.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\RegistryASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\H\Artifacts)
+Running RECmd\RECmd.exe: -d "D:\Kape Output\H\Artifacts\H" --bn BatchExamples\SoftwareASEPs.reb --nl false --csv "D:\Kape Output\H\RECmd\Registry"
+[FAIL] MFTECmd_$MFT_DumpResidentFiles rc=3221225786
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\H\Artifacts)
+[OK  ] H: registry(csv): 완료 → D:\Kape Output\H\RECmd
+[SKIP] I: registry: 레지스트리 하이브 없음 → D:\Kape Output\I\Artifacts\I
+[SKIP] J: registry: 레지스트리 하이브 없음 → D:\Kape Output\J\Artifacts\J
+[DONE] registry
+[FAIL] NTFSLogTracker_$J rc=3221225786
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\H\Artifacts)
+[FAIL] NTFSLogTracker_$LogFile rc=3221225786
+[SKIP] INDXRipper: drive not mounted (I:\)
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\I\Artifacts)
+[FAIL] MFTECmd_$MFT rc=3221225786
+[RUN ] MFTECmd_$J (src=D:\Kape Output\I\Artifacts)
+[FAIL] MFTECmd_$J rc=3221225786
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\I\Artifacts)
+[FAIL] MFTECmd_$Boot rc=3221225786
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\I\Artifacts)
+[FAIL] MFTECmd_$MFT_FileListing rc=3221225786
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\I\Artifacts)
+[FAIL] MFTECmd_$MFT_ProcessMFTSlack rc=3221225786
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\I\Artifacts)
+[FAIL] MFTECmd_$MFT_DumpResidentFiles rc=3221225786
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\I\Artifacts)
+[FAIL] NTFSLogTracker_$J rc=3221225786
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\I\Artifacts)
+[FAIL] NTFSLogTracker_$LogFile rc=3221225786
+[SKIP] INDXRipper: drive not mounted (J:\)
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\J\Artifacts)
+[FAIL] MFTECmd_$MFT rc=3221225786
+[RUN ] MFTECmd_$J (src=D:\Kape Output\J\Artifacts)
+[FAIL] MFTECmd_$J rc=3221225786
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\J\Artifacts)
+[FAIL] MFTECmd_$Boot rc=3221225786
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\J\Artifacts)
+[FAIL] MFTECmd_$MFT_FileListing rc=3221225786
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\J\Artifacts)
+[FAIL] MFTECmd_$MFT_ProcessMFTSlack rc=3221225786
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\J\Artifacts)
+[FAIL] MFTECmd_$MFT_DumpResidentFiles rc=3221225786
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\J\Artifacts)
+[FAIL] NTFSLogTracker_$J rc=3221225786
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\J\Artifacts)
+[FAIL] NTFSLogTracker_$LogFile rc=3221225786
+[DONE] ntfs
+Traceback (most recent call last):
+  File "C:\GitHub\SeungWon\Final\main.py", line 183, in run_tool_modules
+    for fut in as_completed(futs):
+               ~~~~~~~~~~~~^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py", line 243, in as_completed
+    waiter.event.wait(wait_timeout)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 659, in wait
+    signaled = self._cond.wait(timeout)
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 359, in wait
+    waiter.acquire()
+    ~~~~~~~~~~~~~~^^
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\GitHub\SeungWon\Final\main.py", line 237, in main
+    run_tool_modules(letters, cfg, module_set)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\GitHub\SeungWon\Final\main.py", line 181, in run_tool_modules
+    with ThreadPoolExecutor(max_workers=MODULE_MAX_WORKERS) as ex:
+         ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\_base.py", line 647, in __exit__
+    self.shutdown(wait=True)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 239, in shutdown
+    t.join()
+    ~~~~~~^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1094, in join
+    self._handle.join(timeout)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\GitHub\SeungWon\Final\main.py", line 245, in <module>
+    main()
+    ~~~~^^
+  File "C:\GitHub\SeungWon\Final\main.py", line 242, in main
+    dismount_e01(dev)
+    ~~~~~~~~~~~~^^^^^
+  File "C:\GitHub\SeungWon\Final\main.py", line 90, in dismount_e01
+    subprocess.run(cmd, check=True, capture_output=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1644, in _communicate
+    self.stdout_thread.join(self._remaining_time(endtime))
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ksw02\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1094, in join
+    self._handle.join(timeout)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyboardInterrupt

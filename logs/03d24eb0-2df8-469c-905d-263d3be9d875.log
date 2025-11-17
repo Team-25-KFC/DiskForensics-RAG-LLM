@@ -1,0 +1,189 @@
+[INFO] NTFS 드라이브: I:, J:, H:
+[STEP] Target copy (artifacts.py)
+[WARN] legacy nested folder detected: D:\Kape Output\I\Artifacts\I → flatten
+[INFO] legacy flattened: D:\Kape Output\I\Artifacts
+[RUN ] I: target-only: 91개 타깃 복사 → D:\Kape Output\I\Artifacts
+[OK  ] I: target-only: 복사 완료
+[WARN] legacy nested folder detected: D:\Kape Output\J\Artifacts\J → flatten
+[INFO] legacy flattened: D:\Kape Output\J\Artifacts
+[RUN ] J: target-only: 91개 타깃 복사 → D:\Kape Output\J\Artifacts
+[OK  ] J: target-only: 복사 완료
+[WARN] legacy nested folder detected: D:\Kape Output\H\Artifacts\H → flatten
+[INFO] legacy flattened: D:\Kape Output\H\Artifacts
+[RUN ] H: target-only: 91개 타깃 복사 → D:\Kape Output\H\Artifacts
+[OK  ] H: target-only: 복사 완료
+[INFO] Modules 실행(병렬 6): ntfs, pecmd, amcache, appcompatcache, lecmd, jlecmd, rbcmd, SrumECmd, sqlecmd, sbecmd, wxtcmd, eventlog, registry
+[RUN ] I: PECmd → D:\Kape Output\I\PECmd
+[RUN ] I: LECmd
+[RUN ] I: JLECmd
+[RUN ] I: AmcacheParser
+[RUN ] I: AppCompatCacheParser
+[SKIP] INDXRipper: drive not mounted (I:\)
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\I\Artifacts)
+[OK  ] I: AmcacheParser
+[RUN ] J: AmcacheParser
+[OK  ] I: AppCompatCacheParser
+[RUN ] J: AppCompatCacheParser
+[OK  ] I: PECmd
+[RUN ] J: PECmd → D:\Kape Output\J\PECmd
+[OK  ] I: JLECmd
+[RUN ] J: JLECmd
+[OK  ] I: LECmd
+[RUN ] J: LECmd
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\I\Artifacts)
+[OK  ] J: AmcacheParser
+[RUN ] H: AmcacheParser
+[OK  ] J: AppCompatCacheParser
+[RUN ] H: AppCompatCacheParser
+[OK  ] J: LECmd
+[RUN ] H: LECmd
+[OK  ] J: JLECmd
+[RUN ] H: JLECmd
+[OK  ] J: PECmd
+[RUN ] H: PECmd → D:\Kape Output\H\PECmd
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\I\Artifacts)
+[OK  ] H: AmcacheParser
+[DONE] amcache
+[RUN ] I: RBCmd
+[OK  ] H: AppCompatCacheParser
+[DONE] appcompatcache
+[DBG ] SrumECmd.exe: D:\KAPE\Modules\bin\SrumECmd.exe (exists=True)
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] SRUDB.dat I:: N\A (exists=False)
+[DBG ] SOFTWARE I:: N\A (exists=False)
+[SKIP] SrumECmd: I: SRUDB.dat not found under Artifacts
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] SRUDB.dat J:: N\A (exists=False)
+[DBG ] SOFTWARE J:: N\A (exists=False)
+[SKIP] SrumECmd: J: SRUDB.dat not found under Artifacts
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] SRUDB.dat H:: D:\Kape Output\H\Artifacts\Windows\System32\SRU\SRUDB.dat (exists=True)
+[DBG ] SOFTWARE H:: D:\Kape Output\H\Artifacts\Windows\System32\config\SOFTWARE (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SrumECmd\SRUMDatabase (exists=True)
+[RUN ] SrumECmd: H: → -f SRUDB.dat -r SOFTWARE
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\I\Artifacts)
+[OK  ] I: RBCmd
+[RUN ] J: RBCmd
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\I\Artifacts)
+[OK  ] SrumECmd: H:
+[DONE] SrumECmd
+[DBG ] SQLECmd.exe: D:\KAPE\Modules\bin\SQLECmd\SQLECmd.exe (exists=True)
+[DBG ] Maps: D:\KAPE\Modules\bin\SQLECmd\Maps (exists=True)
+[DBG ] src(Artifacts I:): D:\Kape Output\I\Artifacts (exists=True)
+[DBG ] dst(Output I:): D:\Kape Output\I\SQLECmd (exists=True)
+[RUN ] SQLECmd: I: -d D:\Kape Output\I\Artifacts
+[OK  ] J: RBCmd
+[RUN ] H: RBCmd
+[OK  ] H: JLECmd
+[DONE] jlecmd
+[RUN ] I: SBECmd
+[OK  ] H: PECmd
+[DONE] pecmd
+[RUN ] I: WxTCmd
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\I\Artifacts)
+[OK  ] SQLECmd: I:
+[DBG ] src(Artifacts J:): D:\Kape Output\J\Artifacts (exists=True)
+[DBG ] dst(Output J:): D:\Kape Output\J\SQLECmd (exists=True)
+[RUN ] SQLECmd: J: -d D:\Kape Output\J\Artifacts
+[OK  ] H: RBCmd
+[DONE] rbcmd
+[SKIP] I: eventlogs: EVTX 없음 → D:\Kape Output\I\Artifacts\I
+[SKIP] J: eventlogs: EVTX 없음 → D:\Kape Output\J\Artifacts\J
+[OK  ] H: LECmd
+[DONE] lecmd
+[SKIP] H: eventlogs: 이미 CSV 모듈 처리 완료 (D:\Kape Output\H\.modules_eventlogs_csv_done)
+[DONE] eventlog
+[SKIP] I: registry: 레지스트리 하이브 없음 → D:\Kape Output\I\Artifacts\I
+[SKIP] J: registry: 레지스트리 하이브 없음 → D:\Kape Output\J\Artifacts\J
+[SKIP] H: registry: 이미 CSV 모듈 처리 완료 (D:\Kape Output\H\.modules_registry_csv_done)
+[DONE] registry
+[OK  ] SQLECmd: J:
+[DBG ] src(Artifacts H:): D:\Kape Output\H\Artifacts (exists=True)
+[DBG ] dst(Output H:): D:\Kape Output\H\SQLECmd (exists=True)
+[RUN ] SQLECmd: H: -d D:\Kape Output\H\Artifacts
+[OK  ] I: SBECmd
+[RUN ] J: SBECmd
+[OK  ] I: WxTCmd
+[RUN ] J: WxTCmd
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\I\Artifacts)
+[OK  ] J: SBECmd
+[RUN ] H: SBECmd
+[OK  ] J: WxTCmd
+[RUN ] H: WxTCmd
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\I\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[SKIP] INDXRipper: drive not mounted (J:\)
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\J\Artifacts)
+[OK  ] H: WxTCmd
+[DONE] wxtcmd
+[OK  ] H: SBECmd
+[DONE] sbecmd
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\J\Artifacts)
+[OK  ] SQLECmd: H:
+[DONE] sqlecmd
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\J\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\J\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\J\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[SKIP] INDXRipper: drive not mounted (H:\)
+[RUN ] MFTECmd_$MFT (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=D:\Kape Output\H\Artifacts)
+[FAIL] MFTECmd_$MFT_FileListing rc=1
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=D:\Kape Output\H\Artifacts)
+[FAIL] MFTECmd_$MFT_ProcessMFTSlack rc=1
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=D:\Kape Output\H\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=D:\Kape Output\H\Artifacts)
+[FAIL] NTFSLogTracker_$J rc=3221225794
+[RUN ] NTFSLogTracker_$LogFile (src=D:\Kape Output\H\Artifacts)
+[FAIL] NTFSLogTracker_$LogFile rc=3221225794
+[DONE] ntfs
+[STEP] ntfs (import: ntfs).py
+[DONE] ntfs
+[STEP] pecmd (import: pecmd).py
+[DONE] pecmd
+[STEP] amcache (import: amcache).py
+[DONE] amcache
+[STEP] appcompatcache (import: appcompatcache).py
+[DONE] appcompatcache
+[STEP] lecmd (import: lecmd).py
+[DONE] lecmd
+[STEP] jlecmd (import: jlecmd).py
+[DONE] jlecmd
+[STEP] rbcmd (import: rbcmd).py
+[DONE] rbcmd
+[STEP] SrumECmd (import: SrumECmd).py
+[DONE] SrumECmd
+[STEP] sqlecmd (import: sqlecmd).py
+[DONE] sqlecmd
+[STEP] sbecmd (import: sbecmd).py
+[DONE] sbecmd
+[STEP] wxtcmd (import: wxtcmd).py
+[DONE] wxtcmd
+[STEP] eventlog (import: eventlog).py
+[DONE] eventlog
+[STEP] registry (import: registry).py
+[DONE] registry
+[WARN] Dismount error ignored: Command '['C:\\Arsenal-Image-Mounter-v3.11.307\\aim_cli.exe', '--dismount=000000']' returned non-zero exit status 3221225794.
