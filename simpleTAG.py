@@ -1,8 +1,10 @@
 import csv
-import json
 import re
 from pathlib import Path
 from datetime import datetime, timedelta
+
+# CSV 필드 크기 제한 증가 (매우 큰 필드 처리)
+csv.field_size_limit(10 * 1024 * 1024)  # 10MB로 설정
 
 class ArtifactTagger:
     def __init__(self):
@@ -247,12 +249,14 @@ class ArtifactTagger:
         
         return tags
 
-    def process_csv(self, input_csv, output_jsonl):
-        """CSV 파일을 읽어 태그를 붙이고 JSONL로 저장"""
+    def process_csv(self, input_csv, output_csv):
+        """CSV 파일을 읽어 태그를 붙이고 CSV로 저장"""
         results = []
+        original_fieldnames = []
         
         with open(input_csv, 'r', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
+            original_fieldnames = reader.fieldnames
             
             for row in reader:
                 # 필드 추출 (다양한 컬럼명 지원)
@@ -281,26 +285,27 @@ class ArtifactTagger:
                 tags.extend(self.tag_timeline(created, modified, accessed))
                 tags.extend(self.tag_file_operation(row))
                 
-                # 중복 제거
-                tags = list(set(tags))
+                # 중복 제거 및 정렬
+                tags = sorted(list(set(tags)))
                 
-                # 결과 객체 생성
-                result = {
-                    'original_data': row,
-                    'tags': sorted(tags),  # 정렬하여 보기 쉽게
-                    'tag_count': len(tags),
-                    'categories': self.categorize_tags(tags)
-                }
+                # 원본 데이터에 tags 컬럼만 추가
+                result_row = row.copy()
+                result_row['tags'] = ', '.join(tags)  # 쉼표로 구분하여 가독성 향상
                 
-                results.append(result)
+                results.append(result_row)
         
-        # JSONL 형식으로 저장
-        with open(output_jsonl, 'w', encoding='utf-8') as f:
-            for result in results:
-                f.write(json.dumps(result, ensure_ascii=False) + '\n')
+        # CSV 형식으로 저장
+        if results:
+            # 새로운 필드명 = 원본 + tags 컬럼
+            new_fieldnames = list(original_fieldnames) + ['tags']
+            
+            with open(output_csv, 'w', encoding='utf-8-sig', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=new_fieldnames)
+                writer.writeheader()
+                writer.writerows(results)
         
         print(f"✅ 처리 완료: {len(results)}개 항목")
-        print(f"📁 출력 파일: {output_jsonl}")
+        print(f"📁 출력 파일: {output_csv}")
         
         # 통계 출력
         self.print_statistics(results)
@@ -352,13 +357,18 @@ class ArtifactTagger:
         }
         
         for result in results:
-            for tag in result['tags']:
-                tag_counts[tag] = tag_counts.get(tag, 0) + 1
-                
-                # 카테고리별 카운트
-                prefix = tag.split('_')[0] + '_*'
-                if prefix in category_counts:
-                    category_counts[prefix] += 1
+            # CSV 형식에서 태그 추출
+            tags_str = result.get('tags', '')
+            if tags_str:
+                tags = [t.strip() for t in tags_str.split(',')]
+                for tag in tags:
+                    if tag:
+                        tag_counts[tag] = tag_counts.get(tag, 0) + 1
+                        
+                        # 카테고리별 카운트
+                        prefix = tag.split('_')[0] + '_*'
+                        if prefix in category_counts:
+                            category_counts[prefix] += 1
         
         print("\n" + "="*60)
         print("📊 카테고리별 태그 통계")
@@ -396,9 +406,9 @@ if __name__ == "__main__":
             print(f"🔄 처리 중: {csv_file}")
             print(f"{'='*60}")
             
-            # 출력 파일명 생성 (원본명_tagged.jsonl)
+            # 출력 파일명 생성 (원본명_tagged.csv)
             base_name = os.path.splitext(csv_file)[0]
-            output_file = f"{base_name}_tagged.jsonl"
+            output_file = f"{base_name}_tagged.csv"
             
             try:
                 results = tagger.process_csv(csv_file, output_file)
