@@ -16,3 +16,7 @@ fin_tag/20251029171959_RECmd_Batch_SoftwareClassesASEPs_Output_tagged.csv
 fin_tag/20251029172029_RECmd_Batch_SoftwareWoW6432ASEPs_Output_tagged.csv
 fin_tag/20251029172048_RECmd_Batch_SystemASEPs_Output_tagged.csv
 fin_tag/20251029172121_RECmd_Batch_UserClassesASEPs_Output_tagged.csv
+LLM_/a
+Dataset/qca_from_d.jsonl
+Dataset/merged.json
+Dataset/d.json
