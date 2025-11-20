@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-MODULE_NAME="JLECmd"; MODULE_BIN_DIR=Path(r"D:\KAPE\Modules\bin")
+MODULE_NAME="JLECmd"; MODULE_BIN_DIR=Path(r"C:\KAPE\Modules\bin")
 
 def _find_exe(exe:str)->bool:
     for p in MODULE_BIN_DIR.rglob("*.exe"):

@@ -1,20 +1,6 @@
 # 파일: Final/sqlecmd.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""
-SQLECmd 모듈 (Windows 10/11)
-
-- 입력: BASE_OUT\<드라이브>\Artifacts  (호환: BASE_OUT\$NFTS_<드라이브>\Artifacts)
-- 출력: BASE_OUT\<드라이브>\SQLECmd\*.csv   예) D:\Kape Output\E\SQLECmd\
-- 실행 파일 자동 탐지: <KAPE_EXE>\Modules\bin\**\SQLECmd.exe
-- Maps 자동 탐지: Modules\bin\SQLECmd\Maps 또는 Modules\bin\SQLMap\Maps
-
-오케스트레이터 시그니처:
-    run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool
-        cfg 필수키: BASE_OUT(Path), KAPE_EXE(Path)
-        cfg 선택키: PROC_TIMEOUT_SEC(int, 기본 1800)
-"""
-
 from pathlib import Path
 from typing import List
 import subprocess

@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ── 기본값(환경변수로 덮어쓰기 가능) ─────────────────────────
 AIM_EXE  = os.getenv("AIM_EXE",  r"C:\Arsenal-Image-Mounter-v3.11.307\aim_cli.exe")
 E01_PATH = os.getenv("E01_PATH", r"G:\Laptop\Laptop.E01")
-KAPE_EXE = os.getenv("KAPE_EXE", r"D:\KAPE\kape.exe")
+KAPE_EXE = os.getenv("KAPE_EXE", r"C:\KAPE\kape.exe")
 BASE_OUT = Path(os.getenv("BASE_OUT", r"D:\Kape Output")) 
 
 MOUNT_STABILIZE_SEC = int(os.getenv("MOUNT_STABILIZE_SEC", "15"))

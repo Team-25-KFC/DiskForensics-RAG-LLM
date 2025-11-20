@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-eventlog.py — EvtxECmd(KAPE 모듈) 래퍼 (Win10/11)
-
-전제:
-  - 마운트/타깃 복사는 외부 오케스트레이터(main.py + artifacts.py)에서 수행
-  - 아티팩트 복사본은 다음 중 하나로 존재:
-      <BASE_OUT>\<E>\Artifacts\<E>      (우선)
-      <BASE_OUT>\<E>\Artifacts          (폴백)
-      <BASE_OUT>\$NFTS_E\Artifacts     (호환)
-
-출력:
-  - CSV: <BASE_OUT>\<E>\EvtxECmd\*.csv
-  - 로그: <BASE_OUT>\<E>\Logs\eventlogs_E_module_runlog.txt
-"""
-
 import subprocess
 from pathlib import Path
 from typing import List, Optional

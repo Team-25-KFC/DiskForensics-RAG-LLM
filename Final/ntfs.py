@@ -1,28 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""
-ntfs.py — NTFS 모듈(9개) CSV 실행 워커 (Win10/11, Python 3.11+)
-
-입력(전제):
-  - 타깃 복사본(Artifacts)은 아래 중 하나로 존재
-      <BASE_OUT>\<드라이브>\Artifacts          ← 우선
-      <BASE_OUT>\$NFTS_<드라이브>\Artifacts   ← 보조
-
-출력:
-  - CSV:  <BASE_OUT>\<드라이브>\<모듈명>\*.csv
-  - 로그: <BASE_OUT>\<드라이브>\Logs\*.log
-
-특이사항:
-  - INDXRipper는 모듈 정의상 \\.\%sourceDriveLetter% 접근 → --msource 는 'E:\' 같은 드라이브 루트를 사용
-  - MFTECmd_*, NTFSLogTracker_*는 복사본(Artifacts) 경로를 --msource 로 사용
-  - 프로젝트 규칙 준수: Modules\bin 하위에 해당 exe가 '실존'할 때에만 실행, 미실행 모듈의 빈 출력폴더는 삭제
-
-오케스트레이터(main.py)에서 마운트/아티팩트 복사 후 호출:
-  import ntfs
-  ntfs.run(['E:', 'J:', ...], lambda: None, cfg)
-  # cfg: {"BASE_OUT": Path, "KAPE_EXE": Path, "PROC_TIMEOUT_SEC": int}
-"""
-
 import subprocess
 from pathlib import Path
 from typing import List
@@ -43,7 +20,7 @@ MODULES_9 = [
 ]
 
 # EZTools 모듈 실행파일이 위치한 기본 폴더(하위 폴더 포함 검색)
-MODULE_BIN_DIR = Path(r"D:\KAPE\Modules\bin")
+MODULE_BIN_DIR = Path(r"C:\KAPE\Modules\bin")
 
 # =============================
 # 경로 유틸
