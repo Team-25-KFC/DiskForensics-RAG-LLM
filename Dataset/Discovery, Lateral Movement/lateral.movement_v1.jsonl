@@ -1,0 +1,8 @@
+{"id":"SMB_LateralMovement_001","input":"공격자가 \\\\TARGET\\ADMIN$ 공유를 통해 악성 실행 파일을 업로드한 후 'sc.exe create' 명령으로 원격 서비스를 생성해 실행한 것이 포착되었다.","label_mid":"SMB_LateralMovement","label_risk":"Malicious"}
+{"id":"SMB_LateralMovement_002","input":"PsExec 도구를 사용해 \\10.0.2.15 경로에 악성 코드를 복사하고 원격 명령을 실행하여 권한 상승을 시도한 흔적이 있다.","label_mid":"SMB_LateralMovement","label_risk":"Malicious"}
+{"id":"SMB_LateralMovement_003","input":"관리자 계정 탈취 후 net use 명령으로 ADMIN$ 연결을 맺고, rundll32 호출을 통해 원격 DLL을 로딩해 lateral movement를 수행했다.","label_mid":"SMB_LateralMovement","label_risk":"Malicious"}
+{"id":"SMB_LateralMovement_004","input":"시스템 관리자가 원격 서버의 패치를 적용하기 위해 ADMIN$ 공유를 통해 업데이트 패키지를 전송하고 서비스를 재시작했다.","label_mid":"SMB_LateralMovement","label_risk":"Benign"}
+{"id":"SMB_LateralMovement_005","input":"IT팀이 전사적 배포 작업을 위해 PsExec를 사용해 여러 서버에 소프트웨어를 설치한 정상 로그가 확인되었다.","label_mid":"SMB_LateralMovement","label_risk":"Benign"}
+{"id":"SMB_LateralMovement_006","input":"비업무 시간에 특정 계정으로 ADMIN$ 공유 접속이 있었으나, 파일 전송 기록은 남아 있지 않다. 계정 도용 여부 확인이 필요하다.","label_mid":"SMB_LateralMovement","label_risk":"Suspicious"}
+{"id":"SMB_LateralMovement_007","input":"내부 IP 대역 간에 net use /user 명령으로 반복 연결이 발생했으며, 목적지와 도구가 불분명하다.","label_mid":"SMB_LateralMovement","label_risk":"Suspicious"}
+{"id":"SMB_LateralMovement_008","input":"원격 공유에 단일 연결 시도가 있었지만, 파일 생성이나 명령 실행 로그가 없어 무해한 테스트인지 악성 이동의 전조인지 알 수 없다.","label_mid":"SMB_LateralMovement","label_risk":"Unknown"}

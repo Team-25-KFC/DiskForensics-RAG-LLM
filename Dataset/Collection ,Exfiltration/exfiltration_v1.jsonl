@@ -1,0 +1,32 @@
+{"id":"Exfil_HTTP_001","input":"감염된 시스템에서 외부 IP로 대량의 ZIP 파일을 HTTP POST 방식으로 전송하는 로그가 관찰되었으며, 도메인은 이전에 알려진 악성 C2 서버로 식별되었다.","label_mid":"Exfil_HTTP","label_risk":"Malicious"}
+{"id":"Exfil_HTTP_002","input":"PowerShell 스크립트가 업무 시간 외에 /upload.php 엔드포인트로 기밀 문서들을 업로드하는 정황이 발견되었다. 헤더에 사용자 에이전트 값을 은폐하였다.","label_mid":"Exfil_HTTP","label_risk":"Malicious"}
+{"id":"Exfil_HTTP_003","input":"악성 프로세스가 curl.exe를 통해 시스템 로그와 브라우저 캐시를 HTTP PUT 요청으로 외부 서버에 지속적으로 전송한 흔적이 확인되었다.","label_mid":"Exfil_HTTP","label_risk":"Malicious"}
+{"id":"Exfil_HTTP_004","input":"사용자가 사내 공유 사이트에 보고서를 제출하기 위해 HTTP POST로 문서 파일을 업로드하였다. 해당 도메인은 회사 인트라넷이다.","label_mid":"Exfil_HTTP","label_risk":"Benign"}
+{"id":"Exfil_HTTP_005","input":"정기 백업 스크립트가 사내 HTTP API를 사용하여 설정 파일을 전송했다. 스케줄링 및 파일 크기가 정책 내에 있다.","label_mid":"Exfil_HTTP","label_risk":"Benign"}
+{"id":"Exfil_HTTP_006","input":"업무시간에 외부 블로그 도메인으로 작은 JSON 데이터를 자주 전송하는 요청이 포착되었다. 본 목적이 불분명하고, 해당 서비스 사용 여부 확인이 필요하다.","label_mid":"Exfil_HTTP","label_risk":"Suspicious"}
+{"id":"Exfil_HTTP_007","input":"특정 애플리케이션이 업데이트 서버가 아닌 다른 HTTP 주소로 주기적으로 GET/POST 요청을 보내고 있으나, 자세한 내용은 암호화돼 있어 분석이 필요하다.","label_mid":"Exfil_HTTP","label_risk":"Suspicious"}
+{"id":"Exfil_HTTP_008","input":"비업무 도메인으로 단일 HTTP POST 요청이 있었으나 전송된 데이터나 프로세스 정보를 확인할 수 없었다. 로그가 단편적이라 판단이 어려움.","label_mid":"Exfil_HTTP","label_risk":"Unknown"}
+{"id":"Exfil_AlternateChannel_001","input":"악성 코드가 DNS TXT 쿼리를 이용해 내부 데이터베이스에서 추출한 정보를 base64로 인코딩해 외부 서버로 전송한 것이 발견되었다.","label_mid":"Exfil_AlternateChannel","label_risk":"Malicious"}
+{"id":"Exfil_AlternateChannel_002","input":"PING 패킷의 페이로드에 Zip로 압축된 파일 조각을 삽입하여 ICMP 터널링 방식으로 대량의 데이터를 유출한 흔적이 포착되었다.","label_mid":"Exfil_AlternateChannel","label_risk":"Malicious"}
+{"id":"Exfil_AlternateChannel_003","input":"공격자가 HTTP 대신 웹소켓을 이용해 사용자 파일을 지속적으로 외부 호스트에 전달하였으며, 트래픽이 암호화되어 내용 분석이 어려웠다.","label_mid":"Exfil_AlternateChannel","label_risk":"Malicious"}
+{"id":"Exfil_AlternateChannel_004","input":"새로운 모니터링 에이전트가 정상적으로 DNS 기반 heartbeat 신호를 보내는 것이 확인되었으며, 송수신 데이터는 무해한 상태 정보로 확인되었다.","label_mid":"Exfil_AlternateChannel","label_risk":"Benign"}
+{"id":"Exfil_AlternateChannel_005","input":"사내 백업 솔루션이 PING 기반 keepalive 메시지를 전송해 네트워크 상태를 확인하였으며 데이터 페이로드는 없었다.","label_mid":"Exfil_AlternateChannel","label_risk":"Benign"}
+{"id":"Exfil_AlternateChannel_006","input":"비인가 소프트웨어가 DNS MX 레코드 조회를 이상하게 반복하며 데이터를 송신하는 패턴이 발견되었으나 실제 전송 데이터는 파악되지 않았다.","label_mid":"Exfil_AlternateChannel","label_risk":"Suspicious"}
+{"id":"Exfil_AlternateChannel_007","input":"네트워크 장비가 웹소켓 채널을 이용해 일정 크기의 바이너리 청크를 외부로 보내고 있으나, 이는 정식 기능인지 악성인지 추가 확인이 필요하다.","label_mid":"Exfil_AlternateChannel","label_risk":"Suspicious"}
+{"id":"Exfil_AlternateChannel_008","input":"단일 ICMP 패킷에 비정상적인 패턴의 페이로드가 있었지만, 별도의 연결이나 반복적인 활동이 없어 명확한 판단이 어렵다.","label_mid":"Exfil_AlternateChannel","label_risk":"Unknown"}
+{"id":"Exfil_RemovableMedia_001","input":"보안 정책을 우회하여 USB 드라이브에 고객 데이터베이스 파일(.mdb)을 압축하여 복사한 후, 해당 장치가 즉시 분리되었다.","label_mid":"Exfil_RemovableMedia","label_risk":"Malicious"}
+{"id":"Exfil_RemovableMedia_002","input":"업무시간 외에 근무자가 외부 저장 장치를 연결한 뒤 생산 기록 디렉터리를 통째로 복제한 로그가 발견되었다.","label_mid":"Exfil_RemovableMedia","label_risk":"Malicious"}
+{"id":"Exfil_RemovableMedia_003","input":"알 수 없는 프로세스가 중요한 프로젝트 문서를 임시 폴더에 ZIP으로 묶어 'E:\\_TEMP' 경로의 USB 장치로 이동한 정황이 포착되었다.","label_mid":"Exfil_RemovableMedia","label_risk":"Malicious"}
+{"id":"Exfil_RemovableMedia_004","input":"직원이 자신의 프로젝트 자료를 백업하기 위해 USB에 복사한 내역이 확인되었으며, 복사된 파일은 공용 정보였다.","label_mid":"Exfil_RemovableMedia","label_risk":"Benign"}
+{"id":"Exfil_RemovableMedia_005","input":"IT 팀이 시스템 이미지를 업데이트하기 위해 관리 USB로 OS 설치 파일을 복사하는 과정이었으며, 승인된 작업이다.","label_mid":"Exfil_RemovableMedia","label_risk":"Benign"}
+{"id":"Exfil_RemovableMedia_006","input":"휴식 시간 동안 다량의 로그 파일을 외부 하드에 복사한 기록이 있는데, 업무 관련 백업인지 여부가 불분명하다.","label_mid":"Exfil_RemovableMedia","label_risk":"Suspicious"}
+{"id":"Exfil_RemovableMedia_007","input":"개발 서버에서 특정 DLL 파일들이 외부 저장 장치로 이동했으나, 작업 요청 내역이 없는 상태여서 조사가 필요하다.","label_mid":"Exfil_RemovableMedia","label_risk":"Suspicious"}
+{"id":"Exfil_RemovableMedia_008","input":"불특정 시간대에 소량의 데이터가 USB 드라이브로 이동했지만, 파일 리스트와 용도를 확인할 수 없어 판단이 어렵다.","label_mid":"Exfil_RemovableMedia","label_risk":"Unknown"}
+{"id":"Exfil_Staging_001","input":"일시 중단된 프로세스가 'C:\\Temp\\stage' 디렉터리에 수백 개의 문서를 모아서 7z 형식으로 압축하는 행위가 발견되었다. 이후 네트워크 접속 로그가 끊겼다.","label_mid":"Exfil_Staging","label_risk":"Malicious"}
+{"id":"Exfil_Staging_002","input":"외부 IP로의 전송 직전에 여러 로그 파일을 하나의 tar 아카이브로 병합한 후 임시 폴더에 보관하는 스크립트 실행 흔적이 있다.","label_mid":"Exfil_Staging","label_risk":"Malicious"}
+{"id":"Exfil_Staging_003","input":"악성 프로그램이 데이터베이스 덤프를 여러 부분으로 나누어 staging 디렉터리에 배치해두고 전송을 준비한 것으로 보인다.","label_mid":"Exfil_Staging","label_risk":"Malicious"}
+{"id":"Exfil_Staging_004","input":"시스템 관리자 유지보수 작업 중 로그를 정리하기 위해 'C:\\logs\\staging'에 백업을 모아둔 후 안전하게 폐기했다.","label_mid":"Exfil_Staging","label_risk":"Benign"}
+{"id":"Exfil_Staging_005","input":"정기 백업 스크립트가 특정 폴더에 데이터 파일을 집계한 뒤 클라우드로 전송하도록 예약됐으며, 이 과정은 사내 정책에 따른 것이다.","label_mid":"Exfil_Staging","label_risk":"Benign"}
+{"id":"Exfil_Staging_006","input":"응용 프로그램이 사용자의 동의 없이 문서 여러 개를 임시 폴더에 복사했으나, 이후 이동 기록이 없어 의도가 불명확하다.","label_mid":"Exfil_Staging","label_risk":"Suspicious"}
+{"id":"Exfil_Staging_007","input":"특정 프로세스가 대용량 파일을 여러 개로 쪼개 staging 폴더에 저장하고 있었으며, 추가 행위가 관찰되지 않아 추적이 필요하다.","label_mid":"Exfil_Staging","label_risk":"Suspicious"}
+{"id":"Exfil_Staging_008","input":"임시 디렉터리에서 압축되지 않은 데이터가 발견되었지만, 이는 백업 작업의 일부인지 악성 준비 작업인지 판단할 수 없었다.","label_mid":"Exfil_Staging","label_risk":"Unknown"}

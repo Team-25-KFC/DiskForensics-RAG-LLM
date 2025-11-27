@@ -1,0 +1,8 @@
+{"id":"Process_Service_Discovery_001","input":"PowerShell 스크립트가 Get-Service와 Get-Process를 호출하여 실행 중인 서비스와 프로세스 목록을 수집하고 외부로 전송한 흔적이 발견되었다.","label_mid":"Process_Service_Discovery","label_risk":"Malicious"}
+{"id":"Process_Service_Discovery_002","input":"공격자가 wmic.exe를 사용해 서비스 구성을 덤프하고 프로세스 목록을 csv로 저장한 다음, 후속 공격에 이용했다.","label_mid":"Process_Service_Discovery","label_risk":"Malicious"}
+{"id":"Process_Service_Discovery_003","input":"악성 배치 파일이 'sc query state= all' 명령과 'tasklist /v'를 반복 실행하여 자세한 서비스·프로세스 상태를 수집하였다.","label_mid":"Process_Service_Discovery","label_risk":"Malicious"}
+{"id":"Process_Service_Discovery_004","input":"시스템 관리자가 서비스 오류 원인을 찾기 위해 'services.msc'와 'Task Manager'를 열어 수동으로 상태를 점검했다.","label_mid":"Process_Service_Discovery","label_risk":"Benign"}
+{"id":"Process_Service_Discovery_005","input":"모니터링 에이전트가 정기적으로 'Get-Service'를 호출해 서비스 상태를 보고하는 정상 동작으로 확인되었다.","label_mid":"Process_Service_Discovery","label_risk":"Benign"}
+{"id":"Process_Service_Discovery_006","input":"정체불명의 스크립트가 업무시간 외에 서비스 상태를 반복적으로 나열했으나, 수집 목적을 알 수 없다.","label_mid":"Process_Service_Discovery","label_risk":"Suspicious"}
+{"id":"Process_Service_Discovery_007","input":"새로운 프로그램 설치 후 init 스크립트가 프로세스와 서비스 목록을 조회했지만, 설치 설명서에는 해당 기능이 언급되지 않았다.","label_mid":"Process_Service_Discovery","label_risk":"Suspicious"}
+{"id":"Process_Service_Discovery_008","input":"시스템 로그에 서비스 조회 명령이 단일 실행된 기록이 있으나, 호출 주체 및 후속 행위가 없어 의도를 파악할 수 없다.","label_mid":"Process_Service_Discovery","label_risk":"Unknown"}
