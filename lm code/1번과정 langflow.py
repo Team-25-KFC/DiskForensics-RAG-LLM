@@ -26,7 +26,6 @@ artifact_all 테이블에서
 
 import psycopg2
 from psycopg2.extras import DictCursor
-from collections import defaultdict
 
 # =====================
 # 0. 공용 설정
@@ -125,112 +124,6 @@ def build_artifact_string(row: dict) -> str:
         f"tag:{tag_val}",
         f"description:{desc_val}",
     ])
-
-
-# =====================
-# 2. ASEP 대표 샘플 추출 (type별 1건)
-# =====================
-
-ASEP_TYPES = []  # 필요 시 type 필터 지정 (비워두면 KeyPath : ROOT 포함 전부)
-
-
-def load_asep_candidates(conn):
-    """
-    artifact_all에서 레지스트리 ASEP 후보를 가져온다.
-    - description에 'KeyPath : ROOT' 포함
-    - tactic/ttp가 비어 있거나 Unknown인 것만 대상
-    - ASEP_TYPES가 비어 있지 않으면 type 필터 적용
-    """
-    with conn.cursor(cursor_factory=DictCursor) as cur:
-        if ASEP_TYPES:
-            cur.execute(
-                f"""
-                SELECT id, type, lastwritetimestamp, tag, description
-                FROM {GENERAL_TABLE}
-                WHERE description LIKE '%%KeyPath : ROOT%%'
-                  AND (tactic IS NULL OR tactic = '' OR tactic = 'Unknown')
-                  AND type = ANY(%s);
-                """,
-                (ASEP_TYPES,),
-            )
-        else:
-            cur.execute(
-                f"""
-                SELECT id, type, lastwritetimestamp, tag, description
-                FROM {GENERAL_TABLE}
-                WHERE description LIKE '%%KeyPath : ROOT%%'
-                  AND (tactic IS NULL OR tactic = '' OR tactic = 'Unknown');
-                """
-            )
-        rows = cur.fetchall()
-
-    print(f"[ASEP] 후보 레코드: {len(rows)}건")
-    return rows
-
-
-def group_asep_by_type(rows):
-    groups = defaultdict(list)
-    for row in rows:
-        t_raw = row.get("type") or ""
-        t = t_raw.strip()
-        if not t:
-            continue
-        groups[t.lower()].append(row)
-    print(f"[ASEP] type 그룹 수: {len(groups)}")
-    return groups
-
-
-def pick_asep_reps(groups):
-    reps = []
-    for items in groups.values():
-        items_sorted = sorted(
-            items,
-            key=lambda x: (x.get("lastwritetimestamp", ""), x.get("id", 0)),
-            reverse=True,
-        )
-        reps.append(items_sorted[0])
-    print(f"[ASEP] 대표 선택: {len(reps)}건")
-    return reps
-
-
-def insert_asep_reps(conn, reps):
-    if not reps:
-        print("[ASEP] 대표 없음, INSERT 생략")
-        return 0
-
-    with conn.cursor() as cur:
-        insert_sql = f"""
-        INSERT INTO {UNIFIED_TTP_TABLE} (src_id, artifact, tactic, ttp)
-        VALUES (%s, %s, %s, %s);
-        """
-        inserted = 0
-        for r in reps:
-            artifact_text = build_artifact_string(r)
-            cur.execute(insert_sql, (r["id"], artifact_text, None, None))
-            inserted += 1
-        conn.commit()
-    print(f"[ASEP] INSERT 완료: {inserted}건")
-    return inserted
-
-
-def run_asep_pipeline():
-    """
-    artifact_all에서 레지스트리 ASEP 후보를 type별 1건 대표로 골라
-    artifact_env_ttp에 INSERT (tactic/ttp는 비워둠).
-    이미 artifact_all에서 tactic/ttp가 채워진 행은 제외.
-    """
-    conn = get_connection()
-    try:
-        rows = load_asep_candidates(conn)
-        if not rows:
-            print("[ASEP] 후보 없음, 종료")
-            return
-        groups = group_asep_by_type(rows)
-        reps = pick_asep_reps(groups)
-        insert_asep_reps(conn, reps)
-    finally:
-        conn.close()
-        print("[ASEP] 연결 종료")
 
 
 # =====================
@@ -437,9 +330,5 @@ if __name__ == "__main__":
     # 1) SRUM 대표 패턴 추출
     run_srum_pipeline()
 
-   
-    # 2) ASEP 대표 샘플 추출
-    run_asep_pipeline()
-
-    # 3) BasicSystemInfo �ý��� ���� �±�
+    # 2) BasicSystemInfo 시스템 정보 태깅
     run_systeminfo_pipeline()
