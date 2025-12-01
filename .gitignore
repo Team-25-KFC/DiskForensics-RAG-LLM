@@ -1,0 +1,21 @@
+# 루트 전용 무시 폴더들
+/.langflow/
+/drivers/
+/Postgre_DATA/
+
+# 어디에 있든 __pycache__는 항상 무시
+__pycache__/
+
+# TAG_TEST_CSV 밑 데이터/결과 폴더들
+TAG_TEST_CSV/artifact_csv/
+TAG_TEST_CSV/data_jsonl/
+TAG_TEST_CSV/filnish_tag/
+
+# 기타 임시/실험 폴더
+json_file/
+ltag test/
+zxczxczx/
+
+# 로그/결과 파일들
+*.log
+*.csv
