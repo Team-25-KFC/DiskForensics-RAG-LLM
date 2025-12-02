@@ -500,26 +500,39 @@ class RECmdTagger:
 
 # 사용 예시
 if __name__ == "__main__":
-    import glob
+    from pathlib import Path
 
     tagger = RECmdTagger()
 
-    # 원본 CSV만 처리 (_tagged 포함된 파일은 제외)
-    csv_files = glob.glob("*RECmd_Batch_*.csv")
-    csv_files = [f for f in csv_files if "_tagged" not in f]
+    # 현재 .py가 있는 디렉터리
+    base_dir = Path(__file__).resolve().parent
+
+    # .. / lang_flow
+    input_root = base_dir.parent / "여기에 상위폴더 이름!!!!"
+
+    if not input_root.exists():
+        print(f"폴더를 찾을 수 없지혁..: {input_root}")
+        raise SystemExit(1)
+
+    #  모든 하위폴더에서 RECmd_Batch_*.csv 찾기
+    csv_files = [
+        p
+        for p in input_root.rglob("*RECmd_Batch_*.csv")
+        if "_tagged" not in p.name
+    ]
 
     if not csv_files:
         print("처리할 RECmd Batch CSV 파일이 없습니다.")
     else:
         print(f"총 {len(csv_files)}개의 RECmd CSV 파일을 찾았습니다.\n")
 
-        for i, csv_file in enumerate(csv_files, 1):
+        for i, csv_path in enumerate(csv_files, 1):
             try:
-                print(f"[{i}/{len(csv_files)}] 처리 중: {csv_file}")
-                jsonl_out, row_count = tagger.process_csv(csv_file)
-                print(f"  ✓ JSONL 완료: {jsonl_out} ({row_count:,}개 행)\n")
+                print(f"[{i}/{len(csv_files)}] 처리 중: {csv_path}")
+                jsonl_out, row_count = tagger.process_csv(csv_path)
+                print(f" JSONL 완료: {jsonl_out} ({row_count:,}개 행)\n")
             except Exception as e:
-                print(f"  ✗ 오류 발생: {str(e)}\n")
+                print(f" 오류 발생: {csv_path} → {e}\n")
 
         print("=" * 50)
         print("모든 파일 처리 완료!")
