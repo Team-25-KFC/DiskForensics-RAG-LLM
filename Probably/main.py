@@ -11,7 +11,7 @@ from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ── 기본값(환경변수로 덮어쓰기 가능) ─────────────────────────
-AIM_EXE  = os.getenv("AIM_EXE",  r"C:\Arsenal-Image-Mounter-v3.12.331\aim_cli.exe")
+AIM_EXE  = os.getenv("AIM_EXE",  r"C:\Arsenal-Image-Mounter-v3.11.307\aim_cli.exe")
 # 환경변수에 E01_PATH가 지정된 경우에만 힌트로 사용, 기본은 "완전 미지정"
 E01_PATH = os.getenv("E01_PATH", "").strip()
 KAPE_EXE = os.getenv("KAPE_EXE", r"C:\KAPE\kape.exe")

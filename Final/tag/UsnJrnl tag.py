@@ -1,28 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-KAPE MFTECmd_$J USN 저널 CSV → 태깅 CSV 변환 (main.py + parser/tag 구조용)
-
-동작 개요
-- main.py 가 넘겨주는 cfg["BASE_OUT"] 를 기준으로만 동작한다.
-  (예: BASE_OUT = Path("E:\\Kape Output"))
-- drive_letters (예: ["H:", "I:", ...]) 를 받아서, 각 드라이브에 대해:
-    1) BASE_OUT\<드라이브>\MFTECmd_$J\
-       BASE_OUT\$NFTS_<드라이브>\MFTECmd_$J\
-       두 구조를 모두 탐색
-    2) 그 아래에서 '**/*MFTECmd_$J*_Output.csv' 패턴에 맞는 CSV를 찾는다.
-- 최종 출력 CSV는:
-    BASE_OUT.parent / "tagged" / f"usn_<드라이브>_<stem>_tagged.csv"
-  형태로 저장된다. (JSONL 은 만들지 않음)
-
-태그 정책 (요약)
-- ARTIFACT_USN_JOURNAL 항상 부여
-- FORMAT_ / AREA_ / STATE_ / EVENT_ / SEC_ / ACT_ / TIME_ 태그 부여
-- TIME_ 은 cfg["ANALYSIS_TIME"] (datetime) 기준,
-  없으면 datetime.now(timezone.utc) 기준으로 버킷을 나눈다.
-"""
-
 import csv
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Iterable
 from datetime import datetime, timedelta, timezone
@@ -47,9 +26,6 @@ REGISTRY_EXTS = {".dat", ".hve", ".reg"}
 EMAIL_EXTS = {".pst", ".ost", ".msg", ".eml"}
 SHORTCUT_EXTS = {".lnk", ".url"}
 
-# 랜섬웨어 인디케이터로 쓸 수 있는 대표 확장자 (워너크라이 등)
-RANSOM_EXTS = {".wncry", ".wncryt", ".encrypted", ".locked"}
-
 SUSPICIOUS_NAME_KEYWORDS = {
     "crack",
     "keygen",
@@ -65,11 +41,10 @@ UPDATE_TS_KEYS = ("UpdateTimestamp", "UpdateTime", "Timestamp")
 UPDATE_REASON_KEYS = ("UpdateReasons", "Reasons")
 FILE_ATTR_KEYS = ("FileAttributes", "Attributes")
 
-# 시간 태그 기준 (버킷 길이)
+# 시간 태그 기준 (버킷 길이) — 1일 / 7일 / 30일 / 30일 이후
 DELTA_RECENT = timedelta(days=1)
 DELTA_WEEK = timedelta(days=7)
-DELTA_MONTH = timedelta(days=31)
-DELTA_OLD = timedelta(days=90)
+DELTA_MONTH = timedelta(days=30)
 
 # ──────────────────────────────────────────────────────────────
 #  유틸: 컬럼 접근/타임스탬프 파싱
@@ -108,9 +83,61 @@ def parse_timestamp(ts_str: str) -> Optional[datetime]:
             # 이벤트로그와 맞추기 위해 UTC 기준으로 취급
             return dt.replace(tzinfo=timezone.utc)
         except ValueError:
-        # 다음 포맷 시도
+            # 다음 포맷 시도
             continue
     return None
+
+
+# ──────────────────────────────────────────────────────────────
+#  분석 기준 시간: 모듈 .txt 파일명에서 추출
+# ──────────────────────────────────────────────────────────────
+
+_TIME_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}_\d{2}_\d{2})")
+
+def _parse_marker_time_from_name(name: str) -> Optional[datetime]:
+    """
+    파일명에서 'YYYY-MM-DDTHH_MM_SS' 패턴을 찾아서 UTC datetime으로 변환.
+    예: '2025-12-04T02_51_03_Wannacry_Module.txt'
+    """
+    m = _TIME_PATTERN.search(name)
+    if not m:
+        return None
+    ts = m.group(1)  # '2025-12-04T02_51_03'
+    try:
+        dt = datetime.strptime(ts, "%Y-%m-%dT%H_%M_%S")
+        return dt.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _get_analysis_time_from_markers(base_out: Path) -> datetime:
+    """
+    기준:
+      1) marker_dir = BASE_OUT.parent 안에서
+         가장 최근 .txt 파일을 찾고, 그 파일명에서 시간을 파싱해 now로 사용
+      2) 없으면 현재 UTC 시각 사용
+    """
+    marker_dir = base_out.parent
+
+    txt_files: List[Path] = []
+    try:
+        txt_files = [p for p in marker_dir.glob("*.txt") if p.is_file()]
+    except Exception:
+        txt_files = []
+
+    # 수정시간 기준 최신 순으로 정렬
+    txt_files.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+
+    for p in txt_files:
+        dt = _parse_marker_time_from_name(p.name)
+        if dt is not None:
+            print(f"[INFO] UsnJrnl_tag: 기준 시간(모듈 txt) -> {dt.isoformat()} ({p.name})")
+            return dt
+
+    now = datetime.now(timezone.utc)
+    print(f"[INFO] UsnJrnl_tag: 모듈 txt 기준시간 없음, 현재 시각 사용 -> {now.isoformat()}")
+    return now
+
 
 # ──────────────────────────────────────────────────────────────
 #  태깅: FORMAT_ / AREA_ / STATE_ / EVENT_ / SEC_ / ACT_ / TIME_
@@ -218,7 +245,6 @@ def add_state_tags(tags: set, file_attrs: str) -> None:
         tags.add("STATE_COMPRESSED")
     if "readonly" in attrs or "read_only" in attrs:
         tags.add("STATE_READONLY")
-    # STATE_ENCRYPTED 등은 랜섬 확장자를 따로 처리
 
 
 def add_event_and_act_tags(tags: set, reasons: str) -> None:
@@ -298,11 +324,6 @@ def add_sec_tags(tags: set, full_path: str, file_name: str, ext: str, file_attrs
                 tags.add("SEC_SUSPICIOUS_EXTENSION")
                 break
 
-    # 랜섬웨어 인디케이터 (확장자 기반)
-    if e in RANSOM_EXTS:
-        tags.add("SEC_RANSOMWARE_INDICATOR")
-        tags.add("STATE_ENCRYPTED")
-
 
 def add_time_tags(tags: set, dt: Optional[datetime], now: datetime) -> None:
     if dt is None:
@@ -315,12 +336,12 @@ def add_time_tags(tags: set, dt: Optional[datetime], now: datetime) -> None:
         tags.add("TIME_WEEK")
     elif diff <= DELTA_MONTH:
         tags.add("TIME_MONTH")
-    elif diff > DELTA_OLD:
+    else:
         tags.add("TIME_OLD")
 
 
 # ──────────────────────────────────────────────────────────────
-#  한 행 태깅
+#  한 행 태깅 + description 생성
 # ──────────────────────────────────────────────────────────────
 
 def tag_usn_row(row: Dict[str, Any], now: datetime) -> Dict[str, Any]:
@@ -370,6 +391,74 @@ def tag_usn_row(row: Dict[str, Any], now: datetime) -> Dict[str, Any]:
         "file_attributes": file_attrs,
     }
 
+
+def build_description(row: Dict[str, Any]) -> str:
+    """
+    3번째 컬럼(description)에 들어갈 내용:
+
+    "FileName : ... | Extension : ... | EventInfo : ... |
+     FileAttribute : ... | USN : ... | EntryNumber : ... |
+     SequenceNumber : ... | ParentEntryNumber : ... | ParentSequenceNumber : ..."
+    """
+
+    # FileName (없으면 Name)
+    file_name = row.get("FileName") or row.get("Name") or ""
+
+    # Extension (없으면 FileName에서 유추)
+    extension = row.get("Extension") or ""
+    if not extension and file_name:
+        idx = file_name.rfind(".")
+        if idx != -1:
+            extension = file_name[idx:]
+
+    # EventInfo (없으면 UpdateReasons/Reasons)
+    event_info = (
+        row.get("EventInfo")
+        or row.get("UpdateReasons")
+        or row.get("Reasons")
+        or ""
+    )
+
+    # FileAttribute (없으면 FileAttributes/Attributes)
+    file_attr = (
+        row.get("FileAttribute")
+        or row.get("FileAttributes")
+        or row.get("Attributes")
+        or ""
+    )
+
+    # USN (Usn / USN 둘 다 커버)
+    usn_val = row.get("Usn") or row.get("USN") or ""
+
+    entry_number = row.get("EntryNumber") or ""
+    seq_number = row.get("SequenceNumber") or ""
+    parent_entry = row.get("ParentEntryNumber") or ""
+    parent_seq = row.get("ParentSequenceNumber") or ""
+
+    parts: List[str] = []
+
+    if file_name:
+        parts.append(f"FileName : {file_name}")
+    if extension:
+        parts.append(f"Extension : {extension}")
+    if event_info:
+        parts.append(f"EventInfo : {event_info}")
+    if file_attr:
+        parts.append(f"FileAttribute : {file_attr}")
+    if usn_val:
+        parts.append(f"USN : {usn_val}")
+    if entry_number:
+        parts.append(f"EntryNumber : {entry_number}")
+    if seq_number:
+        parts.append(f"SequenceNumber : {seq_number}")
+    if parent_entry:
+        parts.append(f"ParentEntryNumber : {parent_entry}")
+    if parent_seq:
+        parts.append(f"ParentSequenceNumber : {parent_seq}")
+
+    return " | ".join(parts)
+
+
 # ──────────────────────────────────────────────────────────────
 #  CSV → 태깅 CSV 변환 (한 파일)
 # ──────────────────────────────────────────────────────────────
@@ -382,27 +471,23 @@ def _process_usn_csv_for_drive(
 ) -> None:
     """
     MFTECmd_$J CSV 하나를 읽어서
-    tagged/usn_<드라이브>_<stem>_tagged.csv 로 저장.
+    tagged/UsnJrnl_<드라이브>_<stem>_tagged.csv 로 저장.
+
+    컬럼: type, time, description, tag
     """
     stem = csv_path.stem
-    out_name = f"usn_{drive_tag}_{stem}_tagged.csv"
+    out_name = f"UsnJrnl_{drive_tag}_{stem}_tagged.csv"
     out_csv = tagged_root / out_name
 
     print(f"[USN ] 입력 CSV: {csv_path}")
     print(f"       → 출력 CSV: {out_csv}")
 
-    # 입력: utf-8-sig (BOM 있든 없든 다 읽게)
-    # 출력: utf-8-sig (엑셀 한글 깨짐 방지)
     with csv_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
          out_csv.open("w", encoding="utf-8-sig", newline="") as f_out:
 
         reader = csv.DictReader(f_in)
-        fieldnames = list(reader.fieldnames) if reader.fieldnames else []
 
-        # tags 컬럼 추가
-        if "tags" not in fieldnames:
-            fieldnames.append("tags")
-
+        fieldnames = ["type", "time", "description", "tag"]
         writer = csv.DictWriter(f_out, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -411,44 +496,38 @@ def _process_usn_csv_for_drive(
 
         for row in reader:
             in_count += 1
+
             tagged_info = tag_usn_row(row, now)
+            description = build_description(row)
 
-            tag_list = tagged_info.get("tags", [])
-            tag_str = "|".join(tag_list) if isinstance(tag_list, list) else str(tag_list)
+            tags_list = tagged_info.get("tags", [])
+            tag_str = "|".join(tags_list) if isinstance(tags_list, list) else str(tags_list)
 
-            row_out = dict(row)
-            row_out["tags"] = tag_str
-            writer.writerow(row_out)
+            out_row = {
+                "type": "usn_journal",
+                "time": tagged_info.get("timestamp", ""),
+                "description": description,
+                "tag": tag_str,
+            }
+            writer.writerow(out_row)
             out_count += 1
 
     print(f"       행 수: 입력 {in_count} → 출력 {out_count}")
+
 
 # ──────────────────────────────────────────────────────────────
 #  엔트리포인트: main.py 가 호출하는 run()
 # ──────────────────────────────────────────────────────────────
 
 def run(drive_letters: List[str], cfg: Dict[str, Any]) -> bool:
-    """
-    main.py 에서 tag 단계로 호출하는 표준 엔트리포인트.
-
-    drive_letters: ['H:', 'I:', ...]
-    cfg: {
-      "BASE_OUT": Path(...),      # 예: E:\\Kape Output
-      "KAPE_EXE": Path(...),
-      "PROC_TIMEOUT_SEC": int,
-      (옵션) "ANALYSIS_TIME": datetime (timezone aware 권장)
-    }
-    """
     base_out: Path = cfg["BASE_OUT"]
+
     # Kape Output 의 상위 폴더 기준으로 tagged/ 사용
     tagged_root = base_out.parent / "tagged"
     tagged_root.mkdir(parents=True, exist_ok=True)
 
-    analysis_time = cfg.get("ANALYSIS_TIME")
-    if isinstance(analysis_time, datetime):
-        now = analysis_time
-    else:
-        now = datetime.now(timezone.utc)
+    # 분석 기준 시간: 모듈 txt 파일명에서 추출
+    now = _get_analysis_time_from_markers(base_out)
 
     any_processed = False
 
@@ -462,7 +541,7 @@ def run(drive_letters: List[str], cfg: Dict[str, Any]) -> bool:
 
         module_roots = [c for c in candidates if c.exists()]
         if not module_roots:
-            print(f"[SKIP] usn_tag: {dl} MFTECmd_$J 출력 폴더 없음")
+            print(f"[SKIP] UsnJrnl_tag: {dl} MFTECmd_$J 출력 폴더 없음")
             continue
 
         target_csvs: List[Path] = []
@@ -470,18 +549,18 @@ def run(drive_letters: List[str], cfg: Dict[str, Any]) -> bool:
             target_csvs.extend(root.rglob("*MFTECmd_$J*_Output.csv"))
 
         if not target_csvs:
-            print(f"[SKIP] usn_tag: {dl} MFTECmd_$J CSV 없음")
+            print(f"[SKIP] UsnJrnl_tag: {dl} MFTECmd_$J CSV 없음")
             continue
 
-        print(f"[INFO] usn_tag: {dl} 대상 CSV {len(target_csvs)}개")
+        print(f"[INFO] UsnJrnl_tag: {dl} 대상 CSV {len(target_csvs)}개")
 
         for csv_path in target_csvs:
             _process_usn_csv_for_drive(csv_path, tagged_root, d, now)
             any_processed = True
 
     if not any_processed:
-        print("[INFO] usn_tag: 처리할 USN CSV가 없습니다.")
+        print("[INFO] UsnJrnl_tag: 처리할 USN CSV가 없습니다.")
     else:
-        print("[INFO] usn_tag: 완료")
+        print("[INFO] UsnJrnl_tag: 완료")
 
     return any_processed

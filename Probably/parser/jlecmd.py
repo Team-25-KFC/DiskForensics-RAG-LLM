@@ -4,11 +4,11 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-MODULE_NAME="RecentFileCacheParser"; BIN=Path(r"C:\KAPE\Modules\bin")
+MODULE_NAME="JLECmd"; MODULE_BIN_DIR=Path(r"C:\KAPE\Modules\bin")
 
-def _has()->bool:
-    for p in BIN.rglob("*.exe"):
-        if p.name.lower()=="recentfilecacheparser.exe": return True
+def _find_exe(exe:str)->bool:
+    for p in MODULE_BIN_DIR.rglob("*.exe"):
+        if p.name.lower()==exe.lower(): return True
     return False
 
 def _cands(b:Path,d:str)->list[Path]: return [b/f"$NFTS_{d[0]}"/"Artifacts", b/d[0]/"Artifacts"]
@@ -16,7 +16,7 @@ def _loc(b:Path,d:str)->Path|None:
     for p in _cands(b,d):
         if p.exists(): return p
     return None
-def _root(a:Path)->Path: return a.parent
+def _out(art:Path)->Path: return art.parent
 def _stream(cmd:list[str],log:Path,t:int)->int:
     log.parent.mkdir(parents=True,exist_ok=True)
     with open(log,"w",encoding="utf-8") as lf:
@@ -30,11 +30,11 @@ def _stream(cmd:list[str],log:Path,t:int)->int:
 
 def run(drive_letters:List[str],unmount_callback,cfg:dict)->bool:
     BASE_OUT:Path=cfg["BASE_OUT"]; KAPE_EXE:Path=cfg["KAPE_EXE"]; TO=int(cfg.get("PROC_TIMEOUT_SEC",1800))
-    if not _has(): print("[SKIP] RecentFileCacheParser: exe not found"); return False
+    if not _find_exe("JLECmd.exe"): print("[SKIP] JLECmd: exe not found"); return False
     for dl in drive_letters:
         art=_loc(BASE_OUT,dl)
-        if not art: print(f"[SKIP] {dl} RecentFileCache: Artifacts missing"); continue
-        root=_root(art); mdest=root/MODULE_NAME; log=root/"Logs"/f"{MODULE_NAME}.log"
+        if not art: print(f"[SKIP] {dl} JLECmd: Artifacts missing"); continue
+        root=_out(art); mdest=root/MODULE_NAME; log=root/"Logs"/f"{MODULE_NAME}.log"
         cmd=[str(KAPE_EXE),"--msource",str(art),"--mdest",str(mdest),"--module",MODULE_NAME,"--mef","csv","--vss","false"]
         print(f"[RUN ] {dl} {MODULE_NAME}"); rc=_stream(cmd,log,TO)
         if rc!=0:

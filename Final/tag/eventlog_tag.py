@@ -1,23 +1,6 @@
 # 파일: tag/eventlog_tag.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-KAPE EvtxECmd 이벤트로그 CSV → 태그 CSV 변환 모듈
-
-- main.py 에서 호출되는 엔트리포인트: run(drive_letters, cfg)
-- 입력:
-    BASE_OUT/<드라이브>/EvtxECmd/**/*EvtxECmd*_Output.csv
-  예: E:\\Kape Output\\H\\EvtxECmd\\EventLogs\\Security_EvtxECmd_Output.csv
-
-- 출력:
-    BASE_OUT.parent / "tagged" / eventlog_<드라이브>_<원본이름>_tagged.csv
-  예: E:\\tagged\\eventlog_H_Security_EvtxECmd_Output_tagged.csv
-
-- 시간 태그 기준:
-    cfg["ANALYSIS_TIME"] 가 있으면 그 시간을 UTC 기준으로 사용
-    없으면 datetime.now(timezone.utc) 사용
-"""
-
 import csv
 import json
 import os
@@ -740,6 +723,65 @@ def build_tags(row: Dict[str, Any], now: datetime) -> List[str]:
     return sorted(tags)
 
 
+# // [코드 삽입 시작] type / time / description 빌더
+
+def build_type_label(row: Dict[str, Any]) -> str:
+    """
+    type 컬럼: eventlog_<EventID> 형태 (예: eventlog_4688)
+    EventID 없으면 eventlog_unknown.
+    """
+    event_id = safe_int(row.get("EventID"))
+    if event_id is not None:
+        return f"eventlog_{event_id}"
+    return "eventlog_unknown"
+
+
+def build_time_label(row: Dict[str, Any]) -> str:
+    """
+    time 컬럼: TimeCreated/TimeCreatedUtc 기준 마지막 사용 시간.
+    포맷: YYYY-MM-DD HH:MM:SS
+    """
+    t_str = row.get("TimeCreated") or row.get("TimeCreatedUtc") or ""
+    dt = parse_time(t_str)
+    if not dt:
+        return t_str.strip()
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def build_description(row: Dict[str, Any]) -> str:
+    """
+    description 컬럼: 주요 필드를
+    'Key : Value | Key2 : Value2' 형식으로 합쳐서 LLM이 보기 좋게 요약.
+    """
+    parts: List[str] = []
+
+    def add(label: str, candidates: List[str]) -> None:
+        v = get_first_nonempty(row, candidates)
+        if v:
+            parts.append(f"{label} : {v}")
+
+    add("TimeCreated", ["TimeCreated", "TimeCreatedUtc"])
+    add("Channel", ["Channel"])
+    add("Provider", ["ProviderName", "Provider"])
+    add("EventID", ["EventID"])
+    add("Computer", ["Computer"])
+    add("SubjectUser", ["SubjectUserName"])
+    add("TargetUser", ["TargetUserName"])
+    add("LogonType", ["LogonType"])
+    add("NewProcessName", ["NewProcessName", "Image", "ProcessName"])
+    add("CommandLine", ["CommandLine", "ProcessCommandLine"])
+    add("ParentProcessName", ["ParentProcessName"])
+    add("ParentCommandLine", ["ParentCommandLine"])
+    add("IpAddress", ["IpAddress"])
+    add("IpPort", ["IpPort"])
+    add("TaskCategory", ["TaskCategory"])
+    add("Message", ["Message", "Description", "EventMessage", "Payload"])
+
+    return " | ".join(parts)
+
+# // [코드 삽입 끝]
+
+
 # ───────────────────── CSV 처리 ─────────────────────
 
 def _read_csv_rows(csv_path: Path) -> List[Dict[str, Any]]:
@@ -786,9 +828,8 @@ def process_evtx_csv(
     out_name = f"eventlog_{drive_tag}_{base_name}_tagged.csv"
     out_csv = tag_root / out_name
 
-    fieldnames = list(rows[0].keys())
-    if "tags" not in fieldnames:
-        fieldnames.append("tags")
+    # // [코드 삽입 시작] 최종 출력: type / time / description / tags 4컬럼
+    fieldnames = ["type", "time", "description", "tags"]
 
     with out_csv.open("w", encoding="utf-8", newline="") as f_csv:
         writer = csv.DictWriter(f_csv, fieldnames=fieldnames)
@@ -796,9 +837,14 @@ def process_evtx_csv(
 
         for row in rows:
             tags = build_tags(row, analysis_time)
-            row_out = dict(row)
-            row_out["tags"] = "|".join(tags)
+            row_out = {
+                "type": build_type_label(row),
+                "time": build_time_label(row),
+                "description": build_description(row),
+                "tags": "|".join(tags),
+            }
             writer.writerow(row_out)
+    # // [코드 삽입 끝]
 
     print(f"    -> {out_csv}")
     return out_csv
