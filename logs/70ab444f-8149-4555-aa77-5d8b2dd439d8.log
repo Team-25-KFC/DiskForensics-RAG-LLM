@@ -1,0 +1,6 @@
+C:\GitHub\SeungWon\Final\main.py:63: SyntaxWarning: "\c" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\c"? A raw string is also an option.
+  2) 그 외에는 D:~Z: 전체에서 \ccit\*.e01 검색
+[INFO] 사용 E01: F:\ccit\jo-2009-12-11-001.E01
+[INFO] NTFS 드라이브: (없음)
+[ERR ] NTFS 드라이브가 없어 종료
+[INFO] Dismounted.

@@ -3,31 +3,117 @@
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 import subprocess, sys, shlex, os, uuid, threading, time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # MCP 툴 서버 정의
 mcp = FastMCP("final-main-runner-async")
 
-# --- 상수 정의 ---
-ROOTDIR = Path(r"C:\GitHub\SeungWon")
+# ──────────────────────────────────────────────
+#  ROOTDIR / SCRIPT 자동 탐색 로직
+# ──────────────────────────────────────────────
+
+def _detect_rootdir() -> Path:
+    """
+    Final/main.py 위치를 최대한 자동으로 탐색해서 ROOTDIR를 결정한다.
+
+    우선순위:
+    1) 환경변수 FORENSIC_ROOTDIR 또는 SEUNGWON_ROOTDIR
+    2) server.py(__file__) 기준으로 위로 올라가며 Final/main.py 존재 여부 확인
+    3) server.py 주변 디렉토리 및 현재 작업 디렉토리 전체를 재귀 탐색하여 Final/main.py 찾기
+    4) 그래도 못 찾으면 RuntimeError 발생 (환경변수로 지정 필요)
+    """
+    # 1) 환경변수 우선
+    env_root = os.getenv("FORENSIC_ROOTDIR") or os.getenv("SEUNGWON_ROOTDIR")
+    if env_root:
+        p = Path(env_root).expanduser().resolve()
+        if p.exists():
+            return p
+
+    here = Path(__file__).resolve()
+
+    # 2) 부모 디렉토리 체인에서 Final/main.py 찾기
+    for parent in [here.parent] + list(here.parents):
+        candidate = parent / "Final" / "main.py"
+        if candidate.exists():
+            return parent
+
+    # 3) 주변 디렉토리 전체 탐색 (server.py가 있는 폴더와 현재 작업 디렉토리 기준)
+    search_roots = {here.parent, Path.cwd()}
+    visited: set[Path] = set()
+
+    def _search_under(root: Path) -> Optional[Path]:
+        """root 이하에서 Final/main.py를 재귀 탐색."""
+        try:
+            root = root.resolve()
+        except Exception:
+            return None
+        if root in visited or not root.exists():
+            return None
+        visited.add(root)
+
+        try:
+            # Final/main.py 패턴만 rglob로 탐색
+            for path in root.rglob("Final/main.py"):
+                # Final 폴더의 상위 폴더를 ROOTDIR로 사용
+                return path.parent.parent
+        except Exception:
+            # 권한 문제 등은 무시
+            return None
+        return None
+
+    for sr in list(search_roots):
+        found = _search_under(sr)
+        if found is not None:
+            return found
+
+    # 4) 완전히 실패한 경우
+    raise RuntimeError(
+        "Final/main.py 위치를 자동으로 찾을 수 없습니다. "
+        "FORENSIC_ROOTDIR (또는 SEUNGWON_ROOTDIR) 환경변수로 루트 폴더를 지정해 주세요."
+    )
+
+
+ROOTDIR = _detect_rootdir()
 SCRIPT  = ROOTDIR / "Final" / "main.py"
 LOGDIR  = ROOTDIR / "logs"
 LOGDIR.mkdir(exist_ok=True)
-DEFAULT_PYTHON_EXE = Path(r"C:\Users\ksw02\AppData\Local\Programs\Python\Python313\python.exe")
 
-# --- 전역 작업 저장소 ---
+# ──────────────────────────────────────────────
+#  전역 작업 저장소
+# ──────────────────────────────────────────────
 # { "job_id": { "status": "running" | "done", ... } }
 JOBS: Dict[str, Dict[str, Any]] = {}
 
+# ──────────────────────────────────────────────
+#  파이썬 실행 파일 결정 로직
+# ──────────────────────────────────────────────
 
 def _get_python(python_exe: str) -> Path:
-    """유효한 파이썬 실행 파일 경로를 반환합니다."""
-    return Path(python_exe) if python_exe.strip() else DEFAULT_PYTHON_EXE
+    """
+    사용할 파이썬 실행 파일 경로를 결정한다.
+
+    우선순위:
+    1) 함수 인자로 들어온 python_exe (공백이 아닌 경우)
+    2) 환경변수 FORENSIC_PYTHON_EXE 또는 PYTHON_EXE
+    3) 현재 이 MCP 서버를 실행 중인 파이썬(sys.executable)
+    """
+    # 1) 인자로 직접 받은 경로가 있으면 그걸 사용
+    if python_exe and python_exe.strip():
+        return Path(python_exe).expanduser().resolve()
+
+    # 2) 환경변수로 오버라이드 (옵션)
+    env_exe = os.getenv("FORENSIC_PYTHON_EXE") or os.getenv("PYTHON_EXE")
+    if env_exe:
+        return Path(env_exe).expanduser().resolve()
+
+    # 3) 기본값: 현재 MCP 서버를 실행 중인 파이썬
+    return Path(sys.executable).resolve()
 
 
-# ---
-# 툴 1: 작업 시작 (진동벨 받기)
-# ---
+# ──────────────────────────────────────────────
+#  툴 1: 작업 시작 (진동벨 받기)
+# ──────────────────────────────────────────────
+
 @mcp.tool()
 def start_forensic_job(python_exe: str = "", args: str = "") -> str:
     """
@@ -104,9 +190,10 @@ def start_forensic_job(python_exe: str = "", args: str = "") -> str:
         )
 
 
-# ---
-# 툴 2: 상태 확인 (진동벨 확인)
-# ---
+# ──────────────────────────────────────────────
+#  툴 2: 상태 확인 (진동벨 확인)
+# ──────────────────────────────────────────────
+
 @mcp.tool()
 def check_forensic_job_status(job_id: str, tail_lines: int = 30) -> str:
     """
@@ -115,7 +202,10 @@ def check_forensic_job_status(job_id: str, tail_lines: int = 30) -> str:
     """
     job = JOBS.get(job_id)
     if not job:
-        return f"[ERR] job_id '{job_id}'를 찾을 수 없습니다. (서버 재시작 시 메모리 초기화되었을 수도 있음)"
+        return (
+            f"[ERR] job_id '{job_id}'를 찾을 수 없습니다. "
+            "(서버 재시작 시 메모리 초기화되었을 수도 있음)"
+        )
 
     log_path = Path(job["log_path"])
     if not log_path.exists():
@@ -142,7 +232,10 @@ def check_forensic_job_status(job_id: str, tail_lines: int = 30) -> str:
     )
 
 
-# FastMCP HTTP 앱 실행
+# ──────────────────────────────────────────────
+#  FastMCP HTTP 앱 실행
+# ──────────────────────────────────────────────
+
 app = mcp.streamable_http_app()
 
 if __name__ == "__main__":
