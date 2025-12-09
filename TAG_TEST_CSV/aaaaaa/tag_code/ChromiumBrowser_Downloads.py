@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import csv
-import argparse
 from datetime import datetime
 from typing import Optional, Dict, List, Tuple
+from pathlib import Path
 
 # ===============================
 # 0. 유틸: 파일명에서 기준 시각(ref_time) 추출
@@ -20,7 +21,6 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
     """
     base = os.path.basename(filename)
 
-    # 파일명 앞 14자만 뽑아서 숫자인지 확인
     if len(base) < 14:
         return None
 
@@ -35,33 +35,43 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
         return None
 
 
-
-
 # ===============================
-# 1. base_dir 아래에서 최신 Downloads CSV 찾기
+# 1. D:~Z: 전체에서 ccit 아래 Downloads CSV 찾기
 # ===============================
 
-def find_all_download_csv(base_dir: str) -> List[Tuple[str, Optional[datetime]]]:
+def find_all_download_csv_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
     """
-    base_dir 아래를 재귀적으로 돌면서
-    '*_ChromiumBrowser_Downloads_*.csv' 패턴을 모두 찾고,
-    (파일 전체 경로, ref_time) 리스트로 반환.
-    """
-    candidate_files: List[Tuple[str, Optional[datetime]]] = []
+    D:~Z: 전체를 돌면서:
+      - root 경로에 'ccit'가 포함된 경우만 탐색 유지
+      - 그 아래에서 '*_ChromiumBrowser_Downloads_*.csv' 파일들을 찾음
+      - 파일명 앞 14자리(YYYYMMDDHHMMSS)를 ref_time으로 파싱
 
-    for root, dirs, files in os.walk(base_dir):
-        for name in files:
-            if "_ChromiumBrowser_Downloads_" not in name:
+    반환:
+      [(파일 Path, ref_time or None), ...]
+    """
+    candidate_files: List[Tuple[Path, Optional[datetime]]] = []
+
+    for drive_code in range(ord("D"), ord("Z") + 1):
+        drive_root = Path(f"{chr(drive_code)}:\\")
+        if not drive_root.exists():
+            continue
+
+        for root, dirs, files in os.walk(str(drive_root)):
+            lower_root = root.lower()
+            if "ccit" not in lower_root:
                 continue
 
-            full_path = os.path.join(root, name)
-            ref_time = parse_ref_time_from_filename(name)
-            if ref_time is None:
-                print(f"[DEBUG] 날짜 파싱 실패: {name}")
-            candidate_files.append((full_path, ref_time))
+            for name in files:
+                if "_ChromiumBrowser_Downloads_" not in name:
+                    continue
+
+                full_path = Path(root) / name
+                ref_time = parse_ref_time_from_filename(name)
+                if ref_time is None:
+                    print(f"[DEBUG] 날짜 파싱 실패: {name}")
+                candidate_files.append((full_path, ref_time))
 
     return candidate_files
-
 
 
 # ===============================
@@ -130,7 +140,7 @@ def get_time_tags_for_download(
             tags.append("TIME_WEEK")
         elif diff_days <= 30:
             tags.append("TIME_MONTH")
-        elif diff_days > 90:
+        elif diff_days > 30:
             tags.append("TIME_OLD")
 
     return tags
@@ -150,6 +160,7 @@ ARC_EXT = {".zip", ".rar", ".7z", ".tar", ".gz", ".tgz"}
 EXE_EXT = {".exe", ".dll", ".sys", ".com", ".scr"}
 SCR_EXT = {".ps1", ".bat", ".vbs", ".js", ".py", ".cmd"}
 DB_EXT  = {".db", ".sqlite", ".accdb", ".mdb"}
+
 
 def get_format_tags_from_target_path(target_path: str) -> List[str]:
     """
@@ -195,7 +206,7 @@ def get_format_tags_from_target_path(target_path: str) -> List[str]:
 def build_description(row: Dict[str, str], lwt_field: Optional[str]) -> str:
     """
     - row: Downloads CSV 한 행
-    - lwt_field: LastWriteTimestamp로 사용한 필드명 ("LastAccessTime" 또는 "StartTime" 또는 None)
+    - lwt_field: lastwritetimestemp로 사용한 필드명 ("LastAccessTime" 또는 "StartTime" 또는 None)
 
     규칙:
       - SourceFile 은 description에서 제외
@@ -223,49 +234,72 @@ def build_description(row: Dict[str, str], lwt_field: Optional[str]) -> str:
 # 5. output 파일명 충돌 처리 (_v1, _v2 ...)
 # ===============================
 
-def ensure_unique_output_path(path: str) -> str:
+def ensure_unique_output_path(path: Path) -> Path:
     """
     이미 같은 이름의 파일이 있으면
     base_Tagged_v1.csv, base_Tagged_v2.csv ... 식으로
     사용 가능한 새 경로를 돌려준다.
     """
-    if not os.path.exists(path):
+    if not path.exists():
         return path
 
-    base, ext = os.path.splitext(path)
+    base, ext = os.path.splitext(str(path))
     idx = 1
     while True:
-        candidate = f"{base}_v{idx}{ext}"
-        if not os.path.exists(candidate):
+        candidate = Path(f"{base}_v{idx}{ext}")
+        if not candidate.exists():
             return candidate
         idx += 1
 
 
 # ===============================
-# 6. Downloads CSV → (Type, LastWriteTimestamp, Description, Tag)
+# 6. ccit 루트 찾기 (출력용)
 # ===============================
 
-def tag_downloads_csv(input_path: str,
+def find_ccit_root(path: Path) -> Path:
+    """
+    입력 CSV가 있는 경로에서 위로 올라가면서
+    이름이 'ccit' 인 폴더를 찾는다.
+    못 찾으면 같은 드라이브의 'ccit' 폴더를 기본으로 사용.
+    """
+    for parent in [path] + list(path.parents):
+        if parent.name.lower() == "ccit":
+            return parent
+
+    # fallback: 드라이브 루트 + ccit
+    drive = path.drive or "D:"
+    ccit_root = Path(drive + "\\ccit")
+    ccit_root.mkdir(parents=True, exist_ok=True)
+    return ccit_root
+
+
+# ===============================
+# 7. Downloads CSV → (type, lastwritetimestemp, descrition, tag)
+# ===============================
+
+def tag_downloads_csv(input_path: Path,
                       ref_time: Optional[datetime],
-                      output_dir: str) -> str:
+                      output_dir: Path) -> Path:
     """
     - input_path: ChromiumBrowser_Downloads CSV 전체 경로
     - ref_time: 파일명에서 뽑은 기준 시각
-    - output_dir: Type/LastWriteTimestamp/Description/Tag CSV를 저장할 디렉터리
-    """
-    os.makedirs(output_dir, exist_ok=True)
+    - output_dir: 결과 CSV를 저장할 디렉터리
 
-    input_basename = os.path.basename(input_path)
+    출력 스키마:
+      type, lastwritetimestemp, descrition, tag
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
     output_filename = f"{base_no_ext}_Tagged.csv"
-    output_path = os.path.abspath(os.path.join(output_dir, output_filename))
-    output_path = ensure_unique_output_path(output_path)
+    output_path = ensure_unique_output_path(output_dir / output_filename)
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as f_in, \
-         open(output_path, "w", encoding="utf-8-sig", newline="") as f_out:
+    with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
+         output_path.open("w", encoding="utf-8-sig", newline="") as f_out:
 
         reader = csv.DictReader(f_in)
-        fieldnames_out = ["Type", "LastWriteTimestamp", "Description", "Tag"]
+        fieldnames_out = ["type", "lastwritetimestemp", "descrition", "tag"]
         writer = csv.DictWriter(f_out, fieldnames=fieldnames_out)
         writer.writeheader()
 
@@ -294,6 +328,7 @@ def tag_downloads_csv(input_path: str,
                 base_dt = None
                 lwt_field = None
                 lwt_value = ""
+                use_access = False
 
             # 2) TIME_ 태그
             tags.extend(get_time_tags_for_download(base_dt, use_access, ref_time))
@@ -314,7 +349,7 @@ def tag_downloads_csv(input_path: str,
             target_path = row.get("TargetPath", "") or ""
             tags.extend(get_format_tags_from_target_path(target_path))
 
-            # 4) Description 생성
+            # 4) descrition 생성
             description = build_description(row, lwt_field)
 
             # 5) Tag 정리 (중복 제거 + 정렬)
@@ -322,10 +357,10 @@ def tag_downloads_csv(input_path: str,
             tag_str = ",".join(tags)
 
             out_row = {
-                "Type": "ARTIFACT_BROWSER_DOWNLOAD",
-                "LastWriteTimestamp": lwt_value,
-                "Description": description,
-                "Tag": tag_str,
+                "type": "ARTIFACT_BROWSER_DOWNLOAD",
+                "lastwritetimestemp": lwt_value,
+                "descrition": description,
+                "tag": tag_str,
             }
             writer.writerow(out_row)
 
@@ -333,67 +368,40 @@ def tag_downloads_csv(input_path: str,
 
 
 # ===============================
-# 7. main
+# 8. main (D:~Z: + ccit 스캔)
 # ===============================
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="ChromiumBrowser_Downloads CSV를 Forensic 태그 4컬럼(Type, LastWriteTimestamp, Description, Tag) 형태로 변환하는 스크립트."
-    )
-    parser.add_argument(
-        "--base-dir",
-        type=str,
-        default=None,
-        help=(
-            "*_ChromiumBrowser_Downloads_*.csv 파일을 찾을 기준 디렉터리. "
-            "지정하지 않으면, 스크립트 기준 부모 폴더의 "
-            "'Adware.Pushware Output/H/SQLECmd' 폴더를 기준으로 재귀 탐색."
-        ),
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default=None,
-        help=(
-            "태깅된 CSV(Type, LastWriteTimestamp, Description, Tag)을 저장할 디렉터리. "
-            "지정하지 않으면 스크립트 기준 부모 폴더의 'csvtag_output' 폴더를 사용."
-        ),
-    )
+    print("[Downloads] D:~Z: + ccit 경로에서 *_ChromiumBrowser_Downloads_*.csv 탐색 중...")
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(script_dir)
-
-    args = parser.parse_args()
-
-    if args.base_dir:
-        base_dir = os.path.abspath(args.base_dir)
-    else:
-        # 기본값: Adware.Pushware Output/H/SQLECmd
-        base_dir = os.path.join(parent_dir, "Adware.Pushware Output", "H", "SQLECmd")
-
-    if args.output_dir:
-        output_dir = os.path.abspath(args.output_dir)
-    else:
-        output_dir = os.path.join(parent_dir, "csvtag_output")
-
-    print(f"[+] 검색 기준 디렉터리 (base_dir): {base_dir}")
-    print(f"[+] 결과 저장 디렉터리 (output_dir): {output_dir}")
-
-    download_files = find_all_download_csv(base_dir)
+    download_files = find_all_download_csv_under_ccit()
     if not download_files:
         print("[-] *_ChromiumBrowser_Downloads_*.csv 파일을 찾지 못했습니다.")
         return
 
     for input_path, ref_time in download_files:
-        print(f"[+] 입력 파일: {os.path.abspath(input_path)}")
+        print(f"[+] 입력 파일: {input_path}")
         if ref_time:
             print(f"    -> 파일명 기준 기준 시각(ref_time): {ref_time}")
         else:
-            print("    -> ref_time 없음 (TIME_* 태그는 생략될 수 있음)")
+            print("    -> ref_time 없음 (TIME_* 태그는 일부 생략될 수 있음)")
+
+        ccit_root = find_ccit_root(input_path)
+        output_dir = ccit_root / "tagged"
+
+        print(f"    -> 출력 디렉터리: {output_dir}")
 
         output_path = tag_downloads_csv(input_path, ref_time, output_dir)
         print(f"    -> 태깅 완료. 결과 파일: {output_path}")
 
+
+def run(*args, **kwargs):
+    """
+    오케스트레이터에서 run(drive_letters, cfg) 형태로 호출해도 되고,
+    단독 실행 시에는 main()만 쓰면 된다.
+    여기서는 D:~Z: + ccit 스캔만 사용하므로 args/cfg는 무시한다.
+    """
+    main()
 
 
 if __name__ == "__main__":

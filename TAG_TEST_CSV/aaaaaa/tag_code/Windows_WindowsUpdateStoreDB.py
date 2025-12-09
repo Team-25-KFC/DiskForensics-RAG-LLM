@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import csv
-import argparse
 from datetime import datetime
 from typing import Optional, List, Tuple, Dict
+from pathlib import Path
 
 # =========================================
 # 0. 공통: 파일명에서 기준 시각(ref_time) 추출
@@ -31,34 +31,45 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
 
 
 # =========================================
-# 1. base_dir 아래에서 WindowsUpdateStoreDB CSV 찾기
+# 1. D:~Z: 전체에서 ccit 아래 WindowsUpdateStoreDB CSV 찾기
 # =========================================
 
-def find_update_store_csvs(base_dir: str) -> List[Tuple[str, Optional[datetime]]]:
+def find_update_store_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
     """
-    base_dir 아래를 재귀적으로 돌면서
+    D:~Z: 전체를 재귀적으로 돌면서
     '*_Windows_WindowsUpdateStoreDB_*.csv' 패턴을 모두 찾고,
-    각 파일 경로와 파일명 기준 시각(ref_time)을 리스트로 돌려준다.
+    각 파일 Path와 파일명 기준 시각(ref_time)을 리스트로 돌려준다.
+
+    단, 경로에 'ccit' 가 들어간 경우만 대상.
     """
-    results: List[Tuple[str, Optional[datetime]]] = []
+    results: List[Tuple[Path, Optional[datetime]]] = []
 
-    for root, dirs, files in os.walk(base_dir):
-        for name in files:
-            # 파일명 패턴 필터
-            if "Windows_WindowsUpdateStoreDB_" not in name:
+    for drive_code in range(ord("D"), ord("Z") + 1):
+        drive_root = Path(f"{chr(drive_code)}:\\")
+        if not drive_root.exists():
+            continue
+
+        for root, dirs, files in os.walk(str(drive_root)):
+            # ccit 폴더 아래만 본다
+            if "ccit" not in root.lower():
                 continue
-            if not name.lower().endswith(".csv"):
-                continue
 
-            full_path = os.path.join(root, name)
-            ref_time = parse_ref_time_from_filename(name)
+            for name in files:
+                # 파일명 패턴 필터
+                if "Windows_WindowsUpdateStoreDB_" not in name:
+                    continue
+                if not name.lower().endswith(".csv"):
+                    continue
 
-            if ref_time is None:
-                print(f"[DEBUG] UpdateStoreDB 후보 파일이지만 날짜 파싱 실패: {name}")
-            else:
-                print(f"[DEBUG] UpdateStoreDB 후보 파일: {name}, ref_time={ref_time}")
+                full_path = Path(root) / name
+                ref_time = parse_ref_time_from_filename(name)
 
-            results.append((full_path, ref_time))
+                if ref_time is None:
+                    print(f"[DEBUG] UpdateStoreDB 후보지만 날짜 파싱 실패: {name}")
+                else:
+                    print(f"[DEBUG] UpdateStoreDB 후보: {name}, ref_time={ref_time}")
+
+                results.append((full_path, ref_time))
 
     if not results:
         print("[DEBUG] UpdateStoreDB 후보 파일 리스트가 비어 있음 (필터/파싱 문제 가능)")
@@ -158,45 +169,66 @@ def build_description(row: Dict[str, str]) -> str:
 
 
 # =========================================
-# 4. output 파일명 충돌 처리 (_v1, _v2 ...)
+# 4. output 파일명 충돌 처리 (Path 버전)
 # =========================================
 
-def ensure_unique_output_path(path: str) -> str:
+def ensure_unique_output_path(path: Path) -> Path:
     """
     이미 같은 이름의 파일이 있으면
     base_Tagged_v1.csv, base_Tagged_v2.csv ... 식으로
     사용 가능한 새 경로를 돌려준다.
     """
-    if not os.path.exists(path):
+    if not path.exists():
         return path
 
-    base, ext = os.path.splitext(path)
+    base, ext = os.path.splitext(str(path))
     idx = 1
     while True:
-        candidate = f"{base}_v{idx}{ext}"
-        if not os.path.exists(candidate):
+        candidate = Path(f"{base}_v{idx}{ext}")
+        if not candidate.exists():
             return candidate
         idx += 1
 
 
 # =========================================
-# 5. UpdateStoreDB CSV 태깅 (정규화: Type / LastWriteTimestamp / Description / Tags)
+# 5. ccit 루트 찾기 (출력용)
 # =========================================
 
-def tag_updatestore_csv(input_path: str,
+def find_ccit_root(path: Path) -> Path:
+    """
+    입력 CSV가 있는 경로에서 위로 올라가면서
+    이름이 'ccit' 인 폴더를 찾는다.
+    못 찾으면 같은 드라이브의 'ccit' 폴더를 기본으로 사용.
+    """
+    for parent in [path] + list(path.parents):
+        if parent.name.lower() == "ccit":
+            return parent
+
+    drive = path.drive or "D:"
+    ccit_root = Path(drive + "\\ccit")
+    ccit_root.mkdir(parents=True, exist_ok=True)
+    return ccit_root
+
+
+# =========================================
+# 6. UpdateStoreDB CSV 태깅
+#    -> (type, lastwritetimestemp, descrition, tag)
+# =========================================
+
+def tag_updatestore_csv(input_path: Path,
                         ref_time: Optional[datetime],
-                        output_dir: str) -> str:
+                        output_dir: Path) -> Path:
     """
     Windows_WindowsUpdateStoreDB CSV 한 개를 태깅해서
 
-    Type, LastWriteTimestamp, Description, Tags
+    type, lastwritetimestemp, descrition, tag
 
     4컬럼 형태로 변환해서 저장한다.
-    - Type: "Windows_WindowsUpdateStoreDB" 고정
-    - LastWriteTimestamp: Time 컬럼 문자열 그대로 사용
-    - Description: Time/SourceFile 컬럼 제외하고
-                   "Key:Value | Key2:Value2 ..." 형식으로 합침
-    - Tags:
+    - type              : "Windows_WindowsUpdateStoreDB" 고정
+    - lastwritetimestemp: Time 컬럼 문자열 그대로 사용
+    - descrition        : Time/SourceFile 컬럼 제외하고
+                          "Key:Value | Key2:Value2 ..." 형식으로 합침
+    - tag:
         ARTIFACT_DB
         AREA_PROGRAMDATA
         EVENT_MODIFY
@@ -205,20 +237,20 @@ def tag_updatestore_csv(input_path: str,
         + TIME_MODIFIED
         + TIME_RECENT / TIME_WEEK / TIME_MONTH / TIME_OLD 중 하나 (ref_time 기준)
     """
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    input_basename = os.path.basename(input_path)
+    input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
     output_filename = f"{base_no_ext}_Tagged.csv"
-    output_path = os.path.abspath(os.path.join(output_dir, output_filename))
-    output_path = ensure_unique_output_path(output_path)
+    output_path = ensure_unique_output_path(output_dir / output_filename)
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as f_in, \
-         open(output_path, "w", encoding="utf-8-sig", newline="") as f_out:
+    with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
+         output_path.open("w", encoding="utf-8-sig", newline="") as f_out:
 
         reader = csv.DictReader(f_in)
 
-        fieldnames = ["Type", "LastWriteTimestamp", "Description", "Tags"]
+        # 오케스트레이터 규격: 소문자 4컬럼
+        fieldnames = ["type", "lastwritetimestemp", "descrition", "tag"]
         writer = csv.DictWriter(f_out, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -255,10 +287,10 @@ def tag_updatestore_csv(input_path: str,
             tag_str = ",".join(tags)
 
             out_row = {
-                "Type": "Windows_WindowsUpdateStoreDB",
-                "LastWriteTimestamp": last_write_ts,
-                "Description": description,
-                "Tags": tag_str,
+                "type": "Windows_WindowsUpdateStoreDB",
+                "lastwritetimestemp": last_write_ts,
+                "descrition": description,
+                "tag": tag_str,
             }
             writer.writerow(out_row)
 
@@ -266,64 +298,38 @@ def tag_updatestore_csv(input_path: str,
 
 
 # =========================================
-# 6. main
+# 7. main (D:~Z: + ccit 스캔)
 # =========================================
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Windows_WindowsUpdateStoreDB CSV에 1차 태그를 자동으로 부여하는 스크립트."
-    )
-    parser.add_argument(
-        "--base-dir",
-        type=str,
-        default=None,
-        help=(
-            "*_Windows_WindowsUpdateStoreDB_*.csv 파일을 찾을 기준 디렉터리. "
-            "지정하지 않으면, 스크립트 기준 부모 폴더의 'Adware.Pushware Output' 폴더를 기준으로 재귀 탐색."
-        ),
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default=None,
-        help=(
-            "태깅된 CSV를 저장할 디렉터리. "
-            "지정하지 않으면 스크립트 기준 부모 폴더의 'csvtag_output' 폴더를 사용."
-        ),
-    )
+    print("[WindowsUpdateStoreDB] D:~Z: + ccit 경로에서 '*_Windows_WindowsUpdateStoreDB_*.csv' 탐색 중...")
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(script_dir)
-
-    args = parser.parse_args()
-
-    if args.base_dir:
-        base_dir = os.path.abspath(args.base_dir)
-    else:
-        base_dir = os.path.join(parent_dir, "Adware.Pushware Output")
-
-    if args.output_dir:
-        output_dir = os.path.abspath(args.output_dir)
-    else:
-        output_dir = os.path.join(parent_dir, "csvtag_output")
-
-    print(f"[+] 검색 기준 디렉터리 (base_dir): {base_dir}")
-    print(f"[+] 결과 저장 디렉터리 (output_dir): {output_dir}")
-
-    candidates = find_update_store_csvs(base_dir)
+    candidates = find_update_store_csvs_under_ccit()
     if not candidates:
         print("[-] *_Windows_WindowsUpdateStoreDB_*.csv 파일을 찾지 못했거나, 파일명 날짜를 파싱하지 못했습니다.")
         return
 
     for input_path, ref_time in candidates:
-        print(f"[+] 입력 파일: {os.path.abspath(input_path)}")
+        print(f"[+] 입력 파일: {input_path}")
         if ref_time:
             print(f"    -> 파일명 기준 기준 시각(ref_time): {ref_time}")
         else:
             print("    -> ref_time 없음 (TIME_RECENT/WEEK/MONTH/OLD 태그는 생략됨)")
 
+        ccit_root = find_ccit_root(input_path)
+        output_dir = ccit_root / "tagged"
+        print(f"    -> 출력 디렉터리: {output_dir}")
+
         output_path = tag_updatestore_csv(input_path, ref_time, output_dir)
         print(f"[+] 태깅 완료. 결과 파일: {output_path}")
+
+
+def run(*args, **kwargs):
+    """
+    오케스트레이터에서 run(...) 형태로 호출해도 되도록 래핑.
+    (인자는 무시하고 D:~Z: + ccit 스캔만 수행)
+    """
+    main()
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import csv
-import argparse
 from datetime import datetime
 from typing import Optional, Dict, List, Tuple
+from pathlib import Path
 
 # ===============================
-# 0. 유틸: 파일명에서 기준 시각(ref_time) 추출
+# 0. 파일명에서 기준 시각(ref_time) 추출
 # ===============================
 
 def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
@@ -17,43 +18,60 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
     if not m:
         return None
     ts_str = m.group(1)
-    return datetime.strptime(ts_str, "%Y%m%d%H%M%S")
+    try:
+        return datetime.strptime(ts_str, "%Y%m%d%H%M%S")
+    except ValueError:
+        return None
 
 
 # ===============================
-# 1. base_dir 아래에서 최신 PECmd CSV 찾기
+# 1. D:~Z: 전체에서 ccit 아래 PECmd CSV 찾기
 # ===============================
 
-def find_latest_pecmd_csv(base_dir: str) -> Tuple[Optional[str], Optional[datetime]]:
+def find_pecmd_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
     """
-    base_dir 아래를 재귀적으로 돌면서
+    D:~Z: 전체를 재귀적으로 돌면서
     '*_PECmd_Output.csv' 패턴을 모두 찾고,
-    파일명 앞 14자리(YYYYMMDDHHMMSS) 기준으로 가장 최신 파일을 고른다.
+    각 파일 Path와 파일명 기준 시각(ref_time)을 리스트로 돌려준다.
+
+    단, 경로에 'ccit' 가 들어간 경우만 대상.
     """
-    candidate_files: List[Tuple[str, datetime]] = []
+    results: List[Tuple[Path, Optional[datetime]]] = []
 
-    for root, dirs, files in os.walk(base_dir):
-        for name in files:
-            if not name.endswith("_PECmd_Output.csv"):
+    for drive_code in range(ord("D"), ord("Z") + 1):
+        drive_root = Path(f"{chr(drive_code)}:\\")
+        if not drive_root.exists():
+            continue
+
+        for root, dirs, files in os.walk(str(drive_root)):
+            lower_root = root.lower()
+            if "ccit" not in lower_root:
                 continue
 
-            ref_time = parse_ref_time_from_filename(name)
-            if ref_time is None:
-                continue
+            for name in files:
+                if not name.endswith("_PECmd_Output.csv"):
+                    continue
 
-            full_path = os.path.join(root, name)
-            candidate_files.append((full_path, ref_time))
+                full_path = Path(root) / name
+                ref_time = parse_ref_time_from_filename(name)
 
-    if not candidate_files:
-        return None, None
+                if ref_time is None:
+                    print(f"[DEBUG] PECmd 후보 파일이지만 날짜 파싱 실패: {name}")
+                else:
+                    print(f"[DEBUG] PECmd 후보 파일: {name}, ref_time={ref_time}")
 
-    candidate_files.sort(key=lambda x: x[1], reverse=True)
-    latest_path, latest_ref_time = candidate_files[0]
-    return latest_path, latest_ref_time
+                results.append((full_path, ref_time))
+
+    if not results:
+        print("[DEBUG] PECmd 후보 파일 리스트가 비어 있음 (필터/파싱 문제 가능)")
+    else:
+        print(f"[DEBUG] PECmd 후보 파일 개수: {len(results)}")
+
+    return results
 
 
 # ===============================
-# 2. Directories / FilesLoaded 요약 함수
+# 2. Directories / FilesLoaded 요약 유틸
 # ===============================
 
 def normalize_volume(path: str) -> str:
@@ -82,8 +100,6 @@ def shorten_dir_path(path: str) -> str:
     first = parts[1]
     tail = "\\".join(parts[-2:])
     return f"{drive}\\{first}\\...\\{tail}"
-
-from typing import List, Dict
 
 def summarize_files_in_dir(files: List[str]) -> str:
     """
@@ -238,6 +254,7 @@ def parse_lastrun(last_run_str: str) -> Optional[datetime]:
     except ValueError:
         return None
 
+
 def get_time_tags(last_run: Optional[datetime],
                   ref_time: Optional[datetime]) -> List[str]:
     """
@@ -260,7 +277,7 @@ def get_time_tags(last_run: Optional[datetime],
             tags.append("TIME_WEEK")
         elif days <= 30:
             tags.append("TIME_MONTH")
-        elif days > 90:
+        elif days > 30:
             tags.append("TIME_OLD")
 
     return tags
@@ -270,57 +287,107 @@ def get_time_tags(last_run: Optional[datetime],
 # 4. output 파일명 충돌 처리 (_v1, _v2 ...)
 # ===============================
 
-def ensure_unique_output_path(path: str) -> str:
+def ensure_unique_output_path(path: Path) -> Path:
     """
     이미 같은 이름의 파일이 있으면
     base_Tagged_v1.csv, base_Tagged_v2.csv ... 식으로
     사용 가능한 새 경로를 돌려준다.
     """
-    if not os.path.exists(path):
+    if not path.exists():
         return path
 
-    base, ext = os.path.splitext(path)
+    base, ext = os.path.splitext(str(path))
     idx = 1
     while True:
-        candidate = f"{base}_v{idx}{ext}"
-        if not os.path.exists(candidate):
+        candidate = Path(f"{base}_v{idx}{ext}")
+        if not candidate.exists():
             return candidate
         idx += 1
 
 
 # ===============================
-# 5. 프리패치 CSV 태깅
+# 5. ccit 루트 찾기 (출력용)
 # ===============================
 
-def tag_prefetch_csv(input_path: str,
-                     ref_time: Optional[datetime],
-                     output_dir: str) -> str:
+def find_ccit_root(path: Path) -> Path:
     """
-    - input_path: PECmd_Output.csv 전체 경로
+    입력 CSV가 있는 경로에서 위로 올라가면서
+    이름이 'ccit' 인 폴더를 찾는다.
+    못 찾으면 같은 드라이브의 'ccit' 폴더를 기본으로 사용.
+    """
+    for parent in [path] + list(path.parents):
+        if parent.name.lower() == "ccit":
+            return parent
+
+    drive = path.drive or "D:"
+    ccit_root = Path(drive + "\\ccit")
+    ccit_root.mkdir(parents=True, exist_ok=True)
+    return ccit_root
+
+
+# ===============================
+# 6. description 빌더
+# ===============================
+
+def build_description(row: Dict[str, str]) -> str:
+    """
+    한 행(row)에서:
+      - LastRun / Tags / tag / SourceAccessed / Note / Version 은
+        별도 컬럼이거나 필요 없으니까 description에서 제외
+      - 나머지 컬럼은 "Key:Value" 형태로 이어붙여 descrition 생성
+    구분자: " | "
+    """
+    exclude_keys = {
+        "LastRun", "Tags", "tag",
+        "SourceAccessed", "Note", "Version"
+    }
+
+    parts: List[str] = []
+    for key, val in row.items():
+        if key in exclude_keys:
+            continue
+        if val is None:
+            continue
+        s = str(val).strip()
+        if not s:
+            continue
+        parts.append(f"{key}:{s}")
+    return " | ".join(parts)
+
+
+# ===============================
+# 7. 프리패치 CSV 태깅
+#    -> (type / lastwritetimestemp / descrition / tag)
+# ===============================
+
+def tag_prefetch_csv(input_path: Path,
+                     ref_time: Optional[datetime],
+                     output_dir: Path) -> Path:
+    """
+    - input_path: *_PECmd_Output.csv 전체 경로
     - ref_time: 파일명에서 뽑은 기준 시각
-    - output_dir: 실행 파일(parent)의 csvtag_output 디렉터리
+    - output_dir: ccit\tagged 디렉터리
 
     최종 출력 컬럼:
-      1) Type               -> 여기서는 "PREFETCH" 고정
-      2) LastWriteTimestamp -> LastRun 원본 문자열
-      3) description        -> 나머지 필드를 "Key:Value | ..." 형태로 묶은 문자열
+      1) type               -> "ARTIFACT_PREFETCH" 고정
+      2) lastwritetimestemp -> LastRun 원본 문자열
+      3) descrition         -> 나머지 필드를 "Key:Value | ..." 형태로 묶은 문자열
       4) tag                -> 우리가 부여한 태그 (쉼표 구분)
     """
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    input_basename = os.path.basename(input_path)
+    input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
     output_filename = f"{base_no_ext}_Tagged.csv"
-    output_path = os.path.abspath(os.path.join(output_dir, output_filename))
-    output_path = ensure_unique_output_path(output_path)
+    output_path = ensure_unique_output_path(output_dir / output_filename)
 
-    with open(input_path, "r", encoding="utf-8-sig", newline="") as f_in, \
-         open(output_path, "w", encoding="utf-8-sig", newline="") as f_out:
+    with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
+         output_path.open("w", encoding="utf-8-sig", newline="") as f_out:
 
         reader = csv.DictReader(f_in)
 
-        # 최종 컬럼은 고정 4개
-        fieldnames = ["Type", "LastWriteTimestamp", "description", "tag"]
+        # 최종 컬럼은 공통 4개
+        fieldnames = ["type", "lastwritetimestemp", "descrition", "tag"]
         writer = csv.DictWriter(f_out, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -346,22 +413,22 @@ def tag_prefetch_csv(input_path: str,
                 row["SourceFilename"] = os.path.basename(row["SourceFilename"] or "")
 
             # ===== TIME 태그 (LastRun 기준) =====
-            last_run_str = row.get("LastRun", "")
+            last_run_str = row.get("LastRun", "") or ""
             last_run_dt = parse_lastrun(last_run_str)
             tags.extend(get_time_tags(last_run_dt, ref_time))
+
+            # ===== descrition 생성 =====
+            desc = build_description(row)
 
             # ===== tag 문자열 정리 =====
             tags = sorted(set(tags))
             tag_str = ",".join(tags)
 
-            # ===== description 생성 =====
-            desc = build_description(row)
-
             # ===== 최종 출력용 row 구성 =====
             out_row = {
-                "Type": "PREFETCH",
-                "LastWriteTimestamp": last_run_str,  # LastRun 원본 그대로
-                "description": desc,
+                "type": "ARTIFACT_PREFETCH",
+                "lastwritetimestemp": last_run_str.strip(),
+                "descrition": desc,
                 "tag": tag_str,
             }
 
@@ -369,88 +436,41 @@ def tag_prefetch_csv(input_path: str,
 
     return output_path
 
-def build_description(row: Dict[str, str]) -> str:
-    """
-    한 행(row)에서:
-      - LastRun / Tags / tag / SourceAccessed / Note / Version 은
-        별도 컬럼이거나 필요 없으니까 description에서 제외
-      - 나머지 컬럼은 "Key:Value" 형태로 이어붙여 description 생성
-    구분자: " | "
-    """
-    exclude_keys = {
-        "LastRun", "Tags", "tag",
-        "SourceAccessed", "Note", "Version"
-    }
-
-    parts: List[str] = []
-    for key, val in row.items():
-        if key in exclude_keys:
-            continue
-        if val is None:
-            continue
-        s = str(val).strip()
-        if not s:
-            continue
-        parts.append(f"{key}:{s}")
-    return " | ".join(parts)
-
 
 # ===============================
-# 6. main: 스크립트 위치 기준 base_dir + csvtag_output
+# 8. main (D:~Z: + ccit 스캔)
 # ===============================
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="PECmd Output(프리패치) CSV에 1차 태그를 자동으로 부여하고, Directories/FilesLoaded를 요약하는 스크립트."
-    )
-    parser.add_argument(
-        "--base-dir",
-        type=str,
-        default=None,
-        help=(
-            "*_PECmd_Output.csv 파일을 찾을 기준 디렉터리. "
-            "지정하지 않으면, 스크립트 기준 부모 폴더의 'Adware.Pushware Output' 폴더를 기준으로 재귀 탐색."
-        ),
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default=None,
-        help=(
-            "태깅된 CSV를 저장할 디렉터리. "
-            "지정하지 않으면 스크립트 기준 부모 폴더의 'csvtag_output' 폴더를 사용."
-        ),
-    )
+    print("[PECmd] D:~Z: + ccit 경로에서 *_PECmd_Output.csv 탐색 중...")
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(script_dir)
-
-    args = parser.parse_args()
-
-    if args.base_dir:
-        base_dir = os.path.abspath(args.base_dir)
-    else:
-        base_dir = os.path.join(parent_dir, "Adware.Pushware Output")
-
-    if args.output_dir:
-        output_dir = os.path.abspath(args.output_dir)
-    else:
-        output_dir = os.path.join(parent_dir, "csvtag_output")
-
-    print(f"[+] 검색 기준 디렉터리 (base_dir): {base_dir}")
-    print(f"[+] 결과 저장 디렉터리 (output_dir): {output_dir}")
-
-    input_path, ref_time = find_latest_pecmd_csv(base_dir)
-    if not input_path or not ref_time:
-        print("[-] *_PECmd_Output.csv 파일을 찾지 못했거나, 파일명 날짜를 파싱하지 못했습니다.")
+    candidates = find_pecmd_csvs_under_ccit()
+    if not candidates:
+        print("[-] *_PECmd_Output.csv 파일을 찾지 못했습니다.")
         return
 
-    print(f"[+] 선택된 입력 파일: {os.path.abspath(input_path)}")
-    print(f"[+] 파일명 기준 기준 시각(ref_time): {ref_time}")
+    for input_path, ref_time in candidates:
+        print(f"[+] 입력 파일: {input_path}")
+        if ref_time:
+            print(f"    -> 파일명 기준 기준 시각(ref_time): {ref_time}")
+        else:
+            print("    -> ref_time 없음 (TIME_RECENT/WEEK/MONTH/OLD 태그는 생략될 수 있음)")
 
-    output_path = tag_prefetch_csv(input_path, ref_time, output_dir)
+        ccit_root = find_ccit_root(input_path)
+        output_dir = ccit_root / "tagged"
+        print(f"    -> 출력 디렉터리: {output_dir}")
 
-    print(f"[+] 태깅 완료. 결과 파일: {output_path}")
+        output_path = tag_prefetch_csv(input_path, ref_time, output_dir)
+        print(f"    -> 태깅 완료. 결과 파일: {output_path}")
+
+
+def run(*args, **kwargs):
+    """
+    오케스트레이터에서 run(drive_letters, cfg) 형태로 호출해도 되고,
+    단독 실행 시에는 main()만 써도 된다.
+    여기서는 D:~Z: + ccit 스캔만 사용하므로 args/cfg는 무시한다.
+    """
+    main()
 
 
 if __name__ == "__main__":
