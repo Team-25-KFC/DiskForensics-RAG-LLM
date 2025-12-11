@@ -1,41 +1,53 @@
 # -*- coding: utf-8 -*-
 """
-ChromiumBrowser_Cookies CSV 정규화 + 태깅 모듈 (D:~Z: + ccit 스캔 버전)
+ChromiumBrowser_Cookies CSV 정규화 + 태깅 모듈
 
-- D:~Z: 전체를 돌면서 "ccit"가 포함된 경로 안에서
-  "*ChromiumBrowser_Cookies*.csv"를 찾는다.
-- 파일명 앞 14자리(YYYYMMDDHHMMSS)를 기준 시각(ref_time)으로 사용해
-  가장 최신 파일 1개를 선택한다.
-- 출력은 "해당 드라이브:\ccit\tagged\<원본파일명>_Tagged.csv"로 저장한다.
+[동작 요약]
 
-출력 스키마:
+- D:~Z: 각 드라이브 루트에서
+    "<드라이브>:\\Kape Output" 아래를 재귀 탐색한다.
+- 그 아래에서 "*ChromiumBrowser_Cookies*.csv" 파일들을 모두 찾는다.
+- 각 파일에 대해:
+    1) 파일명 앞 14자리(YYYYMMDDHHMMSS)로 ref_time 추출
+       (없으면 파일 수정 시간(mtime)을 ref_time으로 사용)
+    2) "Kape Output" 바로 아래 1단계 폴더 이름(예: G, H, ...)을 라벨로 추출
+    3) 해당 드라이브의 "<드라이브>:\\ccit\\artifact_csv"로
+       "YYYYMMDDHHMMSS_원본파일명.csv" 형태로 복사
+    4) "<드라이브>:\\tagged" 폴더에
+       "<KapeChild>_YYYYMMDDHHMMSS_원본파일명_Tagged.csv"로 태깅 결과 저장
+
+출력 스키마(공통):
   type, lastwritetimestemp, descrition, tag
 """
 
 import os
 import re
 import csv
+import shutil
 from datetime import datetime
 from typing import Optional, Dict, List, Tuple
 from pathlib import Path
 
 
 # ===============================
-# 0. 유틸: 파일명에서 기준 시각(ref_time) 추출
+# 0. 파일명에서 기준 시각(ref_time) 추출
 # ===============================
 
 def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
-    r"""
-    예: 20251114143910_ChromiumBrowser_Cookies_....csv
-        -> 앞 14자리(20251114143910)만 잘라서 2025-11-14 14:39:10 로 변환
+    """
+    예:
+        20251114143910_ChromiumBrowser_Cookies_....csv
+        20251114143910567890_ChromiumBrowser_Cookies_....csv
+
+    앞쪽의 연속된 14자리 숫자(YYYYMMDDHHMMSS)를 찾아 ref_time으로 사용.
     """
     name = os.path.basename(filename)
 
-    m = re.match(r"(\d{14}).*ChromiumBrowser_Cookies.*\.csv$", name)
+    m = re.match(r"(\d{14})", name)
     if not m:
         return None
 
-    ts_str = m.group(1)  # 20251114143910
+    ts_str = m.group(1)
     try:
         return datetime.strptime(ts_str, "%Y%m%d%H%M%S")
     except ValueError:
@@ -43,52 +55,59 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
 
 
 # ===============================
-# 1. D:~Z: 전체에서 ccit 아래 최신 CSV 찾기
+# 1. Kape Output 아래에서 Cookies CSV 찾기
 # ===============================
 
-def find_latest_cookie_csv_under_ccit() -> Tuple[Optional[Path], Optional[datetime]]:
+def find_kape_cookie_csvs() -> List[Path]:
     """
-    D: ~ Z: 전체를 돌면서:
-      - root 경로에 'ccit'가 포함된 경우만 탐색 유지
-      - 그 아래에서 '*ChromiumBrowser_Cookies*.csv' 파일들을 찾음
-      - 파일명 앞 14자리(YYYYMMDDHHMMSS)를 기준 시각(ref_time)으로 파싱
-      - ref_time 기준으로 가장 최신 파일 1개를 선택
-
-    반환:
-      (파일경로(Path) 또는 None, 기준시각(datetime) 또는 None)
+    D:~Z: 각 드라이브에서 "<드라이브>:\\Kape Output" 아래를 탐색해
+    "*ChromiumBrowser_Cookies*.csv" 파일들을 찾는다.
     """
-    candidates: List[Tuple[Path, datetime]] = []
+    results: List[Path] = []
 
     for drive_code in range(ord("D"), ord("Z") + 1):
         drive_root = Path(f"{chr(drive_code)}:\\")
         if not drive_root.exists():
             continue
 
-        for root, dirs, files in os.walk(str(drive_root)):
-            lower_root = root.lower()
-            if "ccit" not in lower_root:
-                continue
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.exists():
+            continue
 
+        for root, dirs, files in os.walk(str(kape_root)):
             for name in files:
-                if "ChromiumBrowser_Cookies" not in name:
+                lower = name.lower()
+                if "chromiumbrowser_cookies" not in lower:
                     continue
-                if not name.lower().endswith(".csv"):
-                    continue
-
-                ref_time = parse_ref_time_from_filename(name)
-                if ref_time is None:
+                if not lower.endswith(".csv"):
                     continue
 
                 full_path = Path(root) / name
-                candidates.append((full_path, ref_time))
+                results.append(full_path)
+                print(f"[DEBUG] KAPE Cookies CSV 발견: {full_path}")
 
-    if not candidates:
-        return None, None
+    if not results:
+        print("[-] 'Kape Output' 아래에서 ChromiumBrowser_Cookies CSV를 찾지 못했습니다.")
 
-    # 기준 시각 내림차순 정렬 → 가장 최신 1개
-    candidates.sort(key=lambda x: x[1], reverse=True)
-    latest_path, latest_ref_time = candidates[0]
-    return latest_path, latest_ref_time
+    return results
+
+
+def get_kape_child_name(src_path: Path) -> str:
+    """
+    예: D:\\Kape Output\\G\\SQLECmd\\... -> 'G' 반환.
+    못 찾으면 'KAPE' 리턴.
+    """
+    for parent in [src_path] + list(src_path.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = src_path.relative_to(parent)
+                if len(rel.parts) > 0:
+                    return rel.parts[0]
+                else:
+                    return "KAPE"
+            except ValueError:
+                continue
+    return "KAPE"
 
 
 # ===============================
@@ -168,17 +187,18 @@ def get_time_tags(last_access: Optional[datetime],
 # 3. description 빌더
 # ===============================
 
-def build_description(row: Dict[str, str]) -> str:
+def build_description(row: Dict[str, str],
+                      extra: Optional[Dict[str, str]] = None) -> str:
     """
     한 행(row)에서:
       - LastAccessUTC는 lastwritetimestemp에 이미 쓰므로 제외
-      - SourceFile은 제외
+      - SourceFile은 그대로 둔다 (어디 히스토리 DB인지 알 수 있음)
       - 나머지 컬럼은 "Key:Value" 형태로 이어붙여 description 생성
+      - extra(CsvPath, CsvName 등)가 들어오면 마지막에 붙인다.
     구분자: " | "
     """
     exclude_keys = {
         "LastAccessUTC",
-        "SourceFile",
     }
 
     parts: List[str] = []
@@ -192,6 +212,15 @@ def build_description(row: Dict[str, str]) -> str:
             continue
         parts.append(f"{key}:{s}")
 
+    if extra:
+        for key, val in extra.items():
+            if val is None:
+                continue
+            s = str(val).strip()
+            if not s:
+                continue
+            parts.append(f"{key}:{s}")
+
     return " | ".join(parts)
 
 
@@ -204,8 +233,12 @@ def build_cookie_tags(row: Dict[str, str],
     """
     한 쿠키 레코드(row)에 대해 태그 생성:
       - 기본 태그:
-        ARTIFACT_BROWSER_COOKIE, AREA_APPDATA_LOCAL,
-        FORMAT_DATABASE, ACT_BROWSING, STATE_ACTIVE
+        ARTIFACT_BROWSER_COOKIE
+        AREA_APPDATA_LOCAL
+        FORMAT_DATABASE
+        ACT_BROWSING
+        STATE_ACTIVE
+        EVENT_BROWSER_COOKIE_ACCESS   ← 쿠키 접근/사용
       - EVENT_CREATE: CreationUTC 있으면
       - TIME_*: LastAccessUTC 기준 (TIME_ACCESSED + RECENT/WEEK/MONTH/OLD 중 하나)
     """
@@ -215,6 +248,7 @@ def build_cookie_tags(row: Dict[str, str],
         "FORMAT_DATABASE",
         "ACT_BROWSING",
         "STATE_ACTIVE",
+        "EVENT_BROWSER_COOKIE_ACCESS",
     ]
 
     # EVENT_CREATE (생성 기준)
@@ -253,12 +287,12 @@ def ensure_unique_output_path(path: Path) -> Path:
 
 
 # ===============================
-# 6. ccit 루트 찾기 (출력용)
+# 6. ccit 루트 찾기 (artifact_csv용)
 # ===============================
 
 def find_ccit_root(path: Path) -> Path:
     """
-    입력 CSV가 있는 경로에서 위로 올라가면서
+    입력 경로에서 위로 올라가면서
     이름이 'ccit' 인 폴더를 찾는다.
     못 찾으면 같은 드라이브의 'ccit' 폴더를 기본으로 사용.
     """
@@ -266,7 +300,6 @@ def find_ccit_root(path: Path) -> Path:
         if parent.name.lower() == "ccit":
             return parent
 
-    # fallback: 드라이브 루트 + ccit
     drive = path.drive or "D:"
     ccit_root = Path(drive + "\\ccit")
     ccit_root.mkdir(parents=True, exist_ok=True)
@@ -279,20 +312,28 @@ def find_ccit_root(path: Path) -> Path:
 
 def tag_cookie_csv(input_path: Path,
                    ref_time: Optional[datetime],
-                   output_dir: Path) -> Path:
+                   output_dir: Path,
+                   kape_child: Optional[str] = None) -> Path:
     """
-    - input_path: ChromiumBrowser_Cookies CSV 전체 경로
-    - ref_time: 파일명에서 뽑은 기준 시각
-    - output_dir: 결과 CSV 저장 디렉터리
+    - input_path: ccit\\artifact_csv 안에 있는 정규화된 Cookies CSV
+    - ref_time : 기준 시각
+    - output_dir: 결과 CSV 저장 디렉터리 (드라이브 루트의 tagged)
+    - kape_child: Kape Output 바로 아래 폴더명 (예: 'G')
 
-    출력 스키마(공통):
+    출력 스키마:
       type, lastwritetimestemp, descrition, tag
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
     input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
-    output_filename = f"{base_no_ext}_Tagged.csv"
+
+    label = (kape_child or "").strip()
+    if label:
+        output_filename = f"{label}_{base_no_ext}_Tagged.csv"
+    else:
+        output_filename = f"{base_no_ext}_Tagged.csv"
+
     output_path = ensure_unique_output_path(output_dir / output_filename)
 
     with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
@@ -300,20 +341,23 @@ def tag_cookie_csv(input_path: Path,
 
         reader = csv.DictReader(f_in)
 
-        # 네가 정한 공통 4컬럼
         fieldnames = ["type", "lastwritetimestemp", "descrition", "tag"]
         writer = csv.DictWriter(f_out, fieldnames=fieldnames)
         writer.writeheader()
 
+        extra_common = {
+            "CsvPath": str(input_path),
+            "CsvName": input_basename,
+        }
+
         for row in reader:
-            # type: 아티팩트 종류
             type_val = "ARTIFACT_BROWSER_COOKIE"
 
             # lastwritetimestemp: LastAccessUTC 그대로 사용
             last_write_ts = (row.get("LastAccessUTC") or "").strip()
 
-            # descrition: 나머지 컬럼 Key:Value | ... 로 합치기
-            description = build_description(row)
+            # descrition: 행 + CsvPath/CsvName
+            description = build_description(row, extra=extra_common)
 
             # tag: 태그 리스트
             tags = build_cookie_tags(row, ref_time)
@@ -331,37 +375,65 @@ def tag_cookie_csv(input_path: Path,
 
 
 # ===============================
-# 8. 메인/엔트리 (D:~Z: + ccit 스캔)
+# 8. main (Kape Output → ccit\\artifact_csv → 드라이브 루트\\tagged)
 # ===============================
 
 def main():
-    print("[ChromiumCookies] D:~Z: + ccit 경로에서 ChromiumBrowser_Cookies CSV 탐색 중...")
+    print("[ChromiumCookies] D:~Z: 의 'Kape Output' 아래에서 ChromiumBrowser_Cookies CSV 탐색 중...")
 
-    input_path, ref_time = find_latest_cookie_csv_under_ccit()
-    if not input_path or not ref_time:
-        print("[ChromiumCookies] ChromiumBrowser_Cookies CSV를 찾지 못했거나, 파일명 날짜를 파싱하지 못했습니다.")
+    kape_csvs = find_kape_cookie_csvs()
+    if not kape_csvs:
         return
 
-    print(f"[ChromiumCookies] 선택된 입력 파일: {input_path}")
-    print(f"[ChromiumCookies] 파일명 기준 기준 시각(ref_time): {ref_time}")
+    copied_list: List[Tuple[Path, datetime, str]] = []
 
-    # ccit 루트 찾고, 그 아래 tagged 폴더로 출력
-    ccit_root = find_ccit_root(input_path)
-    output_dir = ccit_root / "tagged"
+    # 1단계: 원본 KAPE CSV → ccit\\artifact_csv 로 복사 + ref_time 계산
+    for src_path in kape_csvs:
+        print(f"[+] 원본 KAPE Cookies CSV: {src_path}")
 
-    print(f"[ChromiumCookies] 출력 디렉터리: {output_dir}")
+        ref_time = parse_ref_time_from_filename(src_path.name)
+        if ref_time:
+            print(f"    -> 파일명 기준 ref_time: {ref_time}")
+        else:
+            ref_time = datetime.fromtimestamp(src_path.stat().st_mtime)
+            print(f"    -> 파일명에서 ref_time 추출 실패, mtime 사용: {ref_time}")
 
-    output_path = tag_cookie_csv(input_path, ref_time, output_dir)
-    print(f"[ChromiumCookies] 태깅/변환 완료. 결과 파일: {output_path}")
+        kape_child = get_kape_child_name(src_path)
+        print(f"    -> Kape 하위 폴더 라벨: {kape_child}")
+
+        ccit_root = find_ccit_root(src_path)
+        artifact_dir = ccit_root / "artifact_csv"
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+
+        prefix = ref_time.strftime("%Y%m%d%H%M%S")
+        new_name = f"{prefix}_{src_path.name}"
+        dest_path = ensure_unique_output_path(artifact_dir / new_name)
+
+        shutil.copy2(src_path, dest_path)
+        print(f"    -> artifact_csv 복사/이름변경: {dest_path}")
+
+        copied_list.append((dest_path, ref_time, kape_child))
+
+    # 2단계: artifact_csv → tagged (드라이브 루트의 tagged 폴더)
+    for artifact_path, ref_time, kape_child in copied_list:
+        ccit_root = find_ccit_root(artifact_path)
+        # ccit와 같은 레벨에 tagged 생성: 예) D:\\ccit -> D:\\tagged
+        output_dir = ccit_root.parent / "tagged"
+
+        print(f"[TAG] 입력 파일: {artifact_path}")
+        print(f"      출력 디렉터리: {output_dir}")
+
+        output_path = tag_cookie_csv(
+            artifact_path,
+            ref_time,
+            output_dir,
+            kape_child=kape_child,
+        )
+        print(f"      -> 태깅 완료. 결과 파일: {output_path}")
 
 
-# 오케스트레이터에서 호출할 수 있게 run도 정의
+# 오케스트레이터용 엔트리
 def run(*args, **kwargs):
-    """
-    오케스트레이터에서 run(drive_letters, cfg) 형태로 호출해도 되고,
-    단독 실행 시에도 main()만 쓰면 된다.
-    여기서는 D:~Z: + ccit 스캔만 사용하므로 args/cfg는 무시한다.
-    """
     main()
 
 

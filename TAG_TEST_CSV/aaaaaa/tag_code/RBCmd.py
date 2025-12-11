@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 import pandas as pd
+from pathlib import Path
 
 
 # =====================================
@@ -18,28 +19,39 @@ COLUMNS_TO_DROP = [
 
 
 # =====================================
-# 1. CSV 파일 찾기 (D: ~ Z:)
+# 1. CSV 파일 찾기 (D: ~ Z:) - Kape Output 기준
 # =====================================
 
 def find_rbcmd_csv():
+    """
+    D:~Z: 각 드라이브에서 루트의 'Kape Output' 폴더를 찾고,
+    그 아래를 재귀적으로 돌면서 *_RBCmd_Output.csv 를 찾는다.
+    일단 첫 번째로 발견된 파일만 반환.
+    """
     matches = []
+
     for drive_code in range(ord("D"), ord("Z") + 1):
-        drive = f"{chr(drive_code)}:\\"
-        if not os.path.exists(drive):
+        drive_root = f"{chr(drive_code)}:\\"
+        if not os.path.exists(drive_root):
             continue
 
-        for root, dirs, files in os.walk(drive):
-            lower_root = root.lower()
-            if "ccit" not in lower_root:
-                continue
+        kape_root = os.path.join(drive_root, "Kape Output")
+        if not os.path.isdir(kape_root):
+            continue
 
+        print(f"[DEBUG] 드라이브 {drive_root} 의 Kape Output 탐색: {kape_root}")
+
+        for root, dirs, files in os.walk(kape_root):
             for fname in files:
                 if fname.endswith(TARGET_SUFFIX):
-                    matches.append(os.path.join(root, fname))
+                    full_path = os.path.join(root, fname)
+                    print(f"[DEBUG] RBCmd 후보 발견: {full_path}")
+                    matches.append(full_path)
 
     if not matches:
         return None
-    # 일단 첫 번째 것만 사용
+
+    # 일단 첫 번째 것만 사용 (기존 로직 유지)
     return matches[0]
 
 
@@ -55,6 +67,38 @@ def extract_capture_dt_from_filename(path):
         return None
     dt_str = m.group(1)  # "YYYYMMDDHHMMSS"
     return datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+
+
+# =====================================
+# 2-1. Kape Output 하위 CASE 폴더 이름 추출
+#       (Kape Output 바로 아래 1단계 폴더명만)
+# =====================================
+
+def get_kape_child_folder_name(csv_path: str):
+    """
+    csv_path 가
+        <드라이브>:\Kape Output\<CASE>\...\file.csv
+    형태라고 가정하고,
+
+    - 'Kape Output' 폴더를 위로 올라가며 찾은 뒤
+    - 그 기준 상대 경로의 첫 번째 부분(하위 폴더 이름, 예: 'Jo', 'Terry') 하나만 반환.
+
+    못 찾으면 None.
+    """
+    p = Path(csv_path)
+    for parent in [p] + list(p.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = p.relative_to(parent)
+            except ValueError:
+                return None
+
+            # 예: rel.parts = ('Jo', 'RBCmd', '...', 'file.csv')
+            if rel.parts:
+                return rel.parts[0]
+            return None
+
+    return None
 
 
 # =====================================
@@ -345,27 +389,35 @@ def make_description(row):
 
 
 # =====================================
-# 9. 출력 경로: 드라이브\ccit\tagged\*.csv
+# 9. 출력 경로: 드라이브\tagged\*.csv
+#    + 파일명에 CASE 이름 포함
 # =====================================
 
-def get_tagged_output_path(csv_path: str) -> str:
-    lower = csv_path.lower()
-    marker = "\\ccit\\"
-    idx = lower.find(marker)
-    if idx == -1:
-        # ccit를 못 찾으면, 그냥 현재 디렉토리 밑 tagged 사용
+def get_tagged_output_path(csv_path: str, case_name: str | None) -> str:
+    """
+    - 드라이브 루트에 'tagged' 폴더 생성 (ccit 와 같은 레벨)
+      예) D:\tagged
+    - 파일명은 원본 stem + CASE 이름 + _normalized.csv
+      예) 20251102074048_RBCmd_Output_Jo_normalized.csv
+    """
+    drive, _ = os.path.splitdrive(csv_path)
+    if not drive:
+        # 드라이브 정보를 못 얻으면 원래 폴더 기준
         base_dir = os.path.dirname(csv_path)
-        tagged_dir = os.path.join(base_dir, "tagged")
     else:
-        # 예: D:\ccit\Adware... → D:\ccit\ 로 자르기
-        ccit_dir = csv_path[: idx + len(marker)]
-        tagged_dir = os.path.join(ccit_dir, "tagged")
+        base_dir = drive + "\\"
 
+    tagged_dir = os.path.join(base_dir, "tagged")
     os.makedirs(tagged_dir, exist_ok=True)
 
     base_name = os.path.basename(csv_path)
     stem, ext = os.path.splitext(base_name)
-    out_name = f"{stem}_normalized.csv"
+
+    if case_name:
+        out_name = f"{stem}_{case_name}_normalized.csv"
+    else:
+        out_name = f"{stem}_normalized.csv"
+
     return os.path.join(tagged_dir, out_name)
 
 
@@ -377,6 +429,12 @@ def normalize_rbcmd_csv(csv_path):
     print(f"[+] Target CSV: {csv_path}")
     capture_dt = extract_capture_dt_from_filename(csv_path)
     print(f"[+] Capture datetime from filename: {capture_dt}")
+
+    case_name = get_kape_child_folder_name(csv_path)
+    if case_name:
+        print(f"[+] Kape Output 하위 CASE 폴더: {case_name}")
+    else:
+        print("[!] Kape Output 하위 CASE 폴더를 찾지 못함 (파일명에 CASE 미반영)")
 
     # CSV 로드
     df = pd.read_csv(csv_path, encoding="utf-8-sig")
@@ -408,8 +466,8 @@ def normalize_rbcmd_csv(csv_path):
     # 최종 컬럼만 남기기
     out_df = df[["type", "lastwritetimestemp", "descrition", "tag"]]
 
-    # 저장 위치: 드라이브\ccit\tagged\*.csv
-    out_path = get_tagged_output_path(csv_path)
+    # 저장 위치: 드라이브\tagged\*.csv (CASE 이름 포함)
+    out_path = get_tagged_output_path(csv_path, case_name)
     out_df.to_csv(out_path, index=False, encoding="utf-8-sig")
     print(f"[+] Normalized CSV saved to: {out_path}")
 

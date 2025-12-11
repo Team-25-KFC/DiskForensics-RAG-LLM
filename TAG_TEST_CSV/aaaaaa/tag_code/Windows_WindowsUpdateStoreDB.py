@@ -31,16 +31,20 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
 
 
 # =========================================
-# 1. D:~Z: 전체에서 ccit 아래 WindowsUpdateStoreDB CSV 찾기
+# 1. D:~Z: 전체에서
+#    루트 경로의 "Kape Output" 아래 WindowsUpdateStoreDB CSV 찾기
 # =========================================
 
 def find_update_store_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
     """
-    D:~Z: 전체를 재귀적으로 돌면서
-    '*_Windows_WindowsUpdateStoreDB_*.csv' 패턴을 모두 찾고,
-    각 파일 Path와 파일명 기준 시각(ref_time)을 리스트로 돌려준다.
+    D:~Z: 각 드라이브에서
 
-    단, 경로에 'ccit' 가 들어간 경우만 대상.
+    - 루트 경로에 "Kape Output" 폴더가 있는지 확인
+      예) D:\\Kape Output, E:\\Kape Output
+    - 해당 "Kape Output" 폴더 아래를 재귀적으로 돌면서
+      '*_Windows_WindowsUpdateStoreDB_*.csv' 패턴을 모두 찾는다.
+
+    찾은 각 파일에 대해 (Path, 파일명 기준 시각 ref_time) 튜플을 반환.
     """
     results: List[Tuple[Path, Optional[datetime]]] = []
 
@@ -49,11 +53,13 @@ def find_update_store_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]
         if not drive_root.exists():
             continue
 
-        for root, dirs, files in os.walk(str(drive_root)):
-            # ccit 폴더 아래만 본다
-            if "ccit" not in root.lower():
-                continue
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.is_dir():
+            continue
 
+        print(f"[DEBUG] 드라이브 {drive_root} 에서 Kape Output 경로 탐색: {kape_root}")
+
+        for root, dirs, files in os.walk(str(kape_root)):
             for name in files:
                 # 파일명 패턴 필터
                 if "Windows_WindowsUpdateStoreDB_" not in name:
@@ -67,12 +73,12 @@ def find_update_store_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]
                 if ref_time is None:
                     print(f"[DEBUG] UpdateStoreDB 후보지만 날짜 파싱 실패: {name}")
                 else:
-                    print(f"[DEBUG] UpdateStoreDB 후보: {name}, ref_time={ref_time}")
+                    print(f"[DEBUG] UpdateStoreDB 후보: {full_path}, ref_time={ref_time}")
 
                 results.append((full_path, ref_time))
 
     if not results:
-        print("[DEBUG] UpdateStoreDB 후보 파일 리스트가 비어 있음 (필터/파싱 문제 가능)")
+        print("[DEBUG] UpdateStoreDB 후보 파일 리스트가 비어 있음 (Kape Output 경로/필터/파싱 문제 가능)")
     else:
         print(f"[DEBUG] UpdateStoreDB 후보 파일 개수: {len(results)}")
 
@@ -211,13 +217,47 @@ def find_ccit_root(path: Path) -> Path:
 
 
 # =========================================
+# 5-1. Kape Output 하위 폴더 이름 추출
+#      (Kape Output 바로 아래 1단계 폴더명만)
+# =========================================
+
+def get_kape_child_folder_name(input_path: Path) -> Optional[str]:
+    """
+    input_path 가
+        <드라이브>:\Kape Output\<CASE>\...\file.csv
+    형태라고 가정하고,
+
+    - 'Kape Output' 폴더를 위로 올라가며 찾은 뒤
+    - 그 기준 상대 경로의 첫 번째 부분(하위 폴더 이름, 예: 'Jo', 'Terry') 하나만 반환.
+
+    못 찾으면 None.
+    """
+    # input_path 자신이 아니라 부모부터 올라가는 게 자연스럽지만,
+    # relative_to 에서는 파일 경로여도 문제 없으므로 그대로 사용.
+    for parent in [input_path] + list(input_path.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = input_path.relative_to(parent)
+            except ValueError:
+                return None
+
+            # 예: rel.parts = ('Jo', 'RECmd', '...', 'file.csv')
+            if rel.parts:
+                return rel.parts[0]
+            return None
+
+    return None
+
+
+# =========================================
 # 6. UpdateStoreDB CSV 태깅
 #    -> (type, lastwritetimestemp, descrition, tag)
 # =========================================
 
 def tag_updatestore_csv(input_path: Path,
                         ref_time: Optional[datetime],
-                        output_dir: Path) -> Path:
+                        output_dir: Path,
+                        kape_child_name: Optional[str] = None) -> Path:
     """
     Windows_WindowsUpdateStoreDB CSV 한 개를 태깅해서
 
@@ -236,12 +276,22 @@ def tag_updatestore_csv(input_path: Path,
         + ACT_INSTALL / ACT_UNINSTALL (조건)
         + TIME_MODIFIED
         + TIME_RECENT / TIME_WEEK / TIME_MONTH / TIME_OLD 중 하나 (ref_time 기준)
+
+    output_dir 는 ccit 폴더와 같은 레벨의 'tagged' 경로를 넘겨준다.
+    파일 이름은 원본 파일명 + Kape Output 하위폴더명을 반영해 생성한다.
+    예) 2025..._Windows_WindowsUpdateStoreDB_..._Jo_Tagged.csv
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
     input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
-    output_filename = f"{base_no_ext}_Tagged.csv"
+
+    # Kape Output 하위 폴더 이름이 있으면 파일명에 포함
+    if kape_child_name:
+        output_filename = f"{base_no_ext}_{kape_child_name}_Tagged.csv"
+    else:
+        output_filename = f"{base_no_ext}_Tagged.csv"
+
     output_path = ensure_unique_output_path(output_dir / output_filename)
 
     with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
@@ -298,11 +348,11 @@ def tag_updatestore_csv(input_path: Path,
 
 
 # =========================================
-# 7. main (D:~Z: + ccit 스캔)
+# 7. main (D:~Z: + Kape Output 스캔)
 # =========================================
 
 def main():
-    print("[WindowsUpdateStoreDB] D:~Z: + ccit 경로에서 '*_Windows_WindowsUpdateStoreDB_*.csv' 탐색 중...")
+    print("[WindowsUpdateStoreDB] D:~Z: 드라이브의 'Kape Output' 경로에서 '*_Windows_WindowsUpdateStoreDB_*.csv' 탐색 중...")
 
     candidates = find_update_store_csvs_under_ccit()
     if not candidates:
@@ -316,18 +366,31 @@ def main():
         else:
             print("    -> ref_time 없음 (TIME_RECENT/WEEK/MONTH/OLD 태그는 생략됨)")
 
+        # ccit 기준 루트 찾기
         ccit_root = find_ccit_root(input_path)
-        output_dir = ccit_root / "tagged"
+
+        # 출력 디렉터리: ccit 폴더와 같은 레벨의 'tagged'
+        # 예) D:\ccit -> D:\tagged
+        base_dir = ccit_root.parent
+        output_dir = base_dir / "tagged"
+
+        # Kape Output 하위 폴더 이름 (예: Jo, Terry)
+        kape_child = get_kape_child_folder_name(input_path)
+        if kape_child:
+            print(f"    -> Kape Output 하위 폴더 이름: {kape_child}")
+        else:
+            print("    -> Kape Output 하위 폴더 이름을 찾지 못함 (파일명에 폴더명 미포함)")
+
         print(f"    -> 출력 디렉터리: {output_dir}")
 
-        output_path = tag_updatestore_csv(input_path, ref_time, output_dir)
+        output_path = tag_updatestore_csv(input_path, ref_time, output_dir, kape_child)
         print(f"[+] 태깅 완료. 결과 파일: {output_path}")
 
 
 def run(*args, **kwargs):
     """
     오케스트레이터에서 run(...) 형태로 호출해도 되도록 래핑.
-    (인자는 무시하고 D:~Z: + ccit 스캔만 수행)
+    (인자는 무시하고 D:~Z: + Kape Output 스캔만 수행)
     """
     main()
 

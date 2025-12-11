@@ -1,7 +1,11 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import json
 from datetime import datetime
+from typing import List, Optional, Tuple
+from pathlib import Path
+
 import pandas as pd
 
 
@@ -9,7 +13,6 @@ import pandas as pd
 # 0. 기본 설정
 # =====================================
 
-# 찾을 파일 이름 패턴
 TARGET_SUFFIX = "_LECmd_Output.csv"
 
 # 필요 없다고 판단한 열
@@ -19,47 +22,97 @@ COLUMNS_TO_DROP = [
 
 
 # =====================================
-# 1. CSV 파일 찾기 (D: ~ Z:)
+# 1. CSV 파일 찾기 (D: ~ Z:, Kape Output 아래)
 # =====================================
 
-def find_lecmd_csv():
-    matches = []
+def find_lecmd_csvs_under_kape_output() -> List[Tuple[Path, Optional[datetime]]]:
+    """
+    D:~Z: 전체를 돌면서
+      <드라이브>:\Kape Output\...\*_LECmd_Output.csv
+    패턴을 모두 찾고,
+    (csv_path, 파일명 기준 캡처시각) 리스트를 반환.
+    """
+    results: List[Tuple[Path, Optional[datetime]]] = []
+
     for drive_code in range(ord("D"), ord("Z") + 1):
-        drive = f"{chr(drive_code)}:\\"
-        if not os.path.exists(drive):
+        drive_root = Path(f"{chr(drive_code)}:\\")
+        if not drive_root.exists():
             continue
 
-        for root, dirs, files in os.walk(drive):
-            lower_root = root.lower()
-            if "ccit" not in lower_root:
-                continue
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.exists():
+            continue
 
+        print(f"[DEBUG] 드라이브 {drive_root} 의 Kape Output 탐색: {kape_root}")
+
+        for root, dirs, files in os.walk(str(kape_root)):
             for fname in files:
-                if fname.endswith(TARGET_SUFFIX):
-                    matches.append(os.path.join(root, fname))
+                if not fname.endswith(TARGET_SUFFIX):
+                    continue
 
-    if not matches:
-        return None
-    # 일단 첫 번째 것만 사용 (필요하면 여기서 여러 개 처리하도록 바꿔도 됨)
-    return matches[0]
+                full_path = Path(root) / fname
+                capture_dt = extract_capture_dt_from_filename(fname)
+                if capture_dt is None:
+                    print(f"[DEBUG] LECmd 후보 파일이지만 날짜 파싱 실패: {fname}")
+                else:
+                    print(f"[DEBUG] LECmd 후보 파일: {fname}, capture_dt={capture_dt}")
+
+                results.append((full_path, capture_dt))
+
+    if not results:
+        print("[DEBUG] LECmd 후보 파일 리스트가 비어 있음 (필터/파싱 문제 가능)")
+    else:
+        print(f"[DEBUG] LECmd 후보 파일 개수: {len(results)}")
+
+    return results
 
 
 # =====================================
-# 2. 파일명에서 캡처 시각 추출
-#    예: 20251126183950_LECmd_Output.csv
+# 1-1. 파일명에서 캡처 시각 추출
+#      예: 20251126183950_LECmd_Output.csv
 # =====================================
 
-def extract_capture_dt_from_filename(path):
-    basename = os.path.basename(path)
+def extract_capture_dt_from_filename(name_or_path) -> Optional[datetime]:
+    basename = os.path.basename(str(name_or_path))
     m = re.match(r"^(\d{14})_", basename)
     if not m:
         return None
     dt_str = m.group(1)  # "YYYYMMDDHHMMSS"
-    return datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+    try:
+        return datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+    except ValueError:
+        return None
 
 
 # =====================================
-# 3. 확장자 -> FORMAT_ 매핑
+# 1-2. Kape Output 하위 1단계 폴더명 추출
+#      예: D:\Kape Output\Jo\SQLECmd\...\file.csv → "Jo"
+# =====================================
+
+def get_kape_child_folder_name(csv_path: Path) -> Optional[str]:
+    """
+    csv_path 가
+        <드라이브>:\Kape Output\<CASE>\...\file.csv
+    형태라고 가정하고,
+    'Kape Output' 기준 상대 경로의 첫 부분(<CASE>)을 반환.
+    """
+    p = csv_path
+    for parent in [p] + list(p.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = p.relative_to(parent)
+            except ValueError:
+                return None
+
+            if rel.parts:
+                return rel.parts[0]
+            return None
+
+    return None
+
+
+# =====================================
+# 2. 확장자 -> FORMAT_ 매핑
 # =====================================
 
 EXT_TO_FORMAT = {
@@ -130,7 +183,7 @@ def extension_to_format_tag(ext: str):
 
 
 # =====================================
-# 4. 이름 기반 의심(SUS_NAME) 헬퍼
+# 3. 이름 기반 의심(SUS_NAME) 헬퍼
 # =====================================
 
 SUSPICIOUS_KEYWORDS = [
@@ -185,7 +238,7 @@ def is_suspicious_name(basename: str, ext: str) -> bool:
 
 
 # =====================================
-# 5. 경로 정규화 (\\?\C:\... 제거)
+# 4. 경로 정규화 (\\?\C:\... 제거)
 # =====================================
 
 def normalize_fs_path(path: str) -> str:
@@ -199,7 +252,7 @@ def normalize_fs_path(path: str) -> str:
 
 
 # =====================================
-# 6. TIME_* 태그
+# 5. TIME_* 태그
 # =====================================
 
 def get_time_bucket_tags(capture_dt, event_dt, base_tag=None):
@@ -231,20 +284,18 @@ def get_time_bucket_tags(capture_dt, event_dt, base_tag=None):
 
 
 # =====================================
-# 7. 한 행(row)에 대한 태그 생성
+# 6. 한 행(row)에 대한 태그 생성
 #    - 확장자/SEC_* 판단은 LocalPath 기준
 # =====================================
 
 def generate_tags_for_row(row, capture_dt):
     tags = set()
 
-    # 7-1) LNK 자체 (SourceFile이 .lnk면 FORMAT_SHORTCUT)
-    source_path = str(row.get("SourceFile", "") or "")
-    src_ext = os.path.splitext(source_path)[1].lower()
-    if src_ext == ".lnk":
-        tags.add("FORMAT_SHORTCUT")
+    # LNK 아티팩트 고정
+    tags.add("ARTIFACT_LNK")
+    tags.add("FORMAT_SHORTCUT")
 
-    # 7-2) 타겟 경로: LocalPath만 사용
+    # 6-1) 타겟 경로: LocalPath만 사용
     target_path_raw = row.get("LocalPath")
     if pd.isna(target_path_raw):
         target_path_raw = ""
@@ -252,9 +303,6 @@ def generate_tags_for_row(row, capture_dt):
     target_lower = target_path.lower()
     basename = os.path.basename(target_path)
     ext = os.path.splitext(basename)[1].lower()
-
-    # 기본 아티팩트 타입
-    tags.add("ARTIFACT_LNK")
 
     # FORMAT_ (타겟 기준, LocalPath만)
     if ext:
@@ -308,7 +356,7 @@ def generate_tags_for_row(row, capture_dt):
     if "\\temp\\" in target_lower or "\\systemtemp\\" in target_lower:
         tags.add("AREA_TEMP")
 
-    # D:~Z: 드라이브 → 외장/별도 드라이브로 취급 (AREA_EXTERNAL_DRIVE만, 의심 여부는 판단 안 함)
+    # D:~Z: 드라이브 → 외장/별도 드라이브로 취급
     if re.match(r"^[d-z]:\\\\", target_lower):
         tags.add("AREA_EXTERNAL_DRIVE")
 
@@ -316,9 +364,7 @@ def generate_tags_for_row(row, capture_dt):
     if target_lower.startswith("\\\\") and not target_lower.startswith("\\\\?\\c:"):
         tags.add("AREA_NETWORK_SHARE")
 
-    # ❌ SEC_SUSPICIOUS_PATH 는 경로만으로 판단하지 않기로 해서 제거
-
-    # SEC_SUSPICIOUS_NAME (타겟 파일 이름 기준, LocalPath + 실행/스크립트일 때만)
+    # SEC_SUSPICIOUS_NAME (타겟 파일 이름 기준, 실행/스크립트일 때만)
     is_exec_or_script = is_exec or is_script
     if is_exec_or_script and basename:
         if is_suspicious_name(basename, ext):
@@ -333,7 +379,7 @@ def generate_tags_for_row(row, capture_dt):
 
 
 # =====================================
-# 8. descrition 생성
+# 7. descrition 생성
 #    - "키: 값 | 키: 값 | ..." 형태로
 #    - type, tag, lastwritetimestemp, SourceAccessed, SourceFile 제외
 # =====================================
@@ -350,16 +396,16 @@ def make_description(row):
 
     parts = []
     for key, val in data.items():
-        # NaN / NaT 처리
-        if isinstance(val, float) and pd.isna(val):
-            continue
         if isinstance(val, pd.Timestamp):
             if pd.isna(val):
                 continue
             val_str = str(val)
         else:
-            if pd.isna(val) if isinstance(val, (float, int)) else False:
-                continue
+            try:
+                if pd.isna(val):
+                    continue
+            except Exception:
+                pass
             val_str = str(val)
         parts.append(f"{key}: {val_str}")
 
@@ -367,37 +413,63 @@ def make_description(row):
 
 
 # =====================================
-# 9. 출력 경로: 드라이브\ccit\tagged\*.csv
+# 8. output 파일명 충돌 처리 (_v1, _v2 ...)
 # =====================================
 
-def get_tagged_output_path(csv_path: str) -> str:
-    lower = csv_path.lower()
-    marker = "\\ccit\\"
-    idx = lower.find(marker)
-    if idx == -1:
-        # ccit를 못 찾으면, 그냥 현재 디렉토리 밑 tagged 사용
-        base_dir = os.path.dirname(csv_path)
-        tagged_dir = os.path.join(base_dir, "tagged")
-    else:
-        # 예: D:\ccit\Adware... → D:\ccit\ 로 자르기
-        ccit_dir = csv_path[: idx + len(marker)]
-        tagged_dir = os.path.join(ccit_dir, "tagged")
+def ensure_unique_output_path(path: Path) -> Path:
+    """
+    이미 같은 이름의 파일이 있으면
+    *_normalized_v1.csv, *_normalized_v2.csv ... 식으로
+    사용 가능한 새 경로를 돌려준다.
+    """
+    if not path.exists():
+        return path
 
-    os.makedirs(tagged_dir, exist_ok=True)
+    base, ext = os.path.splitext(str(path))
+    idx = 1
+    while True:
+        candidate = Path(f"{base}_v{idx}{ext}")
+        if not candidate.exists():
+            return candidate
+        idx += 1
 
-    base_name = os.path.basename(csv_path)
+
+# =====================================
+# 9. 출력 경로: 드라이브 루트\tagged\*.csv
+# =====================================
+
+def get_tagged_output_path(csv_path: Path, case_name: Optional[str]) -> Path:
+    """
+    - 출력 디렉터리: <드라이브>:\tagged
+    - 파일명: <원래스텀>_<CASE>_normalized.csv (CASE 없으면 그냥 _normalized)
+    """
+    drive = csv_path.drive or "D:"
+    tagged_dir = Path(drive + "\\tagged")
+    tagged_dir.mkdir(parents=True, exist_ok=True)
+
+    base_name = csv_path.name
     stem, ext = os.path.splitext(base_name)
-    out_name = f"{stem}_normalized.csv"
-    return os.path.join(tagged_dir, out_name)
+
+    if case_name:
+        out_name = f"{stem}_{case_name}_normalized.csv"
+    else:
+        out_name = f"{stem}_normalized.csv"
+
+    out_path = tagged_dir / out_name
+    return ensure_unique_output_path(out_path)
 
 
 # =====================================
-# 10. 메인 정규화 함수
+# 10. 메인 정규화 함수 (단일 CSV)
 # =====================================
 
-def normalize_lecmd_csv(csv_path):
+def normalize_lecmd_csv(csv_path: Path,
+                        capture_dt: Optional[datetime],
+                        case_name: Optional[str]):
     print(f"[+] Target CSV: {csv_path}")
-    capture_dt = extract_capture_dt_from_filename(csv_path)
+    if capture_dt is None:
+        capture_dt = extract_capture_dt_from_filename(csv_path)
+
     print(f"[+] Capture datetime from filename: {capture_dt}")
 
     # CSV 로드
@@ -430,8 +502,8 @@ def normalize_lecmd_csv(csv_path):
     # 최종 컬럼만 남기기
     out_df = df[["type", "lastwritetimestemp", "descrition", "tag"]]
 
-    # 저장 위치: 드라이브\ccit\tagged\*.csv
-    out_path = get_tagged_output_path(csv_path)
+    # 저장 위치: <드라이브>:\tagged\*.csv
+    out_path = get_tagged_output_path(csv_path, case_name)
     out_df.to_csv(out_path, index=False, encoding="utf-8-sig")
     print(f"[+] Normalized CSV saved to: {out_path}")
 
@@ -440,9 +512,23 @@ def normalize_lecmd_csv(csv_path):
 # 11. 엔트리 포인트
 # =====================================
 
+def main():
+    print("[LECmd] D:~Z: + 'Kape Output' 경로에서 *_LECmd_Output.csv 탐색 중...")
+
+    candidates = find_lecmd_csvs_under_kape_output()
+    if not candidates:
+        print("[!] Target LECmd CSV not found. Check drives/paths and 'Kape Output' folder.")
+        return
+
+    for csv_path, capture_dt in candidates:
+        case_name = get_kape_child_folder_name(csv_path)
+        if case_name:
+            print(f"[+] CASE 폴더: {case_name}")
+        else:
+            print("[!] CASE 폴더명(Kape Output 하위 1단계)을 찾지 못함")
+
+        normalize_lecmd_csv(csv_path, capture_dt, case_name)
+
+
 if __name__ == "__main__":
-    csv_path = find_lecmd_csv()
-    if not csv_path:
-        print("[!] Target LECmd CSV not found. Check drives/paths.")
-    else:
-        normalize_lecmd_csv(csv_path)
+    main()

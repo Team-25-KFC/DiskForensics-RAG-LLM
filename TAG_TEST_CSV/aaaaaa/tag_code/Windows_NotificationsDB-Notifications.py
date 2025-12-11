@@ -3,18 +3,25 @@
 Windows_NotificationsDB-Notifications CSV 태깅 스크립트 (Payload hex 디코딩 포함)
 
 ✔ 입력:
-    D:~Z: 전체를 재귀 탐색하면서
-    경로에 'ccit' 가 포함된 폴더 아래의
+    D:~Z: 각 드라이브 루트의
+    "Kape Output" 폴더 아래를 재귀 탐색하면서
     *Windows_NotificationsDB-Notifications*.csv (KAPE SQLECmd 출력)
 
 ✔ 출력:
-    각 드라이브의 ccit\tagged 폴더에
+    각 드라이브의 "tagged" 폴더에
     type, lastwritetimestemp, descrition, tag 4컬럼 구조 CSV 생성
 
     - type               : "Windows_NotificationsDB-Notifications" 고정
     - lastwritetimestemp : ArrivalTime 원본 문자열
     - descrition         : (Payload hex → 텍스트 포함) Key:Value | ... 형식
     - tag                : 쉼표(,)로 연결한 태그 문자열
+
+✔ 파일 이름 규칙:
+    입력 경로가
+        <드라이브>:\Kape Output\<CASE>\...\원본.csv
+    인 경우,
+        <드라이브>:\tagged\원본파일명_<CASE>_Tagged.csv
+    형식으로 저장.
 
 태그 정책:
 - 기본 태그:
@@ -130,16 +137,19 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
 
 
 # ------------------------------------------------------
-# 2. D:~Z: 전체에서 ccit 아래 Notifications CSV 찾기
+# 2. D:~Z: 전체에서 Kape Output 아래 Notifications CSV 찾기
 # ------------------------------------------------------
 
 def find_notifications_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
     """
-    D:~Z: 전체를 재귀적으로 돌면서
-    '*Windows_NotificationsDB-Notifications*.csv' 패턴을 모두 찾고,
-    (파일 Path, 파일명 기준 ref_time) 리스트를 돌려준다.
+    D:~Z: 각 드라이브에 대해
 
-    단, 경로에 'ccit' 가 들어간 경우만 대상.
+    - 루트 경로에 "Kape Output" 폴더가 있는지 확인
+      예) D:\\Kape Output, E:\\Kape Output
+    - 해당 "Kape Output" 폴더 아래를 재귀적으로 돌면서
+      '*Windows_NotificationsDB-Notifications*.csv' 패턴을 모두 찾는다.
+
+    찾은 각 파일에 대해 (Path, 파일명 기준 ref_time) 튜플을 반환.
     """
     results: List[Tuple[Path, Optional[datetime]]] = []
 
@@ -148,11 +158,13 @@ def find_notifications_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]
         if not drive_root.exists():
             continue
 
-        for root, dirs, files in os.walk(str(drive_root)):
-            lower_root = root.lower()
-            if "ccit" not in lower_root:
-                continue
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.is_dir():
+            continue
 
+        print(f"[DEBUG] 드라이브 {drive_root} 에서 Kape Output 경로 탐색: {kape_root}")
+
+        for root, dirs, files in os.walk(str(kape_root)):
             for name in files:
                 if "Windows_NotificationsDB-Notifications" not in name:
                     continue
@@ -163,18 +175,49 @@ def find_notifications_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]
                 ref_time = parse_ref_time_from_filename(name)
 
                 if ref_time is None:
-                    print(f"[DEBUG] Notifications 후보 파일이지만 날짜 파싱 실패: {name}")
+                    print(f"[DEBUG] Notifications 후보 파일이지만 날짜 파싱 실패: {full_path}")
                 else:
-                    print(f"[DEBUG] Notifications 후보 파일: {name}, ref_time={ref_time}")
+                    print(f"[DEBUG] Notifications 후보 파일: {full_path}, ref_time={ref_time}")
 
                 results.append((full_path, ref_time))
 
     if not results:
-        print("[DEBUG] Notifications 후보 파일 리스트가 비어 있음 (필터/파싱 문제 가능)")
+        print("[DEBUG] Notifications 후보 파일 리스트가 비어 있음 (Kape Output 경로/필터/파싱 문제 가능)")
     else:
         print(f"[DEBUG] Notifications 후보 파일 개수: {len(results)}")
 
     return results
+
+
+# ------------------------------------------------------
+# 2-1. Kape Output 하위 폴더 이름 추출
+#       (Kape Output 바로 아래 1단계 폴더명만)
+# ------------------------------------------------------
+
+def get_kape_child_folder_name(input_path: Path) -> Optional[str]:
+    """
+    input_path 가
+        <드라이브>:\Kape Output\<CASE>\...\file.csv
+    형태라고 가정하고,
+
+    - 'Kape Output' 폴더를 위로 올라가며 찾은 뒤
+    - 그 기준 상대 경로의 첫 번째 부분(하위 폴더 이름, 예: 'Jo', 'Terry') 하나만 반환.
+
+    못 찾으면 None.
+    """
+    for parent in [input_path] + list(input_path.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = input_path.relative_to(parent)
+            except ValueError:
+                return None
+
+            # 예: rel.parts = ('Jo', 'SQLECmd', '...', 'file.csv')
+            if rel.parts:
+                return rel.parts[0]
+            return None
+
+    return None
 
 
 # ------------------------------------------------------
@@ -290,7 +333,7 @@ def ensure_unique_output_path(path: Path) -> Path:
 
 
 # ------------------------------------------------------
-# 6. ccit 루트 찾기 (출력용)
+# 6. ccit 루트 찾기 (출력용 기준)
 # ------------------------------------------------------
 
 def find_ccit_root(path: Path) -> Path:
@@ -316,16 +359,26 @@ def find_ccit_root(path: Path) -> Path:
 
 def tag_notifications_csv(input_path: Path,
                           ref_time: Optional[datetime],
-                          output_dir: Path) -> Path:
+                          output_dir: Path,
+                          kape_child_name: Optional[str] = None) -> Path:
     """
     Windows_NotificationsDB-Notifications CSV 한 개를 읽어서
     type, lastwritetimestemp, descrition, tag 4컬럼 구조로 변환해 저장.
+
+    output_dir 는 'tagged' 경로를 넘겨준다.
+    파일 이름은 원본 파일명 + Kape Output 하위폴더명을 반영해 생성한다.
+    예) 2025...Windows_NotificationsDB-Notifications..._Jo_Tagged.csv
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
     input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
-    output_filename = f"{base_no_ext}_Tagged.csv"
+
+    if kape_child_name:
+        output_filename = f"{base_no_ext}_{kape_child_name}_Tagged.csv"
+    else:
+        output_filename = f"{base_no_ext}_Tagged.csv"
+
     output_path = ensure_unique_output_path(output_dir / output_filename)
 
     with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
@@ -374,11 +427,11 @@ def tag_notifications_csv(input_path: Path,
 
 
 # ------------------------------------------------------
-# 8. main (D:~Z: + ccit 스캔)
+# 8. main (D:~Z: + Kape Output 스캔)
 # ------------------------------------------------------
 
 def main():
-    print("[Notifications] D:~Z: + ccit 경로에서 *Windows_NotificationsDB-Notifications*.csv 탐색 중...")
+    print("[Notifications] D:~Z: 드라이브의 'Kape Output' 경로에서 *Windows_NotificationsDB-Notifications*.csv 탐색 중...")
 
     candidates = find_notifications_csvs_under_ccit()
     if not candidates:
@@ -392,18 +445,31 @@ def main():
         else:
             print("    -> ref_time 없음 (TIME_RECENT/WEEK/MONTH/OLD 태그는 생략됨)")
 
+        # ccit 기준 루트 찾기
         ccit_root = find_ccit_root(input_path)
-        output_dir = ccit_root / "tagged"
+
+        # 출력 디렉터리: ccit 폴더와 같은 레벨의 'tagged'
+        # 예) D:\ccit -> D:\tagged
+        base_dir = ccit_root.parent
+        output_dir = base_dir / "tagged"
+
+        # Kape Output 하위 폴더 이름 (예: Jo, Terry)
+        kape_child = get_kape_child_folder_name(input_path)
+        if kape_child:
+            print(f"    -> Kape Output 하위 폴더 이름: {kape_child}")
+        else:
+            print("    -> Kape Output 하위 폴더 이름을 찾지 못함 (CASE 폴더 미검출)")
+
         print(f"    -> 출력 디렉터리: {output_dir}")
 
-        out_path = tag_notifications_csv(input_path, ref_time, output_dir)
+        out_path = tag_notifications_csv(input_path, ref_time, output_dir, kape_child)
         print(f"    -> 태깅 완료. 결과 파일: {out_path}")
 
 
 def run(*args, **kwargs):
     """
     오케스트레이터에서 run(...) 형태로 호출해도 되도록 래핑.
-    (인자는 무시하고 D:~Z: + ccit 스캔만 수행)
+    (인자는 무시하고 D:~Z: + Kape Output 스캔만 수행)
     """
     main()
 

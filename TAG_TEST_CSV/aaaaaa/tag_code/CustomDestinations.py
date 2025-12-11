@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 from datetime import datetime
+from typing import List, Optional, Tuple
+from pathlib import Path
+
 import pandas as pd
 
 
@@ -17,43 +21,94 @@ COLUMNS_TO_DROP = [
 
 
 # =====================================
-# 1. CSV 파일 찾기 (D: ~ Z:, ccit 아래)
+# 1. CSV 파일 찾기 (D: ~ Z:, 'Kape Output' 아래)
 # =====================================
 
-def find_custom_dest_csv():
-    matches = []
+def find_custom_dest_csvs_under_kape_output() -> List[Tuple[Path, Optional[datetime]]]:
+    """
+    D:~Z: 전체를 돌면서
+      <드라이브>:\Kape Output\...\*_CustomDestinations.csv
+    패턴을 모두 찾고,
+    (csv_path, 파일명 기준 캡처시각) 리스트를 반환.
+    """
+    results: List[Tuple[Path, Optional[datetime]]] = []
+
     for drive_code in range(ord("D"), ord("Z") + 1):
-        drive = f"{chr(drive_code)}:\\"
-        if not os.path.exists(drive):
+        drive_root = Path(f"{chr(drive_code)}:\\")
+        if not drive_root.exists():
             continue
 
-        for root, dirs, files in os.walk(drive):
-            lower_root = root.lower()
-            if "ccit" not in lower_root:
-                continue
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.exists():
+            continue
 
+        print(f"[DEBUG] 드라이브 {drive_root} 의 Kape Output 탐색: {kape_root}")
+
+        for root, dirs, files in os.walk(str(kape_root)):
             for fname in files:
-                if fname.endswith(TARGET_SUFFIX):
-                    matches.append(os.path.join(root, fname))
+                if not fname.endswith(TARGET_SUFFIX):
+                    continue
 
-    if not matches:
-        return None
-    # 여러 개면 일단 첫 번째
-    return matches[0]
+                full_path = Path(root) / fname
+                capture_dt = extract_capture_dt_from_filename(fname)
+
+                if capture_dt is None:
+                    print(f"[DEBUG] CustomDest 후보 파일이지만 날짜 파싱 실패: {fname}")
+                else:
+                    print(f"[DEBUG] CustomDest 후보 파일: {fname}, capture_dt={capture_dt}")
+
+                results.append((full_path, capture_dt))
+
+    if not results:
+        print("[DEBUG] CustomDest 후보 파일 리스트가 비어 있음 (필터/파싱 문제 가능)")
+    else:
+        print(f"[DEBUG] CustomDest 후보 파일 개수: {len(results)}")
+
+    return results
 
 
 # =====================================
-# 2. 파일명에서 캡처 시각 추출
+# 1-1. 파일명에서 캡처 시각 추출
 #    예: 20251102074043_CustomDestinations.csv
 # =====================================
 
-def extract_capture_dt_from_filename(path: str):
-    basename = os.path.basename(path)
+def extract_capture_dt_from_filename(path_or_name: str) -> Optional[datetime]:
+    basename = os.path.basename(path_or_name)
     m = re.match(r"^(\d{14})_", basename)
     if not m:
         return None
     dt_str = m.group(1)
-    return datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+    try:
+        return datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+    except ValueError:
+        return None
+
+
+# =====================================
+# 1-2. Kape Output 하위 1단계 폴더명 추출
+#      예: D:\Kape Output\Jo\JLECmd\...\file.csv → "Jo"
+# =====================================
+
+def get_kape_child_folder_name(csv_path: Path) -> Optional[str]:
+    """
+    csv_path 가
+        <드라이브>:\Kape Output\<CASE>\...\file.csv
+    형태라고 가정하고,
+    'Kape Output' 기준 상대 경로의 첫 부분(<CASE>)을 반환.
+    """
+    p = csv_path
+    for parent in [p] + list(p.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = p.relative_to(parent)
+            except ValueError:
+                return None
+
+            if rel.parts:
+                return rel.parts[0]
+            return None
+
+    return None
 
 
 # =====================================
@@ -325,7 +380,7 @@ def generate_tags_for_row(row, capture_dt):
     if lower.startswith("\\\\") and not lower.startswith("\\\\?\\c:"):
         tags.add("AREA_NETWORK_SHARE")
 
-    # SEC_SUSPICIOUS_PATH 는 사용하지 않음 (경로만으로 판단 X)
+    # SEC_SUSPICIOUS_PATH 는 사용하지 않음
 
     # SEC_SUSPICIOUS_NAME (실행/스크립트 + 이름 기준)
     if (is_exec or is_script) and basename:
@@ -375,36 +430,63 @@ def make_description(row, time_source_col: str):
 
 
 # =====================================
-# 10. 저장 경로: 드라이브\ccit\tagged\*.csv
+# 10. output 파일명 충돌 처리 (_v1, _v2 ...)
 # =====================================
 
-def get_tagged_output_path(csv_path: str) -> str:
-    lower = csv_path.lower()
-    marker = "\\ccit\\"
-    idx = lower.find(marker)
-    if idx == -1:
-        base_dir = os.path.dirname(csv_path)
-        tagged_dir = os.path.join(base_dir, "tagged")
-    else:
-        # 예: D:\ccit\Adware...\ → D:\ccit\ 까지
-        ccit_dir = csv_path[: idx + len(marker)]
-        tagged_dir = os.path.join(ccit_dir, "tagged")
+def ensure_unique_output_path(path: Path) -> Path:
+    """
+    이미 같은 이름의 파일이 있으면
+    *_normalized_v1.csv, *_normalized_v2.csv ... 식으로
+    사용 가능한 새 경로를 돌려준다.
+    """
+    if not path.exists():
+        return path
 
-    os.makedirs(tagged_dir, exist_ok=True)
+    base, ext = os.path.splitext(str(path))
+    idx = 1
+    while True:
+        candidate = Path(f"{base}_v{idx}{ext}")
+        if not candidate.exists():
+            return candidate
+        idx += 1
 
-    base_name = os.path.basename(csv_path)
+
+# =====================================
+# 11. 저장 경로: 드라이브\tagged\*.csv (CASE 반영)
+# =====================================
+
+def get_tagged_output_path(csv_path: Path, case_name: Optional[str]) -> Path:
+    """
+    - 출력 디렉터리: <드라이브>:\tagged
+    - 파일명: <원래스텀>_<CASE>_normalized.csv (CASE 없으면 그냥 _normalized)
+    """
+    drive = csv_path.drive or "D:"
+    tagged_dir = Path(drive + "\\tagged")
+    tagged_dir.mkdir(parents=True, exist_ok=True)
+
+    base_name = csv_path.name
     stem, ext = os.path.splitext(base_name)
-    out_name = f"{stem}_normalized.csv"
-    return os.path.join(tagged_dir, out_name)
+
+    if case_name:
+        out_name = f"{stem}_{case_name}_normalized.csv"
+    else:
+        out_name = f"{stem}_normalized.csv"
+
+    out_path = tagged_dir / out_name
+    return ensure_unique_output_path(out_path)
 
 
 # =====================================
-# 11. 메인 정규화 함수
+# 12. 메인 정규화 함수 (단일 CSV)
 # =====================================
 
-def normalize_custom_dest_csv(csv_path: str):
+def normalize_custom_dest_csv(csv_path: Path,
+                              capture_dt: Optional[datetime],
+                              case_name: Optional[str]):
     print(f"[+] Target CSV: {csv_path}")
-    capture_dt = extract_capture_dt_from_filename(csv_path)
+    if capture_dt is None:
+        capture_dt = extract_capture_dt_from_filename(csv_path)
+
     print(f"[+] Capture datetime from filename: {capture_dt}")
 
     df = pd.read_csv(csv_path, encoding="utf-8-sig")
@@ -452,18 +534,32 @@ def normalize_custom_dest_csv(csv_path: str):
     # 최종 컬럼 정리
     out_df = df[["type", "lastwritetimestemp", "descrition", "tag"]]
 
-    out_path = get_tagged_output_path(csv_path)
+    out_path = get_tagged_output_path(csv_path, case_name)
     out_df.to_csv(out_path, index=False, encoding="utf-8-sig")
     print(f"[+] Normalized CSV saved to: {out_path}")
 
 
 # =====================================
-# 12. 엔트리 포인트
+# 13. 엔트리 포인트
 # =====================================
 
+def main():
+    print("[CustomDest] D:~Z: + 'Kape Output' 경로에서 *_CustomDestinations.csv 탐색 중...")
+
+    candidates = find_custom_dest_csvs_under_kape_output()
+    if not candidates:
+        print("[!] Target CustomDestinations CSV not found. Check drives/paths and 'Kape Output' folder.")
+        return
+
+    for csv_path, capture_dt in candidates:
+        case_name = get_kape_child_folder_name(csv_path)
+        if case_name:
+            print(f"[+] CASE 폴더: {case_name}")
+        else:
+            print("[!] CASE 폴더명(Kape Output 하위 1단계)을 찾지 못함")
+
+        normalize_custom_dest_csv(csv_path, capture_dt, case_name)
+
+
 if __name__ == "__main__":
-    csv_path = find_custom_dest_csv()
-    if not csv_path:
-        print("[!] Target CustomDestinations CSV not found. Check drives/paths and ccit folder.")
-    else:
-        normalize_custom_dest_csv(csv_path)
+    main()

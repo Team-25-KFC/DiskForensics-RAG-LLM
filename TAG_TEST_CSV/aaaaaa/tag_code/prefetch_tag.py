@@ -25,16 +25,17 @@ def parse_ref_time_from_filename(filename: str) -> Optional[datetime]:
 
 
 # ===============================
-# 1. D:~Z: 전체에서 ccit 아래 PECmd CSV 찾기
+# 1. D:~Z: 전체에서 Kape Output 아래 PECmd CSV 찾기
 # ===============================
 
 def find_pecmd_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
     """
-    D:~Z: 전체를 재귀적으로 돌면서
+    (이름은 그대로 두지만 동작은 Kape Output 기준으로 변경)
+
+    D:~Z: 전체를 돌면서
+    각 드라이브 루트의 'Kape Output' 폴더 아래에서
     '*_PECmd_Output.csv' 패턴을 모두 찾고,
     각 파일 Path와 파일명 기준 시각(ref_time)을 리스트로 돌려준다.
-
-    단, 경로에 'ccit' 가 들어간 경우만 대상.
     """
     results: List[Tuple[Path, Optional[datetime]]] = []
 
@@ -43,11 +44,13 @@ def find_pecmd_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
         if not drive_root.exists():
             continue
 
-        for root, dirs, files in os.walk(str(drive_root)):
-            lower_root = root.lower()
-            if "ccit" not in lower_root:
-                continue
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.exists():
+            continue
 
+        print(f"[DEBUG] 드라이브 {drive_root} 의 Kape Output 탐색: {kape_root}")
+
+        for root, dirs, files in os.walk(str(kape_root)):
             for name in files:
                 if not name.endswith("_PECmd_Output.csv"):
                     continue
@@ -68,6 +71,37 @@ def find_pecmd_csvs_under_ccit() -> List[Tuple[Path, Optional[datetime]]]:
         print(f"[DEBUG] PECmd 후보 파일 개수: {len(results)}")
 
     return results
+
+
+# ===============================
+# 1-1. Kape Output 하위 1단계 폴더 이름 추출
+# ===============================
+
+def get_kape_child_folder_name(csv_path: Path) -> Optional[str]:
+    """
+    csv_path 가
+        <드라이브>:\Kape Output\<CASE>\...\file.csv
+    형태라고 가정하고,
+
+    - 위로 올라가면서 'Kape Output' 폴더를 찾은 다음
+    - 그 기준 상대 경로의 첫 번째 부분(하위 폴더 이름, 예: 'Jo', 'Terry')을 반환.
+
+    못 찾으면 None.
+    """
+    p = csv_path
+    for parent in [p] + list(p.parents):
+        if parent.name.lower() == "kape output":
+            try:
+                rel = p.relative_to(parent)
+            except ValueError:
+                return None
+
+            # 예: rel.parts = ('Jo', 'SQLECmd', '...', 'file.csv')
+            if rel.parts:
+                return rel.parts[0]
+            return None
+
+    return None
 
 
 # ===============================
@@ -306,26 +340,6 @@ def ensure_unique_output_path(path: Path) -> Path:
 
 
 # ===============================
-# 5. ccit 루트 찾기 (출력용)
-# ===============================
-
-def find_ccit_root(path: Path) -> Path:
-    """
-    입력 CSV가 있는 경로에서 위로 올라가면서
-    이름이 'ccit' 인 폴더를 찾는다.
-    못 찾으면 같은 드라이브의 'ccit' 폴더를 기본으로 사용.
-    """
-    for parent in [path] + list(path.parents):
-        if parent.name.lower() == "ccit":
-            return parent
-
-    drive = path.drive or "D:"
-    ccit_root = Path(drive + "\\ccit")
-    ccit_root.mkdir(parents=True, exist_ok=True)
-    return ccit_root
-
-
-# ===============================
 # 6. description 빌더
 # ===============================
 
@@ -362,11 +376,13 @@ def build_description(row: Dict[str, str]) -> str:
 
 def tag_prefetch_csv(input_path: Path,
                      ref_time: Optional[datetime],
-                     output_dir: Path) -> Path:
+                     output_dir: Path,
+                     case_name: Optional[str]) -> Path:
     """
     - input_path: *_PECmd_Output.csv 전체 경로
-    - ref_time: 파일명에서 뽑은 기준 시각
-    - output_dir: ccit\tagged 디렉터리
+    - ref_time  : 파일명에서 뽑은 기준 시각
+    - output_dir: <드라이브>:\tagged 디렉터리
+    - case_name : Kape Output 하위 1단계 폴더 이름 (예: Jo, Terry)
 
     최종 출력 컬럼:
       1) type               -> "ARTIFACT_PREFETCH" 고정
@@ -378,7 +394,13 @@ def tag_prefetch_csv(input_path: Path,
 
     input_basename = input_path.name
     base_no_ext, _ = os.path.splitext(input_basename)
-    output_filename = f"{base_no_ext}_Tagged.csv"
+
+    # 파일명: 원래 이름 + CASE 이름 + _Tagged.csv
+    if case_name:
+        output_filename = f"{base_no_ext}_{case_name}_Tagged.csv"
+    else:
+        output_filename = f"{base_no_ext}_Tagged.csv"
+
     output_path = ensure_unique_output_path(output_dir / output_filename)
 
     with input_path.open("r", encoding="utf-8-sig", newline="") as f_in, \
@@ -438,11 +460,11 @@ def tag_prefetch_csv(input_path: Path,
 
 
 # ===============================
-# 8. main (D:~Z: + ccit 스캔)
+# 8. main (D:~Z: + Kape Output 스캔)
 # ===============================
 
 def main():
-    print("[PECmd] D:~Z: + ccit 경로에서 *_PECmd_Output.csv 탐색 중...")
+    print("[PECmd] D:~Z: + 'Kape Output' 경로에서 *_PECmd_Output.csv 탐색 중...")
 
     candidates = find_pecmd_csvs_under_ccit()
     if not candidates:
@@ -456,19 +478,26 @@ def main():
         else:
             print("    -> ref_time 없음 (TIME_RECENT/WEEK/MONTH/OLD 태그는 생략될 수 있음)")
 
-        ccit_root = find_ccit_root(input_path)
-        output_dir = ccit_root / "tagged"
+        # Kape Output 하위 1단계 폴더명(case) 추출
+        case_name = get_kape_child_folder_name(input_path)
+        if case_name:
+            print(f"    -> Kape Output CASE 폴더: {case_name}")
+        else:
+            print("    -> Kape Output CASE 폴더를 찾지 못함 (파일명에 CASE 미반영)")
+
+        # 출력 디렉터리: 드라이브 루트의 tagged (예: D:\tagged)
+        drive = input_path.drive or "D:"
+        output_dir = Path(drive + "\\tagged")
         print(f"    -> 출력 디렉터리: {output_dir}")
 
-        output_path = tag_prefetch_csv(input_path, ref_time, output_dir)
+        output_path = tag_prefetch_csv(input_path, ref_time, output_dir, case_name)
         print(f"    -> 태깅 완료. 결과 파일: {output_path}")
 
 
 def run(*args, **kwargs):
     """
-    오케스트레이터에서 run(drive_letters, cfg) 형태로 호출해도 되고,
-    단독 실행 시에는 main()만 써도 된다.
-    여기서는 D:~Z: + ccit 스캔만 사용하므로 args/cfg는 무시한다.
+    오케스트레이터에서 run(...) 형태로 호출해도 되도록 래핑.
+    (인자는 무시하고 D:~Z: + 'Kape Output' 스캔만 수행)
     """
     main()
 
