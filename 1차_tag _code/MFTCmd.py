@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 from pathlib import Path
@@ -13,18 +14,26 @@ import pandas as pd
 def iter_case_dirs() -> Iterator[tuple[Path, str, Path]]:
     """
     D:~Z:\Kape Output\<case_name>\... 구조에서 case_dir들을 yield
-    returns: (drive_root, case_name, case_dir)
     """
     for code in range(ord("D"), ord("Z") + 1):
         drive_root = Path(f"{chr(code)}:/")
         kape_root = drive_root / "Kape Output"
+
+        # ✅ 디버그: 드라이브/폴더 존재 여부 찍기
+        if code == ord("D"):  # D만 찍어도 충분
+            print("[DEBUG] drive_root =", drive_root)
+            print("[DEBUG] kape_root  =", kape_root)
+            print("[DEBUG] exists/is_dir =", kape_root.exists(), kape_root.is_dir())
+
         if not kape_root.is_dir():
             continue
 
-        for case_dir in kape_root.iterdir():
-            if case_dir.is_dir():
-                yield drive_root, case_dir.name, case_dir
+        # ✅ 디버그: 케이스 폴더들 나열
+        case_dirs = [p for p in kape_root.iterdir() if p.is_dir()]
+        print(f"[DEBUG] found cases in {kape_root}: {[p.name for p in case_dirs]}")
 
+        for case_dir in case_dirs:
+            yield drive_root, case_dir.name, case_dir
 
 def ensure_unique_output_path(path: Path) -> Path:
     """이미 있으면 _1, _2 ... 붙여서 덮어쓰기 방지"""
@@ -168,7 +177,12 @@ class MFTTagger:
     # Main
     # ============================================================
 
-    def process_csv(self, csv_path, output_root: Path):
+    def process_csv(self, csv_path: Path, output_root: Path, case_name: str):
+        """
+        csv_path: MFTECmd CSV 파일 경로
+        output_root: <드라이브>:\\tagged
+        case_name: Kape Output 하위 1단계 폴더 이름
+        """
         csv_path = Path(csv_path)
         df = pd.read_csv(csv_path, low_memory=False)
 
@@ -203,8 +217,12 @@ class MFTTagger:
 
         out_df = pd.DataFrame(out_rows)
 
+        # 출력 디렉터리: <드라이브>:\tagged
         output_root.mkdir(exist_ok=True, parents=True)
-        out_csv = ensure_unique_output_path(output_root / f"{csv_path.stem}_tagged.csv")
+
+        # 파일 이름: <원본스탬>_<case_name>_tagged.csv
+        out_name = f"{csv_path.stem}_{case_name}_tagged.csv"
+        out_csv = ensure_unique_output_path(output_root / out_name)
         out_df.to_csv(out_csv, index=False, encoding="utf-8-sig")
 
         return str(out_csv), len(out_rows)
@@ -219,8 +237,8 @@ if __name__ == "__main__":
     total = 0
 
     for drive_root, case_name, case_dir in iter_case_dirs():
-        output_root = drive_root / "tagged" / case_name / "MFTCmd"
-        output_root.mkdir(parents=True, exist_ok=True)
+        # 출력 루트: <드라이브>:\tagged
+        output_root = drive_root / "tagged"
 
         csv_files = []
         for p in case_dir.rglob("*MFTECmd_*.csv"):
@@ -239,7 +257,7 @@ if __name__ == "__main__":
         for i, csv_path in enumerate(csv_files, start=1):
             print(f"[{i}/{len(csv_files)}] 처리 중: {csv_path}")
             try:
-                out_csv, cnt = tagger.process_csv(csv_path, output_root)
+                out_csv, cnt = tagger.process_csv(csv_path, output_root, case_name)
                 if out_csv:
                     print(f"  → 완료: {out_csv} ({cnt}행)")
                     total += 1

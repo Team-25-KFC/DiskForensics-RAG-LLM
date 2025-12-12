@@ -9,15 +9,30 @@ import pandas as pd
 # 공통 유틸 (D~Z:\Kape Output\<case>\...)
 # ============================================================
 
-def iter_case_dirs() -> Iterator[tuple[Path, str, Path]]:
+def iter_case_dirs(debug: bool = False) -> Iterator[tuple[Path, str, Path]]:
+    """
+    D:~Z:\Kape Output\<case_name>\... 구조
+    yields: (drive_root, case_name, case_dir)
+    """
     for code in range(ord("D"), ord("Z") + 1):
         drive_root = Path(f"{chr(code)}:/")
         kape_root = drive_root / "Kape Output"
+
+        if debug and chr(code).upper() == "D":
+            print("[DEBUG] drive_root =", drive_root)
+            print("[DEBUG] kape_root  =", kape_root)
+            print("[DEBUG] exists/is_dir =", kape_root.exists(), kape_root.is_dir())
+
         if not kape_root.is_dir():
             continue
-        for case_dir in kape_root.iterdir():
-            if case_dir.is_dir():
-                yield drive_root, case_dir.name, case_dir
+
+        case_dirs = [p for p in kape_root.iterdir() if p.is_dir()]
+
+        if debug and chr(code).upper() == "D":
+            print(f"[DEBUG] found cases in {kape_root}: {[p.name for p in case_dirs]}")
+
+        for case_dir in case_dirs:
+            yield drive_root, case_dir.name, case_dir
 
 
 def ensure_unique_output_path(path: Path) -> Path:
@@ -30,6 +45,11 @@ def ensure_unique_output_path(path: Path) -> Path:
         if not cand.exists():
             return cand
         i += 1
+
+
+def sanitize_for_filename(s: str) -> str:
+    # Windows 금지문자 제거
+    return re.sub(r'[\\/:*?"<>|]', "_", str(s)).strip()
 
 
 # ============================================================
@@ -84,7 +104,11 @@ class BootTagger:
 
         return " | ".join(dict.fromkeys(tags))
 
-    def process_csv(self, csv_path: Path, output_root: Path):
+    def process_csv(self, csv_path: Path, output_root: Path, case_name: str):
+        """
+        output_root: <drive>:\tagged
+        파일명: <원본stem>_<case>_normalized.csv
+        """
         csv_path = Path(csv_path)
         df = pd.read_csv(csv_path, low_memory=False)
 
@@ -92,7 +116,6 @@ class BootTagger:
         for _, row in df.iterrows():
             desc = self.build_description(row)
             tags = self.build_tags(row)
-
             out_rows.append(
                 {
                     "Type": "MFT_BOOT",
@@ -103,9 +126,12 @@ class BootTagger:
             )
 
         output_root.mkdir(parents=True, exist_ok=True)
-        out_csv = ensure_unique_output_path(output_root / f"{csv_path.stem}_tagged.csv")
-        pd.DataFrame(out_rows).to_csv(out_csv, index=False, encoding="utf-8-sig")
 
+        safe_case = sanitize_for_filename(case_name)
+        out_name = f"{csv_path.stem}_{safe_case}_normalized.csv"
+        out_csv = ensure_unique_output_path(output_root / out_name)
+
+        pd.DataFrame(out_rows).to_csv(out_csv, index=False, encoding="utf-8-sig")
         return str(out_csv), len(out_rows)
 
 
@@ -117,14 +143,18 @@ if __name__ == "__main__":
     tagger = BootTagger()
     total = 0
 
-    for drive_root, case_name, case_dir in iter_case_dirs():
-        out_root = drive_root / "tagged" / case_name / "MFTCmd_Boot"
-        out_root.mkdir(parents=True, exist_ok=True)
+    for drive_root, case_name, case_dir in iter_case_dirs(debug=False):
+        # ✅ 출력 루트: <drive>:\tagged (단일 폴더)
+        output_root = drive_root / "tagged"
 
-        csv_files = [
-            p for p in case_dir.rglob("*MFTECmd_Boot*.csv")
-            if "_tagged" not in p.name.lower()
-        ]
+        # ✅ 케이스 폴더 내부 재귀 탐색
+        csv_files = []
+        for p in case_dir.rglob("*MFTECmd_Boot*.csv"):
+            n = p.name.lower()
+            # ✅ 재처리 방지
+            if "_tagged" in n or "_normalized" in n:
+                continue
+            csv_files.append(p)
 
         if not csv_files:
             continue
@@ -134,7 +164,7 @@ if __name__ == "__main__":
         for i, csv_path in enumerate(csv_files, 1):
             try:
                 print(f"[{i}/{len(csv_files)}] 처리 중: {csv_path}")
-                out_csv, cnt = tagger.process_csv(csv_path, out_root)
+                out_csv, cnt = tagger.process_csv(csv_path, output_root, case_name)
                 print(f"  → 완료: {out_csv} ({cnt}행)")
                 total += 1
             except Exception as e:

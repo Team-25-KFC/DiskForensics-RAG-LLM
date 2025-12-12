@@ -10,15 +10,26 @@ import pandas as pd
 # 공통 유틸 (D~Z:\Kape Output\<case>\...)
 # ============================================================
 
-def iter_case_dirs() -> Iterator[tuple[Path, str, Path]]:
+def iter_case_dirs(debug: bool = False) -> Iterator[tuple[Path, str, Path]]:
     for code in range(ord("D"), ord("Z") + 1):
         drive_root = Path(f"{chr(code)}:/")
         kape_root = drive_root / "Kape Output"
+
+        if debug and chr(code).upper() == "D":
+            print("[DEBUG] drive_root =", drive_root)
+            print("[DEBUG] kape_root  =", kape_root)
+            print("[DEBUG] exists/is_dir =", kape_root.exists(), kape_root.is_dir())
+
         if not kape_root.is_dir():
             continue
-        for case_dir in kape_root.iterdir():
-            if case_dir.is_dir():
-                yield drive_root, case_dir.name, case_dir
+
+        case_dirs = [p for p in kape_root.iterdir() if p.is_dir()]
+
+        if debug and chr(code).upper() == "D":
+            print(f"[DEBUG] found cases in {kape_root}: {[p.name for p in case_dirs]}")
+
+        for case_dir in case_dirs:
+            yield drive_root, case_dir.name, case_dir
 
 
 def ensure_unique_output_path(path: Path) -> Path:
@@ -33,13 +44,18 @@ def ensure_unique_output_path(path: Path) -> Path:
         i += 1
 
 
+def sanitize_for_filename(s: str) -> str:
+    # Windows 파일명 금지문자 제거
+    return re.sub(r'[\\/:*?"<>|]', "_", str(s)).strip()
+
+
 # ============================================================
 # RECmd Tagger
 # ============================================================
 
 class RECmdTagger:
     """
-    RECmd Batch CSV -> 공통 포맷(Type / LastWriteTimestamp / description / Tags)로 축소 후 JSONL 저장
+    RECmd Batch CSV -> 공통 포맷(Type / LastWriteTimestamp / description / Tags)로 축소 후 CSV 저장
     """
 
     def __init__(self):
@@ -211,7 +227,6 @@ class RECmdTagger:
 
     def tag_basic_system_info(self, row):
         tags = ["ARTIFACT_REGISTRY", "FORMAT_REGISTRY"]
-
         ts_val = self.extract_timestamp(row)
         t_tag = self.get_time_tag(ts_val)
         if t_tag:
@@ -275,39 +290,9 @@ class RECmdTagger:
         tags = self.normalize_tags(tags)
         return " | ".join(tags)
 
-    def tag_software_aseps(self, row):
-        return self.tag_registry_aseps(row)
-
-    def tag_software_classes_aseps(self, row):
-        return self.tag_registry_aseps(row)
-
-    def tag_software_wow6432_aseps(self, row):
-        return self.tag_registry_aseps(row)
-
-    def tag_system_aseps(self, row):
-        return self.tag_registry_aseps(row)
-
-    def tag_user_classes_aseps(self, row):
-        return self.tag_registry_aseps(row)
-
     def tag_user_activity(self, row):
-        tags = ["ARTIFACT_REGISTRY", "FORMAT_REGISTRY"]
-
-        ts_val = self.extract_timestamp(row)
-        t_tag = self.get_time_tag(ts_val)
-        if t_tag:
-            tags.append(t_tag)
-
-        valuedata = row.get("ValueData", "")
-        if self.has_suspicious_text(valuedata):
-            tags.append("SEC_SUSPICIOUS_NAME")
-
-        tags.extend(self.get_sec_exec_and_script_tags(row))
-        tags.extend(self.get_sec_suspicious_path_tags(row))
-        tags.extend(self.get_state_tags(row))
-
-        tags = self.normalize_tags(tags)
-        return " | ".join(tags)
+        # 기존 로직 그대로
+        return self.tag_installed_software(row)
 
     def tag_default(self, row):
         tags = ["ARTIFACT_REGISTRY", "FORMAT_REGISTRY"]
@@ -326,29 +311,23 @@ class RECmdTagger:
 
     # ---------- 메인 처리 ----------
 
-    def process_csv(self, csv_path: Path, output_dir: Optional[Path] = None):
+    def process_csv(self, csv_path: Path, output_root: Path, case_name: str):
+        """
+        output_root: <drive>:\tagged
+        output file: <stem>_<case>_normalized.csv
+        """
         csv_path = Path(csv_path)
         filename = csv_path.name
 
-        df = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path, low_memory=False)
 
-        # 파일명 기반으로 태깅 함수 선택
+        # 파일명 기반으로 태깅 함수 선택 (기존 유지)
         if "BasicSystemInfo" in filename:
             tag_func = self.tag_basic_system_info
         elif "InstalledSoftware" in filename:
             tag_func = self.tag_installed_software
         elif "RegistryASEPs" in filename:
             tag_func = self.tag_registry_aseps
-        elif "SoftwareASEPs" in filename:
-            tag_func = self.tag_software_aseps
-        elif "SoftwareClassesASEPs" in filename:
-            tag_func = self.tag_software_classes_aseps
-        elif "SoftwareWoW6432ASEPs" in filename:
-            tag_func = self.tag_software_wow6432_aseps
-        elif "SystemASEPs" in filename:
-            tag_func = self.tag_system_aseps
-        elif "UserClassesASEPs" in filename:
-            tag_func = self.tag_user_classes_aseps
         elif "UserActivity" in filename:
             tag_func = self.tag_user_activity
         else:
@@ -373,14 +352,13 @@ class RECmdTagger:
 
         out_df = pd.DataFrame(out_rows)
 
-        if output_dir is None:
-            jsonl_out = csv_path.with_name(csv_path.stem + "_tagged.jsonl")
-        else:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            jsonl_out = ensure_unique_output_path(output_dir / (csv_path.stem + "_tagged.jsonl"))
+        output_root.mkdir(parents=True, exist_ok=True)
+        safe_case = sanitize_for_filename(case_name)
+        out_name = f"{csv_path.stem}_{safe_case}_normalized.csv"
+        out_csv = ensure_unique_output_path(output_root / out_name)
 
-        out_df.to_json(jsonl_out, orient="records", lines=True, force_ascii=False)
-        return str(jsonl_out), len(out_rows)
+        out_df.to_csv(out_csv, index=False, encoding="utf-8-sig")
+        return str(out_csv), len(out_rows)
 
 
 # ============================================================
@@ -391,14 +369,16 @@ if __name__ == "__main__":
     tagger = RECmdTagger()
     total = 0
 
-    for drive_root, case_name, case_dir in iter_case_dirs():
-        out_dir = drive_root / "tagged" / case_name / "RECmd"
-        out_dir.mkdir(parents=True, exist_ok=True)
+    for drive_root, case_name, case_dir in iter_case_dirs(debug=False):
+        # ✅ 출력 루트: <drive>:\tagged (단일 폴더)
+        output_root = drive_root / "tagged"
 
-        csv_files = [
-            p for p in case_dir.rglob("*RECmd_Batch_*.csv")
-            if "_tagged" not in p.name.lower()
-        ]
+        csv_files = []
+        for p in case_dir.rglob("*RECmd_Batch_*.csv"):
+            n = p.name.lower()
+            if "_tagged" in n or "_normalized" in n:
+                continue
+            csv_files.append(p)
 
         if not csv_files:
             continue
@@ -408,8 +388,8 @@ if __name__ == "__main__":
         for i, csv_path in enumerate(csv_files, 1):
             try:
                 print(f"[{i}/{len(csv_files)}] 처리 중: {csv_path}")
-                jsonl_out, row_count = tagger.process_csv(csv_path, out_dir)
-                print(f"  ✓ 완료: {jsonl_out} ({row_count:,}행)")
+                out_csv, row_count = tagger.process_csv(csv_path, output_root, case_name)
+                print(f"  ✓ 완료: {out_csv} ({row_count:,}행)")
                 total += 1
             except Exception as e:
                 print(f"  ✗ 오류: {e}")
