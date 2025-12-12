@@ -1,2 +1,124 @@
 C:\GitHub\SeungWon\Final\main.py:63: SyntaxWarning: invalid escape sequence '\c'
   2) 그 외에는 D:~Z: 전체에서 \ccit\*.e01 검색
+C:\GitHub\SeungWon\Final\parser\artifacts.py:7: SyntaxWarning: invalid escape sequence '\<'
+  - 출력: BASE_OUT\<드라이브>\Artifacts\...
+C:\GitHub\SeungWon\Final\parser\eventlog.py:32: SyntaxWarning: invalid escape sequence '\<'
+  """모듈 msource: <Artifacts>\<E>가 있으면 그쪽, 없으면 <Artifacts> 루트"""
+C:\GitHub\SeungWon\Final\parser\eventlog.py:90: SyntaxWarning: invalid escape sequence '\K'
+  "BASE_OUT": Path(r"D:\Kape Output"),
+[INFO] 사용 E01: F:\ccit\jo-2009-12-11-001.E01
+[INFO] NTFS 드라이브: G:
+[STEP] Target copy (parser.artifacts)
+[WARN] legacy nested folder detected: F:\Kape Output\G\Artifacts\G → flatten
+[INFO] legacy flattened: F:\Kape Output\G\Artifacts
+[RUN ] G: target-only: 91개 타깃 복사 → F:\Kape Output\G\Artifacts
+[OK  ] G: target-only: 복사 완료
+[INFO] parser 모듈 실행 대상: SrumECmd, amcache, appcompatcache, eventlog, jlecmd, lecmd, ntfs, pecmd, rbcmd, registry, sbecmd, sqlecmd, wxtcmd
+[RUN ] G: JLECmd
+[DBG ] SrumECmd.exe: C:\KAPE\Modules\bin\SrumECmd.exe (exists=True)
+[RUN ] G: AppCompatCacheParser
+[RUN ] G: AmcacheParser
+[RUN ] G: LECmd
+[SKIP] G: eventlogs: EVTX 없음 → F:\Kape Output\G\Artifacts\G
+[DONE] parser.eventlog
+[RUN ] INDXRipper (G:\)
+[DBG ] src(Artifacts G:): F:\Kape Output\G\Artifacts (exists=True)
+[DBG ] SRUDB.dat G:: N\A (exists=False)
+[DBG ] SOFTWARE G:: F:\Kape Output\G\Artifacts\Windows\System32\config\software (exists=True)
+[SKIP] SrumECmd: G: SRUDB.dat not found under Artifacts
+[DONE] parser.SrumECmd
+[RUN ] G: PECmd → F:\Kape Output\G\PECmd
+[OK  ] G: AmcacheParser
+[DONE] parser.amcache
+[RUN ] G: RBCmd
+[OK  ] G: JLECmd
+[DONE] parser.jlecmd
+[SKIP] G: registry: 이미 CSV 모듈 처리 완료 (F:\Kape Output\G\.modules_registry_csv_done)
+[DONE] parser.registry
+[RUN ] G: SBECmd
+[OK  ] G: LECmd
+[DONE] parser.lecmd
+[DBG ] SQLECmd.exe: C:\KAPE\Modules\bin\SQLECmd\SQLECmd.exe (exists=True)
+[DBG ] Maps: C:\KAPE\Modules\bin\SQLECmd\Maps (exists=True)
+[DBG ] src(Artifacts G:): F:\Kape Output\G\Artifacts (exists=True)
+[DBG ] dst(Output G:): F:\Kape Output\G\SQLECmd (exists=True)
+[RUN ] SQLECmd: G: -d F:\Kape Output\G\Artifacts
+[OK  ] G: PECmd
+[DONE] parser.pecmd
+[RUN ] G: WxTCmd
+[OK  ] G: RBCmd
+[DONE] parser.rbcmd
+[OK  ] G: AppCompatCacheParser
+[DONE] parser.appcompatcache
+[OK  ] G: WxTCmd
+[DONE] parser.wxtcmd
+[OK  ] SQLECmd: G:
+[DONE] parser.sqlecmd
+[OK  ] G: SBECmd
+[DONE] parser.sbecmd
+[OK  ] INDXRipper
+[RUN ] MFTECmd_$MFT (src=F:\Kape Output\G\Artifacts)
+[OK  ] MFTECmd_$MFT
+[RUN ] MFTECmd_$J (src=F:\Kape Output\G\Artifacts)
+[OK  ] MFTECmd_$J
+[RUN ] MFTECmd_$Boot (src=F:\Kape Output\G\Artifacts)
+[OK  ] MFTECmd_$Boot
+[RUN ] MFTECmd_$MFT_FileListing (src=F:\Kape Output\G\Artifacts)
+[OK  ] MFTECmd_$MFT_FileListing
+[RUN ] MFTECmd_$MFT_ProcessMFTSlack (src=F:\Kape Output\G\Artifacts)
+[OK  ] MFTECmd_$MFT_ProcessMFTSlack
+[RUN ] MFTECmd_$MFT_DumpResidentFiles (src=F:\Kape Output\G\Artifacts)
+[OK  ] MFTECmd_$MFT_DumpResidentFiles
+[RUN ] NTFSLogTracker_$J (src=F:\Kape Output\G\Artifacts)
+[OK  ] NTFSLogTracker_$J
+[RUN ] NTFSLogTracker_$LogFile (src=F:\Kape Output\G\Artifacts)
+[OK  ] NTFSLogTracker_$LogFile
+[DONE] parser.ntfs
+[STEP] parser:SrumECmd
+[DONE] parser:SrumECmd
+[STEP] parser:amcache
+[DONE] parser:amcache
+[STEP] parser:appcompatcache
+[DONE] parser:appcompatcache
+[STEP] parser:eventlog
+[DONE] parser:eventlog
+[STEP] parser:jlecmd
+[DONE] parser:jlecmd
+[STEP] parser:lecmd
+[DONE] parser:lecmd
+[STEP] parser:ntfs
+[DONE] parser:ntfs
+[STEP] parser:pecmd
+[DONE] parser:pecmd
+[STEP] parser:rbcmd
+[DONE] parser:rbcmd
+[STEP] parser:registry
+[DONE] parser:registry
+[STEP] parser:sbecmd
+[DONE] parser:sbecmd
+[STEP] parser:sqlecmd
+[DONE] parser:sqlecmd
+[STEP] parser:wxtcmd
+[DONE] parser:wxtcmd
+[INFO] tag 모듈 실행 대상: UsnJrnl tag, eventlog_tag
+[INFO] UsnJrnl_tag: 모듈 txt 기준시간 없음, 현재 시각 사용 -> 2025-12-05T10:46:55.146001+00:00
+[INFO] UsnJrnl_tag: G: 대상 CSV 3개
+[USN ] 입력 CSV: F:\Kape Output\G\MFTECmd_$J\FileSystem\20251205083357_MFTECmd_$J_Output.csv
+       → 출력 CSV: F:\tagged\UsnJrnl_G_20251205083357_MFTECmd_$J_Output_tagged.csv
+[SKIP] eventlog_tag: G EvtxECmd 폴더 없음 → F:\Kape Output\G\EvtxECmd
+[INFO] eventlog_tag: 처리된 CSV가 없습니다.
+[DONE] tag.eventlog_tag
+       행 수: 입력 84491 → 출력 84491
+[USN ] 입력 CSV: F:\Kape Output\G\MFTECmd_$J\FileSystem\20251205104401_MFTECmd_$J_Output.csv
+       → 출력 CSV: F:\tagged\UsnJrnl_G_20251205104401_MFTECmd_$J_Output_tagged.csv
+       행 수: 입력 84491 → 출력 84491
+[USN ] 입력 CSV: F:\Kape Output\G\MFTECmd_$J\FileSystem\20251205104403_MFTECmd_$J_Output.csv
+       → 출력 CSV: F:\tagged\UsnJrnl_G_20251205104403_MFTECmd_$J_Output_tagged.csv
+       행 수: 입력 84491 → 출력 84491
+[INFO] UsnJrnl_tag: 완료
+[DONE] tag.UsnJrnl tag
+[STEP] tag:UsnJrnl tag
+[DONE] tag:UsnJrnl tag
+[STEP] tag:eventlog_tag
+[DONE] tag:eventlog_tag
+[INFO] Dismounted.

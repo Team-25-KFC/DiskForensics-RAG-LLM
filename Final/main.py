@@ -384,7 +384,7 @@ def main():
         }
 
         # 5) parser 단계: artifacts → 나머지 파서 전부 실행
-        run_parser_modules(letters, cfg)
+        #run_parser_modules(letters, cfg)
 
         # 6) tag 단계: tag 폴더 내 태깅 모듈 전부 실행
         run_tag_modules(letters, cfg)
