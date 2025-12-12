@@ -1,11 +1,41 @@
 import pandas as pd
-import re
 from pathlib import Path
+from typing import Iterator
+
+
+# ============================================================
+# 공통 유틸 (D~Z:\Kape Output\<case>\...)
+# ============================================================
+
+def iter_case_dirs() -> Iterator[tuple[Path, str, Path]]:
+    for code in range(ord("D"), ord("Z") + 1):
+        drive_root = Path(f"{chr(code)}:/")
+        kape_root = drive_root / "Kape Output"
+        if not kape_root.is_dir():
+            continue
+        for case_dir in kape_root.iterdir():
+            if case_dir.is_dir():
+                yield drive_root, case_dir.name, case_dir
+
+
+def ensure_unique_output_path(path: Path) -> Path:
+    if not path.exists():
+        return path
+    parent, stem, suffix = path.parent, path.stem, path.suffix
+    i = 1
+    while True:
+        cand = parent / f"{stem}_{i}{suffix}"
+        if not cand.exists():
+            return cand
+        i += 1
+
+
+# ============================================================
+# Tagger
+# ============================================================
 
 class WxTActivityTagger:
-    """
-    Windows Timeline - Activity.csv 전용 최소 구성 태깅기
-    """
+    """Windows Timeline - Activity.csv 최소 태깅기"""
 
     def __init__(self):
         self.now = pd.Timestamp.now()
@@ -13,15 +43,12 @@ class WxTActivityTagger:
         self.one_week = self.now - pd.Timedelta(days=7)
         self.one_month = self.now - pd.Timedelta(days=30)
 
-    # -----------------------------
-    # TIME TAG
-    # -----------------------------
     def get_time_tag(self, ts):
         if ts is None or pd.isna(ts) or ts == "":
             return None
         try:
             ts = pd.to_datetime(ts)
-        except:
+        except Exception:
             return None
 
         if ts >= self.one_day:
@@ -32,9 +59,6 @@ class WxTActivityTagger:
             return "TIME_MONTH"
         return "TIME_OLD"
 
-    # -----------------------------
-    # AREA TAG (Executable 기반)
-    # -----------------------------
     def get_area_tag(self, exe: str):
         if not exe:
             return None
@@ -46,23 +70,16 @@ class WxTActivityTagger:
             return "AREA_PROGRAMFILES"
         return None
 
-    # -----------------------------
-    # ACTIVITY TYPE TAG
-    # -----------------------------
     def get_activity_tag(self, atype):
         try:
             atype = int(atype)
-        except:
+        except Exception:
             return "ACT_UNKNOWN"
 
         if atype == 11:
             return "ACT_EXECUTE"
-
         return "ACT_UNKNOWN"
 
-    # -----------------------------
-    # 태깅 메인
-    # -----------------------------
     def process_csv(self, csv_path: Path, output_root: Path):
         csv_path = Path(csv_path)
         df = pd.read_csv(csv_path, low_memory=False)
@@ -86,61 +103,58 @@ class WxTActivityTagger:
 
             desc = f"Executable: {exe} | ActivityType: {act}"
 
-            out_rows.append({
-                "Type": "WXTCMD_ACTIVITY",
-                "LastWriteTimestamp": start,
-                "description": desc,
-                "Tags": " | ".join(tags)
-            })
-
-        out_df = pd.DataFrame(out_rows)
+            out_rows.append(
+                {
+                    "Type": "WXTCMD_ACTIVITY",
+                    "LastWriteTimestamp": start,
+                    "description": desc,
+                    "Tags": " | ".join(tags),
+                }
+            )
 
         output_root.mkdir(parents=True, exist_ok=True)
-        out_file = output_root / f"{csv_path.stem}_tagged.csv"
-        out_df.to_csv(out_file, index=False, encoding="utf-8-sig")
+        out_file = ensure_unique_output_path(output_root / f"{csv_path.stem}_tagged.csv")
+        pd.DataFrame(out_rows).to_csv(out_file, index=False, encoding="utf-8-sig")
 
         return str(out_file), len(out_rows)
 
 
-# -----------------------------
-# 실행부
-# -----------------------------
+# ============================================================
+# 실행
+# ============================================================
+
 if __name__ == "__main__":
-    base = Path(__file__).resolve().parent
-    input_root = base
-    out_root = base / "csvtag_output"
-    out_root.mkdir(exist_ok=True)
-
     tagger = WxTActivityTagger()
+    total = 0
 
-csv_files = []
+    for drive_root, case_name, case_dir in iter_case_dirs():
+        out_root = drive_root / "tagged" / case_name / "Wxtcmd"
+        out_root.mkdir(parents=True, exist_ok=True)
 
-for p in input_root.rglob("*.csv"):
-    name = p.name.lower()
+        csv_files = []
+        for p in case_dir.rglob("*.csv"):
+            n = p.name.lower()
+            if "_tagged" in n:
+                continue
+            if "wxt_" not in n:
+                continue
+            if "ids" in n:
+                continue
+            if not n.endswith("_activity.csv"):
+                continue
+            csv_files.append(p)
 
-    # wxt 파일만 처리
-    if "wxt_" not in name:
-        continue
+        if not csv_files:
+            continue
 
-    # IDs 포함된 파일 제외
-    if "ids" in name:
-        continue
-
-    # Activity 파일만 처리
-    if not name.endswith("_activity.csv"):
-        continue
-
-    csv_files.append(p)
-
-    if not csv_files:
-        print("Activity CSV 없음.")
-    else:
-        print(f"{len(csv_files)}개 Activity 파일 태깅 시작")
+        print(f"\n[{drive_root}] case={case_name} | Wxt Activity {len(csv_files)}개")
 
         for i, csv_path in enumerate(csv_files, 1):
             try:
                 out, cnt = tagger.process_csv(csv_path, out_root)
                 print(f"[{i}] 완료 → {out} ({cnt}행)")
+                total += 1
             except Exception as e:
                 print(f"[ERR] {csv_path} → {e}")
 
+    print("\n=== Wxtcmd done:", total, "===")
