@@ -184,28 +184,66 @@ class RECmdTagger:
 
         return tags
 
-    def get_record_type(self, filename: str) -> str:
-        """파일명 기준으로 이 CSV 행들의 Type(아티팩트 그룹)을 결정"""
-        if "BasicSystemInfo" in filename:
-            return "REG_BASIC_SYSTEM_INFO"
-        elif "InstalledSoftware" in filename:
-            return "REG_INSTALLED_SOFTWARE"
-        elif "RegistryASEPs" in filename:
-            return "REG_ASEP_REGISTRY"
-        elif "SoftwareASEPs" in filename:
-            return "REG_ASEP_SOFTWARE"
-        elif "SoftwareClassesASEPs" in filename:
-            return "REG_ASEP_SOFTWARE_CLASSES"
-        elif "SoftwareWoW6432ASEPs" in filename:
-            return "REG_ASEP_SOFTWARE_WOW6432"
-        elif "SystemASEPs" in filename:
-            return "REG_ASEP_SYSTEM"
-        elif "UserClassesASEPs" in filename:
-            return "REG_ASEP_USER_CLASSES"
-        elif "UserActivity" in filename:
-            return "REG_USER_ACTIVITY"
-        else:
-            return "REG_UNKNOWN"
+def get_record_type(self, filename: str, row: dict = None) -> str:
+    fn = filename.lower()
+
+    # ===== 1차: 기존 파일명 기반 매칭 =====
+    if "basicsysteminfo" in fn:
+        return "REG_BASIC_SYSTEM_INFO"
+    if "installedsoftware" in fn:
+        return "REG_INSTALLED_SOFTWARE"
+    if "registryaseps" in fn:
+        return "REG_ASEP_REGISTRY"
+    if "softwareaseps" in fn:
+        return "REG_ASEP_SOFTWARE"
+    if "softwareclassesaseps" in fn:
+        return "REG_ASEP_SOFTWARE_CLASSES"
+    if "softwarewow6432aseps" in fn:
+        return "REG_ASEP_SOFTWARE_WOW6432"
+    if "systemaseps" in fn:
+        return "REG_ASEP_SYSTEM"
+    if "userclassesaseps" in fn:
+        return "REG_ASEP_USER_CLASSES"
+    if "useractivity" in fn:
+        return "REG_USER_ACTIVITY"
+
+    # ===== 2차: DFIRBatch 전용 패턴 =====
+    if "dfirbatch" in fn:
+        # row가 전달되면 HiveType / Category 기반 추가 판별
+        if row:
+            cat = str(row.get("Category", "")).lower()
+            hive = str(row.get("HiveType", "")).lower()
+
+            if hive == "sam":
+                return "REG_HIVE_SAM"
+            if hive == "security":
+                return "REG_HIVE_SECURITY"
+            if hive == "software":
+                return "REG_HIVE_SOFTWARE"
+            if hive == "system":
+                return "REG_HIVE_SYSTEM"
+
+            if "user accounts" in cat:
+                return "REG_USER_ACCOUNTS"
+
+        # row 정보를 못 받으면 그냥 DFIRBatch로 분류
+        return "REG_DFIRBATCH"
+
+    # ===== 3차: CSV 내부 Column 기반 판별 =====
+    if row:
+        keypath = str(row.get("KeyPath", "")).lower()
+
+        if keypath.startswith("root\\sam"):
+            return "REG_HIVE_SAM"
+        if keypath.startswith("root\\security"):
+            return "REG_HIVE_SECURITY"
+        if keypath.startswith("root\\software"):
+            return "REG_HIVE_SOFTWARE"
+        if keypath.startswith("root\\system"):
+            return "REG_HIVE_SYSTEM"
+
+    # ===== 4차: 아무것도 없으면 UNKNOWN =====
+    return "REG_UNKNOWN"
 
     # ---------- 태그 함수들 ----------
 
@@ -500,39 +538,26 @@ class RECmdTagger:
 
 # 사용 예시
 if __name__ == "__main__":
-    from pathlib import Path
+    import glob
 
     tagger = RECmdTagger()
 
-    # 현재 .py가 있는 디렉터리
-    base_dir = Path(__file__).resolve().parent
-
-    # .. / lang_flow
-    input_root = base_dir.parent / "여기에 상위폴더 이름!!!!"
-
-    if not input_root.exists():
-        print(f"폴더를 찾을 수 없지혁..: {input_root}")
-        raise SystemExit(1)
-
-    #  모든 하위폴더에서 RECmd_Batch_*.csv 찾기
-    csv_files = [
-        p
-        for p in input_root.rglob("*RECmd_Batch_*.csv")
-        if "_tagged" not in p.name
-    ]
+    # 원본 CSV만 처리 (_tagged 포함된 파일은 제외)
+    csv_files = glob.glob("*RECmd_Batch_*.csv")
+    csv_files = [f for f in csv_files if "_tagged" not in f]
 
     if not csv_files:
         print("처리할 RECmd Batch CSV 파일이 없습니다.")
     else:
         print(f"총 {len(csv_files)}개의 RECmd CSV 파일을 찾았습니다.\n")
 
-        for i, csv_path in enumerate(csv_files, 1):
+        for i, csv_file in enumerate(csv_files, 1):
             try:
-                print(f"[{i}/{len(csv_files)}] 처리 중: {csv_path}")
-                jsonl_out, row_count = tagger.process_csv(csv_path)
-                print(f" JSONL 완료: {jsonl_out} ({row_count:,}개 행)\n")
+                print(f"[{i}/{len(csv_files)}] 처리 중: {csv_file}")
+                jsonl_out, row_count = tagger.process_csv(csv_file)
+                print(f"  ✓ JSONL 완료: {jsonl_out} ({row_count:,}개 행)\n")
             except Exception as e:
-                print(f" 오류 발생: {csv_path} → {e}\n")
+                print(f"  ✗ 오류 발생: {str(e)}\n")
 
         print("=" * 50)
         print("모든 파일 처리 완료!")
