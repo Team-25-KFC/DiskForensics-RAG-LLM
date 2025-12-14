@@ -1,8 +1,9 @@
+import csv
 import re
+import time
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
-
-import pandas as pd
+from typing import Dict, Iterator, List, Optional, Tuple
+from datetime import datetime, timedelta
 
 
 # ============================================================
@@ -48,24 +49,29 @@ def sanitize_for_filename(s: str) -> str:
 
 
 # ============================================================
-# MFTTagger (원본 로직 유지)
+# Fast MFT Tagger (스트리밍 + 시간측정)
 # ============================================================
 
-class MFTTagger:
+class FastMFTTagger:
     """
-    MFTECmd CSV → 1차 태깅 CSV (Windows 포렌식 태깅 체계 연동)
-    (중간 로직은 그대로, 경로 스캔/출력만 통일)
+    MFTECmd CSV → 1차 태깅 CSV (초고속 스트리밍)
+    - pandas 미사용
+    - csv.reader 스트리밍 처리(메모리 고정)
+    - datetime.fromisoformat 기반 빠른 시간 파싱(100ns 소수부 자동 절삭)
+    - Tags에는 kind(MFT_FILE_LISTING 등) 넣지 않음 (Type 컬럼에 이미 있음)
+    - STATE_DIRECTORY 없음 (폴더 여부는 description의 IsDirectory로만 표현)
     """
 
     def __init__(self, infer_event: bool = True, infer_activity: bool = True):
         self.infer_event = infer_event
         self.infer_activity = infer_activity
 
-        self.now = pd.Timestamp.now()
-        self.one_day_ago = self.now - pd.Timedelta(days=1)
-        self.one_week_ago = self.now - pd.Timedelta(days=7)
-        self.one_month_ago = self.now - pd.Timedelta(days=30)
+        now = datetime.now()
+        self.one_day_ago = now - timedelta(days=1)
+        self.one_week_ago = now - timedelta(days=7)
+        self.one_month_ago = now - timedelta(days=30)
 
+        # FORMAT/SEC 확장자
         self.exec_ext = {".exe", ".dll", ".sys", ".scr", ".com"}
         self.script_ext = {".ps1", ".bat", ".cmd", ".vbs", ".js", ".py", ".psm1", ".hta"}
         self.doc_ext = {".txt", ".rtf", ".pdf", ".doc", ".docx", ".hwp", ".odt"}
@@ -77,14 +83,142 @@ class MFTTagger:
         self.archive_ext = {".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"}
         self.db_ext = {".db", ".sqlite", ".accdb", ".mdb"}
 
-        self.suspicious_name_patterns = [
-            r"mimikatz", r"procdump", r"psexec", r"cobalt", r"beacon",
-            r"keygen", r"crack", r"payload", r"backdoor", r"ransom",
+        # 의심 파일명(속도 위해 substring)
+        self.suspicious_name_tokens = [
+            "mimikatz", "procdump", "psexec", "cobalt", "beacon",
+            "keygen", "crack", "payload", "backdoor", "ransom",
         ]
 
+        # 시간 컬럼 후보(환경 차이 대비)
+        self.CREATED_COLS = [
+            "Created0x10", "CreationTime", "Created", "CreatedUtc", "CreatedUTC",
+            "CreatedTime", "CreatedTimeUtc", "CreatedTimeUTC",
+            "CreatedTimestamp", "CreationTimestamp",
+        ]
+        self.MODIFIED_COLS = [
+            "LastModified0x10", "LastWriteTime", "LastWrite", "Modified", "ModifiedUtc", "ModifiedUTC",
+            "LastWriteTimestamp", "LastWriteTimestampUtc", "LastWriteTimestampUTC",
+        ]
+        self.ACCESSED_COLS = [
+            "LastAccess0x10", "LastAccessTime", "Accessed", "AccessedUtc", "AccessedUTC",
+            "LastAccessTimestamp", "LastAccessTimestampUtc", "LastAccessTimestampUTC",
+        ]
+
+        # kind별 “버킷용 LastWrite 후보”
+        self.LASTWRITE_COLS = {
+            "MFT_ENTRY": ["LastModified0x10", "LastWriteTime", "LastWrite", "Modified", "ModifiedUtc", "LastWriteTimestamp"],
+            "MFT_FILE_LISTING": ["LastWriteTimestamp", "LastWriteTime", "LastWrite", "Modified", "ModifiedUtc", "LastModified0x10"],
+            "MFT_DUMP_RESIDENT": ["TargetModified", "SourceModified", "TargetCreated", "SourceCreated"],
+        }
+
+        # 100ns(7자리) 이상 소수부 → 6자리 절삭
+        self._frac_re = re.compile(r"^(.*\.\d{6})\d+(.*)$")
+
+    # -----------------------------
+    # KIND 판별
+    # -----------------------------
+    def detect_kind(self, csv_name: str) -> str:
+        n = csv_name.lower()
+
+        if "_mft_dumpresidentfiles" in n:
+            return "MFT_DUMP_RESIDENT"
+        if "_filelisting" in n:
+            return "MFT_FILE_LISTING"
+        if "_mft_output" in n or "_mft_" in n or "$mft" in n:
+            return "MFT_ENTRY"
+
+        # USN $J / Boot는 별도 태거로
+        if "usnjrnl" in n or "$j" in n or "_$j" in n:
+            return "IGNORE"
+        if "_boot" in n or "$boot" in n:
+            return "IGNORE"
+
+        return "IGNORE"
+
+    # -----------------------------
+    # 빠른 값 접근
+    # -----------------------------
+    def _get(self, row: List[str], idx: Dict[str, int], col: str) -> str:
+        i = idx.get(col, -1)
+        if i < 0 or i >= len(row):
+            return ""
+        v = row[i]
+        return v if v is not None else ""
+
+    def _pick(self, row: List[str], idx: Dict[str, int], cols: List[str]) -> str:
+        for c in cols:
+            v = self._get(row, idx, c)
+            if v and str(v).strip() != "":
+                return v
+        return ""
+
+    # -----------------------------
+    # 시간 파싱/정규화
+    # -----------------------------
+    def _real_dt(self, v: str) -> Optional[datetime]:
+        if not v:
+            return None
+        s = str(v).strip()
+        if not s:
+            return None
+
+        m = self._frac_re.match(s)
+        if m:
+            s = m.group(1) + m.group(2)
+
+        if s.endswith("Z"):
+            s = s[:-1]
+
+        try:
+            dt = datetime.fromisoformat(s)
+        except Exception:
+            return None
+
+        if dt.year <= 1601:
+            return None
+        return dt
+
+    def get_time_bucket(self, dt: Optional[datetime]) -> Optional[str]:
+        if dt is None:
+            return None
+        if dt >= self.one_day_ago:
+            return "TIME_RECENT"
+        if dt >= self.one_week_ago:
+            return "TIME_WEEK"
+        if dt >= self.one_month_ago:
+            return "TIME_MONTH"
+        return "TIME_OLD"
+
+    def get_time_presence_tags(self, row: List[str], idx: Dict[str, int], kind: str) -> List[str]:
+        tags: List[str] = []
+
+        created = self._real_dt(self._pick(row, idx, self.CREATED_COLS))
+        modified = self._real_dt(self._pick(row, idx, self.MODIFIED_COLS))
+        accessed = self._real_dt(self._pick(row, idx, self.ACCESSED_COLS))
+
+        if created:
+            tags.append("TIME_CREATED")
+        if modified:
+            tags.append("TIME_MODIFIED")
+        if accessed:
+            tags.append("TIME_ACCESSED")
+
+        # ✅ MFT 구조 기반 태그는 MFT_ENTRY에서만
+        if kind == "MFT_ENTRY":
+            si_any = self._real_dt(self._pick(row, idx, ["Created0x10", "LastModified0x10", "LastAccess0x10", "LastRecordChange0x10"]))
+            fn_any = self._real_dt(self._pick(row, idx, ["Created0x30", "LastModified0x30", "LastAccess0x30", "LastRecordChange0x30"]))
+            if si_any:
+                tags.append("TIME_MFT_CREATED")
+            if fn_any:
+                tags.append("TIME_FN_CREATED")
+
+        return tags
+
+    # -----------------------------
+    # 경로/확장자
+    # -----------------------------
     def _norm_path(self, p: str) -> str:
-        p = (p or "").strip()
-        p = p.replace("/", "\\").lower()
+        p = (p or "").strip().replace("/", "\\").lower()
         p = re.sub(r"\\{2,}", r"\\", p)
         return p
 
@@ -96,70 +230,13 @@ class MFTTagger:
             ext = "." + ext
         return ext
 
-    def _pick_first_existing(self, row: pd.Series, cols: List[str]):
-        for c in cols:
-            if c in row.index and pd.notna(row[c]) and str(row[c]).strip() != "":
-                return row[c]
-        return None
-
-    def _real_ts(self, v) -> Optional[pd.Timestamp]:
-        if v is None or pd.isna(v) or str(v).strip() == "":
-            return None
-        ts = pd.to_datetime(v, errors="coerce")
-        if ts is pd.NaT:
-            return None
-        if ts.year <= 1601:
-            return None
-        return ts
-
-    def get_time_bucket(self, ts_raw) -> Optional[str]:
-        ts = self._real_ts(ts_raw)
-        if ts is None:
-            return None
-        if ts >= self.one_day_ago:
-            return "TIME_RECENT"
-        if ts >= self.one_week_ago:
-            return "TIME_WEEK"
-        if ts >= self.one_month_ago:
-            return "TIME_MONTH"
-        return "TIME_OLD"
-
-    def get_time_presence_tags(self, row: pd.Series, kind: str) -> List[str]:
-        tags: List[str] = []
-
-        created = self._real_ts(self._pick_first_existing(row, ["Created0x10", "CreationTime", "Created", "CreatedUtc"]))
-        modified = self._real_ts(self._pick_first_existing(row, ["LastModified0x10", "LastWriteTime", "LastWrite", "Modified", "ModifiedUtc"]))
-        accessed = self._real_ts(self._pick_first_existing(row, ["LastAccess0x10", "LastAccessTime", "Accessed", "AccessedUtc"]))
-
-        if created:
-            tags.append("TIME_CREATED")
-        if modified:
-            tags.append("TIME_MODIFIED")
-        if accessed:
-            tags.append("TIME_ACCESSED")
-
-        if kind == "MFT_ENTRY":
-            si_any = self._real_ts(self._pick_first_existing(
-                row, ["Created0x10", "LastModified0x10", "LastAccess0x10", "LastRecordChange0x10"]
-            ))
-            fn_any = self._real_ts(self._pick_first_existing(
-                row, ["Created0x30", "LastModified0x30", "LastAccess0x30", "LastRecordChange0x30"]
-            ))
-            if si_any:
-                tags.append("TIME_MFT_CREATED")
-            if fn_any:
-                tags.append("TIME_FN_CREATED")
-
-        return list(dict.fromkeys(tags))
-
     def get_area_tags(self, path: str) -> List[str]:
         p = self._norm_path(path)
         if not p:
             return []
-
         tags: List[str] = []
 
-        if re.match(r"^[d-z]:\\", p):
+        if len(p) >= 3 and p[1:3] == ":\\" and "d" <= p[0] <= "z":
             tags.append("AREA_EXTERNAL_DRIVE")
 
         if "\\windows\\system32" in p or "\\windows\\syswow64" in p:
@@ -186,11 +263,10 @@ class MFTTagger:
                 tags.append("AREA_USER_DESKTOP")
             if "\\documents" in p:
                 tags.append("AREA_USER_DOCUMENTS")
-            if "\\downloads\\" in p:
+            if "\\downloads\\" in p or p.endswith("\\downloads"):
                 tags.append("AREA_USER_DOWNLOADS")
             if "\\recent" in p:
                 tags.append("AREA_USER_RECENT")
-
             if "\\appdata\\local\\" in p:
                 tags.append("AREA_APPDATA_LOCAL")
             if "\\appdata\\roaming\\" in p:
@@ -232,15 +308,19 @@ class MFTTagger:
             return ["FORMAT_DATABASE"]
         return []
 
-    def get_state_tags(self, row: pd.Series) -> List[str]:
+    # -----------------------------
+    # STATE_ (STATE_DIRECTORY 없음)
+    # -----------------------------
+    def get_state_tags(self, row: List[str], idx: Dict[str, int]) -> List[str]:
         tags: List[str] = []
+        inuse = (self._get(row, idx, "InUse") or "").strip().lower()
 
-        if row.get("InUse") in [1, True, "True", "true"]:
+        if inuse in ("1", "true", "yes"):
             tags.append("STATE_ACTIVE")
-        elif row.get("InUse") in [0, False, "False", "false"]:
+        elif inuse in ("0", "false", "no"):
             tags.append("STATE_DELETED")
 
-        attrs = str(row.get("Attributes", "") or "").lower()
+        attrs = (self._get(row, idx, "Attributes") or "").strip().lower()
         if attrs:
             if "hidden" in attrs:
                 tags.append("STATE_HIDDEN")
@@ -251,31 +331,40 @@ class MFTTagger:
 
         return list(dict.fromkeys(tags))
 
-    def get_sec_tags(self, path: str, filename: str, ext: str,
-                     format_tags: List[str], area_tags: List[str], state_tags: List[str]) -> List[str]:
+    # -----------------------------
+    # SEC_
+    # -----------------------------
+    def get_sec_tags(
+        self,
+        path: str,
+        filename: str,
+        format_tags: List[str],
+        area_tags: List[str],
+        state_tags: List[str],
+    ) -> List[str]:
         tags: List[str] = []
         p = self._norm_path(path)
-        name = (filename or "").lower()
+        name = (filename or "").strip().lower()
 
         if "FORMAT_EXECUTABLE" in format_tags:
             tags.append("SEC_EXECUTABLE")
         if "FORMAT_SCRIPT" in format_tags:
             tags.append("SEC_SCRIPT")
-
         if "STATE_HIDDEN" in state_tags and "FORMAT_EXECUTABLE" in format_tags:
             tags.append("SEC_HIDDEN_EXECUTABLE")
 
-        for pat in self.suspicious_name_patterns:
-            if re.search(pat, name, re.IGNORECASE):
-                tags.append("SEC_SUSPICIOUS_NAME")
-                break
+        if name:
+            for tok in self.suspicious_name_tokens:
+                if tok in name:
+                    tags.append("SEC_SUSPICIOUS_NAME")
+                    break
 
-        if name.count(".") >= 2:
-            parts = name.split(".")
-            last = "." + parts[-1]
-            prev = "." + parts[-2]
-            if last in (self.exec_ext | self.script_ext) and prev in (self.doc_ext | self.img_ext):
-                tags.append("SEC_SUSPICIOUS_EXTENSION")
+            if name.count(".") >= 2:
+                parts = name.split(".")
+                last = "." + parts[-1]
+                prev = "." + parts[-2]
+                if (last in (self.exec_ext | self.script_ext)) and (prev in (self.doc_ext | self.img_ext)):
+                    tags.append("SEC_SUSPICIOUS_EXTENSION")
 
         if ("AREA_USER_DOWNLOADS" in area_tags or "AREA_TEMP" in area_tags) and (
             "FORMAT_EXECUTABLE" in format_tags or "FORMAT_SCRIPT" in format_tags
@@ -290,23 +379,24 @@ class MFTTagger:
 
         return list(dict.fromkeys(tags))
 
-    def get_event_tags(self, state_tags: List[str], row: pd.Series) -> List[str]:
+    # -----------------------------
+    # EVENT_ / ACT_ (추정)
+    # -----------------------------
+    def get_event_tags(self, row: List[str], idx: Dict[str, int], state_tags: List[str]) -> List[str]:
         if not self.infer_event:
             return []
         tags: List[str] = []
+
         if "STATE_DELETED" in state_tags:
             tags.append("EVENT_DELETE")
 
-        created_raw = self._pick_first_existing(row, ["Created0x10", "CreationTime", "Created", "CreatedUtc"])
-        modified_raw = self._pick_first_existing(row, ["LastModified0x10", "LastWriteTime", "LastWrite", "Modified", "ModifiedUtc"])
+        created_dt = self._real_dt(self._pick(row, idx, self.CREATED_COLS))
+        modified_dt = self._real_dt(self._pick(row, idx, self.MODIFIED_COLS))
 
-        if self._real_ts(created_raw) is not None:
-            if self.get_time_bucket(created_raw) in ("TIME_RECENT", "TIME_WEEK"):
-                tags.append("EVENT_CREATE")
-
-        if self._real_ts(modified_raw) is not None:
-            if self.get_time_bucket(modified_raw) in ("TIME_RECENT", "TIME_WEEK"):
-                tags.append("EVENT_MODIFY")
+        if created_dt and self.get_time_bucket(created_dt) in ("TIME_RECENT", "TIME_WEEK"):
+            tags.append("EVENT_CREATE")
+        if modified_dt and self.get_time_bucket(modified_dt) in ("TIME_RECENT", "TIME_WEEK"):
+            tags.append("EVENT_MODIFY")
 
         return list(dict.fromkeys(tags))
 
@@ -331,67 +421,52 @@ class MFTTagger:
 
         return list(dict.fromkeys(tags))
 
-    def detect_kind(self, csv_name: str) -> str:
-        name = csv_name.lower()
+    # -----------------------------
+    # description
+    # -----------------------------
+    def build_description(self, row: List[str], idx: Dict[str, int], fields: List[str]) -> str:
+        parts = []
+        for f in fields:
+            v = self._get(row, idx, f)
+            if v and str(v).strip() != "":
+                parts.append(f"{f}: {v}")
+        return " | ".join(parts)
 
-        if "_mft_dumpresidentfiles" in name:
-            return "MFT_DUMP_RESIDENT"
-        if "_filelisting" in name:
-            return "MFT_FILE_LISTING"
-        if "_mft_output" in name or "_mft_" in name or "$mft" in name:
-            return "MFT_ENTRY"
-
-        if "usnjrnl" in name or "$j" in name or "_$j" in name:
-            return "IGNORE"
-        if "_boot" in name or "$boot" in name:
-            return "IGNORE"
-
-        return "IGNORE"
-
-    def build_description(self, row: pd.Series, fields: List[str]) -> str:
-        out = []
-        for col in fields:
-            if col in row.index and pd.notna(row[col]) and str(row[col]).strip() != "":
-                out.append(f"{col}: {row[col]}")
-        return " | ".join(out)
-
-    def tag_row(self, row: pd.Series, kind: str) -> Tuple[str, Optional[str], str]:
-        tags: List[str] = ["ARTIFACT_MFT"]
+    # -----------------------------
+    # 한 줄 처리
+    # -----------------------------
+    def tag_one(self, row: List[str], idx: Dict[str, int], kind: str) -> Tuple[str, str, str]:
+        tags: List[str] = ["ARTIFACT_MFT"]  # ✅ kind는 Tags에 넣지 않음
 
         if kind == "MFT_ENTRY":
-            path = row.get("ParentPath", "") or ""
-            filename = row.get("FileName", "") or ""
-            ext = row.get("Extension", "") or ""
-            lastwrite_raw = self._pick_first_existing(
-                row, ["LastModified0x10", "LastWriteTime", "LastWrite", "Modified", "ModifiedUtc"]
-            )
+            path = self._get(row, idx, "ParentPath")
+            filename = self._get(row, idx, "FileName")
+            ext = self._get(row, idx, "Extension")
             desc_fields = ["ParentPath", "FileName", "Extension", "FileSize", "InUse"]
 
         elif kind == "MFT_FILE_LISTING":
-            path = row.get("FullPath", "") or ""
-            filename = Path(str(path)).name if path else (row.get("FileName", "") or "")
-            ext = row.get("Extension", "") or Path(str(filename)).suffix
-            lastwrite_raw = self._pick_first_existing(
-                row, ["LastWriteTime", "LastWrite", "Modified", "ModifiedUtc", "LastModified0x10"]
-            )
+            path = self._get(row, idx, "FullPath")
+            filename = (path.split("\\")[-1] if path else self._get(row, idx, "FileName"))
+            ext = self._get(row, idx, "Extension")
             desc_fields = ["FullPath", "Extension", "IsDirectory", "FileSize"]
 
         else:  # MFT_DUMP_RESIDENT
-            path = row.get("LocalPath", "") or row.get("RelativePath", "") or ""
-            filename = Path(str(path)).name if path else (row.get("FileName", "") or "")
-            ext = Path(str(filename)).suffix
-            lastwrite_raw = self._pick_first_existing(
-                row, ["TargetModified", "SourceModified", "TargetCreated", "SourceCreated"]
-            )
+            path = self._get(row, idx, "LocalPath") or self._get(row, idx, "RelativePath")
+            filename = (path.split("\\")[-1] if path else self._get(row, idx, "FileName"))
+            ext = ""
             desc_fields = ["RelativePath", "LocalPath", "FileSize", "DriveType"]
 
-        npath = self._norm_path(str(path))
-        ext = self._safe_ext(str(ext))
+        npath = self._norm_path(path)
+        ext = self._safe_ext(ext)
 
-        tb = self.get_time_bucket(lastwrite_raw)
+        last_raw = self._pick(row, idx, self.LASTWRITE_COLS.get(kind, []))
+        last_dt = self._real_dt(last_raw)
+
+        tb = self.get_time_bucket(last_dt)
         if tb:
             tags.append(tb)
-        tags += self.get_time_presence_tags(row, kind)
+
+        tags += self.get_time_presence_tags(row, idx, kind)
 
         area_tags = self.get_area_tags(npath)
         tags += area_tags
@@ -399,76 +474,120 @@ class MFTTagger:
         format_tags = self.get_format_tags(ext)
         tags += format_tags
 
-        state_tags = self.get_state_tags(row)
+        state_tags = self.get_state_tags(row, idx)
         tags += state_tags
 
-        sec_tags = self.get_sec_tags(npath, str(filename), ext, format_tags, area_tags, state_tags)
+        sec_tags = self.get_sec_tags(npath, filename, format_tags, area_tags, state_tags)
         tags += sec_tags
 
-        tags += self.get_event_tags(state_tags, row)
+        tags += self.get_event_tags(row, idx, state_tags)
         tags += self.get_activity_tags(area_tags, format_tags, sec_tags)
 
-        desc = self.build_description(row, desc_fields)
+        desc = self.build_description(row, idx, desc_fields)
 
-        tags_clean: List[str] = []
+        # ✅ 공백/중복 제거
+        cleaned = []
+        seen = set()
         for t in tags:
-            if not t:
+            t = (t or "").strip()
+            if not t or t in seen:
                 continue
-            t = str(t).strip()
-            if t:
-                tags_clean.append(t)
+            seen.add(t)
+            cleaned.append(t)
 
-        tags_str = " | ".join(dict.fromkeys(tags_clean))
-        return tags_str, lastwrite_raw, desc
+        return " | ".join(cleaned), last_raw, desc
 
-    def process_csv(self, csv_path: Path, output_root: Path, case_name: str) -> Tuple[Optional[str], int]:
+    # -----------------------------
+    # 파일 처리(스트리밍 + 시간측정 + 진행로그)
+    # output_root: <drive>:\tagged
+    # output name: <stem>_<case>_tagged.csv
+    # -----------------------------
+    def process_csv(
+        self,
+        csv_path: Path,
+        output_root: Path,
+        case_name: str,
+        progress_every: int = 200_000,
+    ) -> Tuple[Optional[str], int, float]:
         csv_path = Path(csv_path)
-        df = pd.read_csv(csv_path, low_memory=False)
-
         kind = self.detect_kind(csv_path.name)
+
         if kind == "IGNORE":
             print(f"  → 스킵됨 (Boot/USN$J/Unknown): {csv_path.name}")
-            return None, 0
+            return None, 0, 0.0
 
-        out_rows = []
-        for _, row in df.iterrows():
-            tags, ts_raw, desc = self.tag_row(row, kind)
-            out_rows.append({
-                "Type": kind,
-                "LastWriteTimestamp": ts_raw,
-                "description": desc,
-                "Tags": tags,
-            })
+        output_root.mkdir(parents=True, exist_ok=True)
 
-        out_df = pd.DataFrame(out_rows)
-
-        output_root.mkdir(exist_ok=True, parents=True)
         safe_case = sanitize_for_filename(case_name)
-        out_csv = ensure_unique_output_path(output_root / f"{csv_path.stem}_{safe_case}_tagged.csv")
+        out_file = ensure_unique_output_path(
+            output_root / f"{csv_path.stem}_{safe_case}_tagged.csv"
+        )
 
-        out_df.to_csv(out_csv, index=False, encoding="utf-8-sig")
-        return str(out_csv), len(out_rows)
+        def _open_with_fallback(p: Path):
+            try:
+                return p.open("r", encoding="utf-8-sig", newline="")
+            except UnicodeDecodeError:
+                return p.open("r", encoding="cp949", errors="ignore", newline="")
+
+        t0 = time.perf_counter()
+        last_tick = t0
+        total = 0
+
+        with _open_with_fallback(csv_path) as f_in, out_file.open("w", encoding="utf-8-sig", newline="") as f_out:
+            reader = csv.reader(f_in)
+            writer = csv.writer(f_out)
+
+            header = next(reader, None)
+            if not header:
+                return str(out_file), 0, 0.0
+
+            idx = {col: i for i, col in enumerate(header)}
+            writer.writerow(["Type", "LastWriteTimestamp", "description", "Tags"])
+
+            for row in reader:
+                if not row or len(row) < 2:
+                    continue
+
+                tags, ts_raw, desc = self.tag_one(row, idx, kind)
+                writer.writerow([kind, ts_raw, desc, tags])
+                total += 1
+
+                if progress_every and total % progress_every == 0:
+                    now = time.perf_counter()
+                    chunk_dt = now - last_tick
+                    elapsed = now - t0
+                    rps = (progress_every / chunk_dt) if chunk_dt > 0 else 0.0
+                    print(f"    ... {total:,} rows | +{chunk_dt:.2f}s | {rps:,.0f} rows/s | elapsed {elapsed:.1f}s")
+                    last_tick = now
+
+        dt = time.perf_counter() - t0
+        return str(out_file), total, dt
 
 
 # ============================================================
-# 실행 (D~Z 스캔)
+# 실행 (WxTActivityTagger와 동일한 경로 규칙)
 # ============================================================
 
 if __name__ == "__main__":
-    tagger = MFTTagger(infer_event=True, infer_activity=True)
-    total = 0
+    tagger = FastMFTTagger(infer_event=True, infer_activity=True)
+    total_files = 0
+    total_rows = 0
+
+    grand_t0 = time.perf_counter()
 
     for drive_root, case_name, case_dir in iter_case_dirs(debug=False):
+        # ✅ 출력 루트: <drive>:\tagged (단일 폴더)
         output_root = drive_root / "tagged"
         output_root.mkdir(parents=True, exist_ok=True)
 
-        csv_files = []
-        for p in case_dir.rglob("*MFTECmd_*.csv"):
+        csv_files: List[Path] = []
+        for p in case_dir.rglob("*.csv"):
             n = p.name.lower()
-            if "_tagged" in n:
+            # ✅ 재처리 방지
+            if "_tagged" in n or "_normalized" in n:
                 continue
-            # Boot는 Boot 전용 스크립트가 처리
-            if "boot" in n:
+            # ✅ MFTECmd만
+            if "mftecmd_" not in n:
                 continue
             csv_files.append(p)
 
@@ -477,16 +596,28 @@ if __name__ == "__main__":
 
         print(f"\n[{drive_root}] case={case_name} | MFTECmd {len(csv_files)}개")
 
-        for i, csv_path in enumerate(csv_files, start=1):
+        for i, csv_path in enumerate(csv_files, 1):
             print(f"[{i}/{len(csv_files)}] 처리 중: {csv_path}")
             try:
-                out_csv, cnt = tagger.process_csv(csv_path, output_root, case_name)
-                if out_csv:
-                    print(f"  → 완료: {out_csv} ({cnt}행)")
-                    total += 1
+                out, cnt, dt = tagger.process_csv(
+                    csv_path=csv_path,
+                    output_root=output_root,
+                    case_name=case_name,
+                    progress_every=200_000,
+                )
+                if out:
+                    rps = (cnt / dt) if dt > 0 else 0.0
+                    print(f"  → 완료: {out}")
+                    print(f"     rows={cnt:,} | time={dt:.2f}s | speed={rps:,.0f} rows/s\n")
+                    total_files += 1
+                    total_rows += cnt
                 else:
-                    print("  → 스킵됨")
+                    print("  → 스킵됨\n")
             except Exception as e:
-                print(f"  오류: {e}")
+                print(f"[ERR] {csv_path} → {e}\n")
 
-    print("\n=== MFTCmd done:", total, "===")
+    grand_dt = time.perf_counter() - grand_t0
+    grand_rps = (total_rows / grand_dt) if grand_dt > 0 else 0.0
+
+    print("\n=== MFTECmd done ===")
+    print(f"files={total_files:,} | rows={total_rows:,} | time={grand_dt:.2f}s | speed={grand_rps:,.0f} rows/s")
