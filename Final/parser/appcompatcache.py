@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import subprocess
-# // [코드 삽입 시작] 한글 로그 인코딩 통일용
-import locale
-ENCODING = locale.getpreferredencoding(False)
-# // [코드 삽입 끝]
 from pathlib import Path
 from typing import List
 
@@ -36,27 +32,41 @@ def _root(a: Path) -> Path:
 
 def _stream(cmd: list[str], log: Path, t: int) -> int:
     log.parent.mkdir(parents=True, exist_ok=True)
-    # // [코드 삽입 시작] 서브프로세스 출력 + 로그 파일 인코딩을 OS 기본값으로 통일
-    with open(log, "w", encoding=ENCODING, errors="replace") as lf:
+
+    with open(log, "w", encoding="utf-8") as lf:
         lf.write("[CMD] " + " ".join(cmd) + "\n")
+
+        # // [코드 삽입 시작]
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
-            encoding=ENCODING,
-            errors="replace",
+            text=False,  # 중요: 자동 디코딩(환경 의존) 방지
         )
         assert proc.stdout
+
+        def _safe_decode(b: bytes) -> str:
+            for enc in ("utf-8", "utf-8-sig", "cp949", "mbcs"):
+                try:
+                    return b.decode(enc)
+                except UnicodeDecodeError:
+                    pass
+            return b.decode("utf-8", errors="replace")
+        # // [코드 삽입 끝]
+
         try:
-            for line in proc.stdout:
-                lf.write(line.rstrip() + "\n")
+            # // [코드 삽입 시작]
+            for raw in proc.stdout:
+                line = _safe_decode(raw).rstrip("\r\n")
+                lf.write(line + "\n")
+            # // [코드 삽입 끝]
+
             return proc.wait(timeout=t if t > 0 else None)
+
         except subprocess.TimeoutExpired:
             proc.kill()
             lf.write("[ERROR] timeout\n")
             return -9
-    # // [코드 삽입 끝]
 
 
 def run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool:
@@ -80,16 +90,11 @@ def run(drive_letters: List[str], unmount_callback, cfg: dict) -> bool:
 
         cmd = [
             str(KAPE_EXE),
-            "--msource",
-            str(art),
-            "--mdest",
-            str(mdest),
-            "--module",
-            MODULE_NAME,
-            "--mef",
-            "csv",
-            "--vss",
-            "false",
+            "--msource", str(art),
+            "--mdest", str(mdest),
+            "--module", MODULE_NAME,
+            "--mef", "csv",
+            "--vss", "false",
         ]
 
         print(f"[RUN ] {dl} {MODULE_NAME}")

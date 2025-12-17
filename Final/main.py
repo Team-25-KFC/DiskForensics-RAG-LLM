@@ -5,6 +5,7 @@ import subprocess
 import time
 import re
 import os
+import sys
 import inspect
 from pathlib import Path
 from typing import List, Optional
@@ -23,13 +24,18 @@ MOUNT_STABILIZE_SEC = int(os.getenv("MOUNT_STABILIZE_SEC", "15"))
 PS_TIMEOUT_SEC      = int(os.getenv("PS_TIMEOUT_SEC", "90"))
 PROC_TIMEOUT_SEC    = int(os.getenv("PROC_TIMEOUT_SEC", "3600"))
 
-# 병렬 실행 워커 수(기본 6)
-MODULE_MAX_WORKERS = int(os.getenv("MODULE_MAX_WORKERS", "6"))
+# 병렬 실행 워커 수
+PARSER_MAX_WORKERS = int(os.getenv("PARSER_MAX_WORKERS", "6"))  # parser용
+TAG_MAX_WORKERS    = int(os.getenv("TAG_MAX_WORKERS", "4"))     # tag용 (요청대로 4개)
 
 # ── 공용 실행 유틸 ───────────────────────────────────────────────
 def run_ps(cmd: str, timeout: Optional[int] = None):
-    return subprocess.run(["powershell", "-NoProfile", "-Command", cmd],
-                          capture_output=True, text=True, timeout=timeout)
+    return subprocess.run(
+        ["powershell", "-NoProfile", "-Command", cmd],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
 
 def ps_lines(cp: subprocess.CompletedProcess):
     return [l.strip() for l in (cp.stdout or "").splitlines() if l.strip()]
@@ -118,13 +124,36 @@ def resolve_e01_path() -> Optional[Path]:
     print(f"[INFO] 사용 E01: {chosen}")
     return chosen
 
+def _find_ccit_root_from_e01(e01_path: Path) -> Path:
+    """
+    E01 경로 기준으로 위로 올라가며 'ccit' 폴더를 찾는다.
+    - 찾으면 그 폴더를 ccit 루트로 사용 (예: D:\\ccit)
+    - 못 찾으면 그냥 E01이 있는 폴더를 ccit 루트처럼 사용
+    """
+    for parent in e01_path.parents:
+        if parent.name.lower() == "ccit":
+            return parent
+    return e01_path.parent
+
 # ── AIM helpers ───────────────────────────────────────────────────
 def mount_e01(e01_path: Path):
-    cmd = [AIM_EXE, "--mount", f"--filename={e01_path}", "--provider=LibEwf", "--readonly", "--online"]
+    cmd = [
+        AIM_EXE,
+        "--mount",
+        f"--filename={e01_path}",
+        "--provider=LibEwf",
+        "--readonly",
+        "--online",
+    ]
     device_number = None
     disk_number = None
     try:
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
         start = time.time()
         assert proc.stdout
         for line in proc.stdout:
@@ -148,23 +177,31 @@ def mount_e01(e01_path: Path):
 def get_ntfs_volumes(disk_number: int):
     ps = (
         f"Get-Partition -DiskNumber {disk_number} | Get-Volume | "
-        f"Where-Object {{$_.FileSystem -eq 'NTFS'}} | Select-Object -ExpandProperty Path"
+        f"Where-Object {{$_.FileSystem -eq 'NTFS'}} | "
+        f"Select-Object -ExpandProperty Path"
     )
     r = run_ps(ps, timeout=PS_TIMEOUT_SEC)
     vols = ps_lines(r)
-    return [p if p.endswith('\\') else p + '\\' for p in vols if p.startswith('\\\\?\\Volume{')]
+    return [
+        p if p.endswith("\\") else p + "\\"
+        for p in vols
+        if p.startswith("\\\\?\\Volume{")
+    ]
 
 def get_letter_for_volume(vol_path: str):
     r = run_ps(
         f"Get-Volume | Where-Object {{$_.Path -eq '{vol_path}'}} | "
         f"Select-Object -ExpandProperty DriveLetter",
-        timeout=PS_TIMEOUT_SEC
+        timeout=PS_TIMEOUT_SEC,
     )
     letter = (r.stdout or "").strip()
     return f"{letter}:" if letter else None
 
 def dismount_e01(device_number=None):
-    cmd = [AIM_EXE, f"--dismount={device_number}"] if device_number else [AIM_EXE, "--dismount=all"]
+    cmd = [AIM_EXE, f"--dismount={device_number}"] if device_number else [
+        AIM_EXE,
+        "--dismount=all",
+    ]
     try:
         subprocess.run(cmd, check=True, capture_output=True)
         print("[INFO] Dismounted.")
@@ -173,6 +210,7 @@ def dismount_e01(device_number=None):
 
 # ── 베이스 디렉터리 / parser / tag 디렉터리 ──────────────────────
 def _base_dir() -> Path:
+    # D:\ccit_project\Final (main.py 위치)
     return Path(__file__).resolve().parent
 
 def _parser_dir() -> Path:
@@ -275,10 +313,15 @@ def _discover_modules(dir_path: Path, exclude: List[str] | None = None) -> List[
     return names
 
 # ── 공용 모듈 실행기 (parser, tag 공용) ─────────────────────────
-def _run_modules(package: str, module_names: List[str], letters: List[str], cfg: dict):
+def _run_modules(package: str,
+                 module_names: List[str],
+                 letters: List[str],
+                 cfg: dict,
+                 max_workers: int):
     """
     package: "parser" 또는 "tag"
     module_names: 실행할 모듈 이름(stem 리스트)
+    max_workers: ThreadPoolExecutor worker 수
     """
     if not module_names:
         print(f"[INFO] 실행할 {package} 모듈이 없습니다.")
@@ -301,7 +344,7 @@ def _run_modules(package: str, module_names: List[str], letters: List[str], cfg:
             buf.append(f"[ERR ] {package}:{name} 실행 오류: {e}")
         return name, "\n".join(buf)
 
-    with ThreadPoolExecutor(max_workers=MODULE_MAX_WORKERS) as ex:
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futs = {ex.submit(_runner, n): n for n in module_names}
         for fut in as_completed(futs):
             name, out = fut.result()
@@ -326,18 +369,93 @@ def run_parser_modules(letters: List[str], cfg: dict):
     # 2) 나머지 parser/*.py 자동 실행 (artifacts 제외)
     module_names = _discover_modules(parser_dir, exclude=["artifacts"])
     print(f"[INFO] parser 모듈 실행 대상: {', '.join(module_names) if module_names else '(없음)'}")
-    _run_modules("parser", module_names, letters, cfg)
+    _run_modules("parser", module_names, letters, cfg, PARSER_MAX_WORKERS)
 
-# ── tag 단계 실행 ────────────────────────────────────────────────
 def run_tag_modules(letters: List[str], cfg: dict):
     """
-    tag 디렉터리 내 *.py 전부 실행.
-    (현재 tag 폴더가 비어 있으면 아무것도 하지 않음)
+    tag 디렉터리 내 *.py 전부를
+    PowerShell의
+
+        Get-ChildItem "...\tag\*.py" | ForEach-Object { python $_.FullName }
+
+    과 비슷한 방식으로 '각각 별도 프로세스'로 실행한다.
+    - 경로는 main.py가 있는 폴더(_base_dir) 기준 상대경로를 사용한다.
+    - letters, cfg 인자는 지금은 사용하지 않는다.
     """
-    tag_dir = _tag_dir()
-    module_names = _discover_modules(tag_dir, exclude=[])
-    print(f"[INFO] tag 모듈 실행 대상: {', '.join(module_names) if module_names else '(없음)'}")
-    _run_modules("tag", module_names, letters, cfg)
+    base_dir = _base_dir()      # 예: D:\ccit_project\Final
+    tag_dir  = _tag_dir()       # 예: D:\ccit_project\Final\tag
+
+    print(f"[DEBUG] base_dir = {base_dir}")
+    print(f"[DEBUG] tag_dir  = {tag_dir} (exists={tag_dir.exists()})")
+
+    if not tag_dir.is_dir():
+        print(f"[WARN] tag 디렉터리가 없습니다: {tag_dir}")
+        return
+
+    # tag/*.py 목록 수집
+    scripts = sorted(tag_dir.glob("*.py"))
+    if not scripts:
+        print("[INFO] tag 폴더에 실행할 .py 파일이 없습니다.")
+        return
+
+    python_exe = sys.executable  # 현재 파이썬 인터프리터
+
+    print("[INFO] tag 스크립트 실행 목록:")
+    for s in scripts:
+        print(f"  - {s.name}")
+
+    # 각 .py를 순차 실행
+    for script in scripts:
+        try:
+            # main.py 위치(base_dir) 기준 상대경로로 변환 (예: tag/LECmd.py)
+            rel_script = script.relative_to(base_dir)
+        except ValueError:
+            # 만약 base_dir 기준 상대경로 계산이 안 되면, 파일명만 사용
+            rel_script = Path("tag") / script.name
+
+        cmd = [python_exe, str(rel_script)]
+        print(f"\n=== Running {rel_script} ===")
+        try:
+            # cwd를 base_dir로 설정 → 항상 상대경로 기준이 일정해짐
+            result = subprocess.run(
+                cmd,
+                cwd=str(base_dir),
+                text=True,
+            )
+            if result.returncode != 0:
+                print(f"[ERR ] {rel_script} 종료 코드: {result.returncode}")
+            else:
+                print(f"[DONE] {rel_script}")
+        except Exception as e:
+            print(f"[ERR ] {rel_script} 실행 중 예외: {e}")
+
+
+# ── input_postgre_data.py 실행기 ─────────────────────────────────
+def run_input_postgre_data():
+    """
+    main.py 기준 상대경로:
+      D:\ccit_project\Final\inputDB\input_postgre_data.py
+    """
+    base = _base_dir()
+    script_path = base / "inputDB" / "input_postgre_data.py"
+
+    if not script_path.exists():
+        print(f"[WARN] input_postgre_data.py 를 찾지 못했습니다: {script_path}")
+        return
+
+    print(f"[STEP] input_postgre_data.py 실행: {script_path}")
+    try:
+        # 현재 파이썬 인터프리터(sys.executable)로 실행
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"[ERR ] input_postgre_data.py 종료 코드: {result.returncode}")
+        else:
+            print("[DONE] input_postgre_data.py")
+    except Exception as e:
+        print(f"[ERR ] input_postgre_data.py 실행 실패: {e}")
 
 # ── main ──────────────────────────────────────────────────────────
 def main():
@@ -347,18 +465,30 @@ def main():
         return
 
     # 2) BASE_OUT(KAPE Output), TAG_OUT 결정
-    #    기본: "E01이 있는 드라이브:\Kape Output" / "E01이 있는 드라이브:\tagged"
+    #    기본: ccit 폴더의 상위 폴더를 루트로 사용
+    #         예) E01: D:\ccit\case\image.E01
+    #             -> ccit_root = D:\ccit
+    #             -> project_root = D:\
+    #             -> Kape Output = D:\Kape Output
+    #             -> tagged = D:\tagged
     if BASE_OUT_ENV:
+        # 환경변수로 BASE_OUT이 명시된 경우: 그대로 사용
         base_out = Path(BASE_OUT_ENV)
-        drive = base_out.drive or (e01_resolved.drive or "D:")
+        base_root = base_out.parent
     else:
-        drive = e01_resolved.drive or "D:"
-        base_out = Path(drive + r"\Kape Output")
+        ccit_root = _find_ccit_root_from_e01(e01_resolved)
+        project_root = ccit_root.parent  # ccit과 나란히 두는 루트
+        base_root = project_root
+        base_out = project_root / "Kape Output"
 
-    tag_out = Path(drive + r"\tagged")
+    # 태그 결과 루트도 같은 루트 기준으로
+    tag_out = base_root / "tagged"
 
     base_out.mkdir(parents=True, exist_ok=True)
     tag_out.mkdir(parents=True, exist_ok=True)
+
+    print(f"[INFO] BASE_OUT (KAPE Output root): {base_out}")
+    print(f"[INFO] TAG_OUT  (tagged root):      {tag_out}")
 
     # 3) E01 마운트
     disk, dev = mount_e01(e01_resolved)
@@ -380,19 +510,23 @@ def main():
             "BASE_OUT": base_out,          # KAPE Output 루트
             "KAPE_EXE": Path(KAPE_EXE),
             "PROC_TIMEOUT_SEC": PROC_TIMEOUT_SEC,
-            "TAG_OUT": tag_out,            # 태깅 결과 루트 (tag/*.py에서 사용)
+            "TAG_OUT": tag_out,            # 태깅 결과 루트 (tag/*.py에서 사용 가능)
         }
 
         # 5) parser 단계: artifacts → 나머지 파서 전부 실행
         #run_parser_modules(letters, cfg)
 
-        # 6) tag 단계: tag 폴더 내 태깅 모듈 전부 실행
+        # 6) tag 단계: tag 폴더 내 태깅 모듈 전부 실행 (쓰레드 max 4)
         run_tag_modules(letters, cfg)
+
+        # 7) 모든 parser + tag 모듈 실행이 끝나면 DB 입력 스크립트 실행
+        run_input_postgre_data()
 
     except Exception as e:
         print(f"[FATAL] main 실패: {e}")
     finally:
         dismount_e01(dev)
+
 
 if __name__ == "__main__":
     main()
